@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-harness"
+version = "0.1.0a1"
+description = "Terminal-first provider-backed agent CLI harness"
+requires-python = ">=3.12"
+dependencies = ["PyYAML>=6.0.2,<7", "prompt-toolkit>=3.0.48,<4"]
+
+[project.scripts]
+agentic-harness = "backlog_harness.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8.3,<9", "ruff>=0.11,<1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/backlog_harness"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
