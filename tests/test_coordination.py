@@ -62,17 +62,19 @@ def test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work(config_file
     data["poll_seconds"] = 0.01
     data["operational_root"] = str(tmp_path / "ops")
     config.write_text(yaml.safe_dump(data))
-    calls = []
+    calls, current = [], []
 
-    async def forbidden(name):
+    async def complete(name):
         calls.append(name)
+        current[0] = replace(current[0], state="Completed")
+        return {"state": "Completed"}
 
     app = SimpleNamespace(
         root=tmp_path / "ops",
         config_path=config,
         config=load_config(config),
-        provider=SimpleNamespace(snapshot=list),
-        run_item=forbidden,
+        provider=SimpleNamespace(snapshot=lambda: current),
+        run_item=complete,
         reconcile=list,
     )
 
@@ -83,13 +85,24 @@ def test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work(config_file
         assert controller.state == "IdleWatch"
         controller.pause()
         assert not controller.admission_open
+        await asyncio.sleep(0.04)
+        assert controller.state == "AdmissionPaused"
+        current.append(Item("later", "later.md", "later-revision", "Ready", "Unowned", 100, ""))
+        await asyncio.sleep(0.04)
+        assert not calls
+        assert controller.state == "AdmissionPaused"
         controller.resume()
         await asyncio.sleep(0.04)
+        assert calls == ["later"]
+        assert current[0].state == "Completed"
+        assert controller.state == "IdleWatch"
+        await asyncio.sleep(0.04)
+        assert calls == ["later"]
         await controller.stop()
         await task
 
     asyncio.run(exercise())
-    assert not calls
+    assert calls == ["later"]
 
 
 def test_uncertain_slot_survives_lost_process_lock(config_file):

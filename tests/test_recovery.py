@@ -571,3 +571,161 @@ def test_existing_reservation_without_retained_session_evidence_never_relaunches
     assert app._stage_path(item.item_id, "assignment").exists() is retained_assignment
     assert not list((app.root / "runs").glob("*/operations/*/invocations/*/intent.json"))
     assert provider.item(item.item_id).state == state
+
+
+@pytest.mark.parametrize("state", ["Ready", "Starting"])
+def test_stale_frozen_assignment_blocks_admission_before_invocation(
+    config_file, provider, monkeypatch, state
+):
+    import asyncio
+    import json
+
+    import yaml
+
+    config, data = config_file
+    data["repository"] = str(provider.repository)
+    data["operational_root"] = str(provider.evidence_root)
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    original = provider.item("item-one")
+    atomic_json(
+        app._stage_path(original.item_id, "assignment"),
+        {
+            "content": original.content,
+            "provider_revision": original.revision,
+            "provider_path": original.path,
+            "original_high": original.original_high,
+        },
+    )
+    path = provider.repository / original.path
+    path.write_text(original.content.replace("One item.", "Revised objective."))
+    git(provider.repository, "add", "--", original.path)
+    git(provider.repository, "commit", "-m", "Revise authoritative objective")
+    revised = provider.item(original.item_id)
+    if state == "Starting":
+        provider.transition(
+            revised.item_id,
+            revised.revision,
+            "Starting",
+            authority("coordinator", operation="new"),
+            validate=validate_transition,
+        )
+        atomic_json(
+            app._stage_path(original.item_id, "admit"),
+            {
+                "text": json.dumps(
+                    {
+                        "operation": "new",
+                        "item_id": original.item_id,
+                        "provider_revision": revised.revision,
+                    }
+                )
+            },
+        )
+    calls = []
+
+    async def forbidden(*args, **kwargs):
+        calls.append(args)
+        pytest.fail("Stale assignment must block before any invocation")
+
+    monkeypatch.setattr(app, "invoke", forbidden)
+    with pytest.raises(TransitionBlocked, match="frozen assignment"):
+        asyncio.run(app.run_item(original.item_id))
+    assert not calls
+    assert provider.item(original.item_id).state == state
+    assert not list((app.root / "runs").glob("*/operations/*/invocations/*/intent.json"))
+
+
+@pytest.mark.parametrize("changed_content", [False, True])
+def test_starting_continuation_requires_content_bound_provider_admission(
+    config_file, provider, monkeypatch, changed_content
+):
+    import asyncio
+    import json
+
+    import yaml
+
+    from backlog_harness.telemetry import Sink
+
+    config, data = config_file
+    data["repository"] = str(provider.repository)
+    data["operational_root"] = str(provider.evidence_root)
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    item = provider.item("item-one")
+    trace_path = app.root / "telemetry/admission/spans.jsonl"
+    JsonlWriter(trace_path).append(
+        {
+            "resourceSpans": [
+                {
+                    "scopeSpans": [
+                        {
+                            "spans": [
+                                {
+                                    "traceId": "a" * 32,
+                                    "spanId": "b" * 16,
+                                    "name": "admission",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+    sink = Sink(trace_path, {})
+    admission = {
+        "role": "coordinator",
+        "invocation_id": "admission",
+        "outcome": "returned",
+        "session": {"session_id": "coordinator", "native_session_id": "native-coordinator"},
+        "text": json.dumps(
+            {
+                "operation": "new",
+                "item_id": item.item_id,
+                "provider_revision": item.revision,
+            }
+        ),
+        "telemetry_path": str(trace_path),
+        "telemetry": {
+            "span_count": 1,
+            "rejected_exports": 0,
+            "evidence_sha256": sink.evidence_digest(),
+        },
+    }
+    atomic_json(
+        app._stage_path(item.item_id, "assignment"),
+        {
+            "content": item.content.replace("One item.", "Different objective.")
+            if changed_content
+            else item.content,
+            "provider_revision": item.revision,
+            "provider_path": item.path,
+            "original_high": item.original_high,
+        },
+    )
+    atomic_json(app._stage_path(item.item_id, "admit"), admission)
+    provider.transition(
+        item.item_id,
+        item.revision,
+        "Starting",
+        app.authority(admission, item.item_id, operation="new"),
+        validate=validate_transition,
+    )
+    calls = []
+
+    async def acceptance_boundary(*args, **kwargs):
+        calls.append(args)
+        raise RuntimeError("valid acceptance boundary reached")
+
+    monkeypatch.setattr(app, "guard", lambda name: None)
+    monkeypatch.setattr(app, "invoke", acceptance_boundary)
+    if changed_content:
+        with pytest.raises(TransitionBlocked, match="admitted provider content"):
+            asyncio.run(app.run_item(item.item_id))
+        assert not calls
+    else:
+        with pytest.raises(RuntimeError, match="valid acceptance boundary reached"):
+            asyncio.run(app.run_item(item.item_id))
+        assert len(calls) == 1 and calls[0][1] == "accept"
+        assert item.content in calls[0][3]

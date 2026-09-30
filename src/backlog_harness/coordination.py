@@ -211,7 +211,8 @@ class RunController:
                                 self.state, self.admission_open = "Available", False
                                 self.record()
                                 return result
-                            self.state = "IdleWatch"
+                            if self.admission_open:
+                                self.state = "IdleWatch"
                     elif self.admission_open:
                         self.state = "Running"
                     self.record()

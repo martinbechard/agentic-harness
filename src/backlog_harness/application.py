@@ -934,6 +934,8 @@ class Application:
                 assignment_path,
                 {
                     "content": item.content,
+                    "provider_revision": item.revision,
+                    "provider_path": item.path,
                     "original_high": item.original_high,
                     "workflow": self.item_workflow(item_id),
                     "candidate_root": self.config.data.get("candidate_root"),
@@ -941,7 +943,15 @@ class Application:
                 },
                 exclusive=True,
             )
-        assignment = json.loads(assignment_path.read_text())["content"]
+        frozen_assignment = json.loads(assignment_path.read_text())
+        assignment = frozen_assignment["content"]
+        if item.state == "Ready":
+            require(
+                frozen_assignment.get("provider_revision") == item.revision
+                and assignment == item.content
+                and frozen_assignment.get("original_high") == item.original_high,
+                "Ready provider record differs from the frozen assignment; reconcile before admission",
+            )
         workflow = self.item_workflow(item_id)
         candidate_repo = self.candidate_repository(item_id)
         require(
@@ -1000,6 +1010,43 @@ class Application:
                 self._stage_path(item_id, "admit").exists(),
                 "Starting reservation has no retained admission evidence; reconcile before launch",
             )
+            admission = json.loads(self._stage_path(item_id, "admit").read_text())
+            admitted = self.result_json(admission)
+            source_revision = frozen_assignment.get("provider_revision")
+            require(
+                source_revision
+                and admitted.get("operation") == "new"
+                and admitted.get("item_id") == item_id
+                and admitted.get("provider_revision") == source_revision,
+                "Retained admission differs from the frozen assignment",
+            )
+            self.validate_invocation_result(admission)
+            admission_authority = self.authority(admission, item_id, operation="new")
+            record = self.root / "provider-operations" / component(
+                digest([item_id, source_revision, "Starting", admission_authority])
+            )
+            require(
+                (record / "requested.json").exists(),
+                "Starting reservation has no bound provider admission operation",
+            )
+            request = json.loads((record / "requested.json").read_text())
+            require(
+                request.get("before_revision") == source_revision
+                and request.get("authority") == admission_authority
+                and request.get("item_id") == item_id
+                and request.get("target") == "Starting",
+                "Provider admission operation differs from retained admission",
+            )
+            from .provider import blob
+
+            require(
+                frozen_assignment.get("provider_path") in request["paths"]
+                and blob(
+                    self.config.repository, request["head"], frozen_assignment["provider_path"]
+                ).decode() == assignment,
+                "Frozen assignment differs from the admitted provider content",
+            )
+            self.provider.reconcile_operation(record)
             self.guard(item_id)
             acceptance = await self.invoke(
                 item_id,
