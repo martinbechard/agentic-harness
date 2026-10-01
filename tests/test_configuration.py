@@ -200,3 +200,14 @@ def test_invalid_invocation_timeout(config_file, value):
     path.write_text(yaml.safe_dump(data))
     with pytest.raises(ConfigError, match="invocation_timeout_seconds"):
         load_config(path)
+
+
+@pytest.mark.parametrize("override", ["preparation", "mode", "completion"])
+def test_item_workflow_cannot_override_preparation_or_gates(config_file, override):
+    path, data = config_file
+    data["workflow"]["items"] = {
+        "one": {"allowed_paths": ["answer.py"], override: {"allowed_roots": ["escape"]}}
+    }
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match="only override"):
+        load_config(path)

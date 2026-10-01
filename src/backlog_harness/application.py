@@ -282,10 +282,9 @@ class Application:
         recovery = self.recovery_record(item_id)
         if recovery:
             return recovery["workflow"]
-        selected = plain(self.config.data["workflow"])
-        selected.update(selected.get("items", {}).get(item_id, {}))
-        selected.pop("items", None)
-        return selected
+        from .estimation import prepared_workflow
+
+        return prepared_workflow(self, item_id, self.config)
 
     def recovery_record(self, item_id):
         path = self._stage_path(item_id, "recovery")
@@ -648,15 +647,15 @@ class Application:
             )
             executing_role = "coordinator"
         else:
-            decisions = []
+            decisions = {}
             for path in self._stage_path(item.item_id, "unused").parent.glob("*.json"):
                 value = json.loads(path.read_text())
                 if isinstance(value, dict) and value.get("invocation_id") == authority.get(
                     "invocation_id"
                 ):
-                    decisions.append(value)
+                    decisions[digest(value)] = value
             require(len(decisions) == 1, "Provider decision-owner evidence is absent or ambiguous")
-            decision = decisions[0]
+            decision = next(iter(decisions.values()))
             self.validate_invocation_result(decision)
             require(
                 decision["role"] == authority["role"]
@@ -892,7 +891,7 @@ class Application:
             if not preserved_owner:
                 expected_owner = "Unowned"
         unowned_estimate = (
-            record["authority"].get("operation") == "record-estimate"
+            record.get("authority", {}).get("operation") == "record-estimate"
             and expected_owner in {None, "Unowned"}
             and after.owner in {None, "Unowned"}
         )
@@ -941,7 +940,7 @@ class Application:
             "Provider resulting revision differs",
         )
         require(after.original_high == record["item"]["original_high"], "Original estimate changed")
-        if record["authority"].get("operation") == "record-estimate":
+        if record.get("authority", {}).get("operation") == "record-estimate":
             require(
                 "Prospective Execution High: " + str(record["authority"]["prospective_high"])
                 in after.content.splitlines(),
@@ -1116,8 +1115,9 @@ class Application:
                     "Recovery workflow configuration changed",
                 )
             if not recovery:
-                selected.update(selected.get("items", {}).get(item_id, {}))
-                selected.pop("items", None)
+                from .estimation import prepared_workflow
+
+                selected = prepared_workflow(self, item_id, snapshot)
             require(
                 "workflow" not in frozen or selected == frozen["workflow"],
                 "Accepted workflow changed; reconcile before another invocation",
@@ -2429,7 +2429,7 @@ class Application:
             ).read_text()
         )
         require(
-            record["authority"].get("operation") == "record-estimate"
+            record.get("authority", {}).get("operation") == "record-estimate"
             and record["authority"].get("prospective_high") == value["prospective_high"]
             and receipt["after"] == asdict(item),
             "Prospective estimate binding differs",
@@ -2481,6 +2481,9 @@ class Application:
             ),
             "A persisted answer is incomplete; use resume-answer before continuing",
         )
+        from .estimation import prepare_item
+
+        item = await prepare_item(self, item)
         assignment_path = self._stage_path(item_id, "assignment")
         if not assignment_path.exists():
             require(

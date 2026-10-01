@@ -304,6 +304,24 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
                 or candidate_root.is_relative_to(operational_root.resolve())
             ):
                 raise ConfigError("candidate_root must be disjoint from provider and evidence")
+        preparation = workflow.get("preparation")
+        if preparation is not None:
+            _object(preparation, "workflow.preparation")
+            if set(preparation) != {"allowed_roots", "check_commands"}:
+                raise ConfigError("Preparation only configures source roots and check commands")
+            roots = preparation["allowed_roots"]
+            if not isinstance(roots, list) or not roots:
+                raise ConfigError("Preparation needs source roots")
+            for root in roots:
+                safe_source_path(root)
+            commands = preparation["check_commands"]
+            if not isinstance(commands, list) or not commands:
+                raise ConfigError("Preparation needs an explicit check command catalog")
+            for argv in commands:
+                if not isinstance(argv, list) or not argv:
+                    raise ConfigError("Preparation check must be a nonempty argv")
+                for arg in argv:
+                    _text(arg, "preparation check argument")
         items = workflow.get("items", {})
         if not isinstance(items, dict):
             raise ConfigError("workflow.items must be a mapping")
@@ -312,6 +330,8 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
         for item_id, selected in items.items():
             _text(item_id, "item id")
             _object(selected, "item workflow")
+            if set(selected) - {"allowed_paths", "checks"}:
+                raise ConfigError("Item workflow may only override allowed_paths and checks")
             if not isinstance(selected.get("allowed_paths"), list) or not selected["allowed_paths"]:
                 raise ConfigError("Item scope needs allowed_paths")
             for value in selected["allowed_paths"]:

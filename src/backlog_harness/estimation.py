@@ -71,3 +71,172 @@ async def _record_estimate(app, item_id, decision_path):
         },
     )
     return receipt
+
+
+def configured_workflow(config, item_id):
+    from .contracts import plain
+
+    selected = plain(config.data["workflow"])
+    selected.update(selected.get("items", {}).get(item_id, {}))
+    selected.pop("items", None)
+    return selected
+
+
+def prepared_workflow(app, item_id, config):
+    """Resolve bounded item parameters without changing runtime or delivery authority."""
+    from .contracts import digest, safe_source_path
+
+    selected = configured_workflow(config, item_id)
+    path = app._stage_path(item_id, "preparation")
+    if not path.exists():
+        selected.pop("preparation", None)
+        return selected
+    saved = json.loads(path.read_text())
+    require(
+        saved["workflow_config_digest"] == digest(selected),
+        "Prepared workflow configuration changed; reconcile before dispatch",
+    )
+    decision = saved["decision"]
+    app.validate_invocation_result(decision)
+    value = app.result_json(decision)
+    require(
+        decision.get("role") == "coordinator"
+        and value.get("item_id") == item_id
+        and value.get("provider_revision") == saved["item"]["revision"],
+        "Preparation identity differs",
+    )
+    require(not value.get("blocked"), "Preparation blocked: " + str(value.get("blocked")))
+    parameters = value.get("workflow", {})
+    require(
+        set(parameters) == {"allowed_paths", "checks"},
+        "Preparation may only parameterize paths and checks",
+    )
+    policy = selected.get("preparation", {})
+    paths = parameters["allowed_paths"]
+    require(
+        isinstance(paths, list) and paths and len(paths) == len(set(paths)),
+        "Preparation needs unique exact source paths",
+    )
+    roots = policy.get("allowed_roots", [])
+    for name in paths:
+        safe_source_path(name)
+        require(
+            any(name == root or name.startswith(root + "/") for root in roots),
+            "Prepared source path exceeds configured authority",
+        )
+        source = config.repository / name
+        require(
+            source.resolve().is_relative_to(config.repository) and not source.is_symlink(),
+            "Prepared source path escapes repository",
+        )
+    checks = parameters["checks"]
+    require(isinstance(checks, list) and checks, "Preparation needs verification commands")
+    catalog = policy.get("check_commands", [])
+    require(
+        all(argv in catalog for argv in checks),
+        "Prepared check exceeds configured command authority",
+    )
+    # Configured workflow checks remain mandatory even when the agent selects focused checks.
+    selected.pop("preparation", None)
+    selected["allowed_paths"] = paths
+    selected["checks"] = selected["checks"] + [
+        argv for argv in checks if argv not in selected["checks"]
+    ]
+    return selected
+
+
+async def prepare_item(app, item):
+    """Prepare an unreserved Ready item once; caller owns item and SOLO locks."""
+    from hashlib import sha256
+
+    from .contracts import digest, load_config, plain
+
+    current = load_config(app.config_path)
+    require(
+        current.repository == app.config.repository and current.operational_root == app.root,
+        "Preparation storage identity changed",
+    )
+    app.config = current
+    policy = current.data["workflow"].get("preparation")
+    if not policy or item.state != "Ready" or app._stage_path(item.item_id, "assignment").exists():
+        return item
+    path = app._stage_path(item.item_id, "preparation")
+    if not path.exists():
+        decision = await app.invoke(
+            item.item_id,
+            "prepare",
+            "coordinator",
+            "Prepare this selected canonical Ready item using its COMPLETE content and applicable "
+            "PROJECT.yaml, AGENTS.md, repository skills and source authority. Read only; do not "
+            "implement, mutate, delegate, or invoke claim operations. Use estimate-agent-work "
+            "for a prospective estimate when original_high is unknown. Historical costs remain "
+            "unknown. Use the existing main-branch workflow; return exact item paths within the "
+            "configured roots and focused check argv selected from the command catalog. Preserve "
+            "all required independent review, acceptance and delivery gates. If authority or "
+            "verification cannot be established, return blocked with the exact actionable reason. "
+            "Return JSON {item_id,provider_revision,workflow:{allowed_paths:[],checks:[]},"
+            "historical_original_high:null,historical_usage:unknown,prospective_high:integer,"
+            "estimate:{kind:prospective_pre_execution,dated_at:ISO_date,generated_tokens:{low,high},"
+            "...estimate-agent-work fields},authority_evidence:[{path,sha256,reason}]}. "
+            "Do not infer approval from Ready alone when canonical content contains an explicit hold. "
+            "Configured bounds: "
+            + json.dumps(plain(policy))
+            + "\nCanonical item: "
+            + json.dumps(asdict(item)),
+            purpose="provider",
+        )
+        app.validate_invocation_result(decision)
+        require(
+            decision.get("config_digest") == current.file_digest,
+            "Preparation invocation configuration differs",
+        )
+        require(
+            load_config(app.config_path).file_digest == current.file_digest,
+            "Preparation configuration changed during invocation",
+        )
+        app.validate_call_limits(decision, current.data["coordinator_limits"])
+        atomic_json(
+            path,
+            {
+                "item": asdict(item),
+                "decision": decision,
+                "workflow_config_digest": digest(configured_workflow(current, item.item_id)),
+            },
+            exclusive=True,
+        )
+    saved = json.loads(path.read_text())
+    # Validate before any provider effect, including replay of retained preparation.
+    prepared_workflow(app, item.item_id, current)
+    authority = app.result_json(saved["decision"]).get("authority_evidence")
+    require(
+        isinstance(authority, list) and bool(authority),
+        "Preparation lacks supporting authority evidence",
+    )
+    for evidence in authority:
+        source = current.repository / evidence["path"]
+        require(
+            not Path(evidence["path"]).is_absolute()
+            and source.resolve().is_relative_to(current.repository)
+            and source.is_file()
+            and bool(evidence.get("reason")),
+            "Preparation authority source is invalid",
+        )
+        require(
+            sha256(source.read_bytes()).hexdigest() == evidence.get("sha256"),
+            "Preparation authority source changed",
+        )
+    if not app._stage_path(item.item_id, "estimate-input").exists():
+        require(asdict(item) == saved["item"], "Prepared item changed before provider effect")
+    if (
+        item.original_high is None
+        and not app._stage_path(item.item_id, "prospective-estimate").exists()
+    ):
+        decision_path = app._stage_path(item.item_id, "estimate-decision")
+        atomic_json(decision_path, saved["decision"])
+        await _record_estimate(app, item.item_id, decision_path)
+        item = app.provider.item(item.item_id)
+    if app._stage_path(item.item_id, "prospective-estimate").exists():
+        app.assignment_estimate(item)
+    else:
+        require(asdict(item) == saved["item"], "Prepared item changed before admission")
+    return item

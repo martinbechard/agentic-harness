@@ -9,7 +9,7 @@ import yaml
 from backlog_harness.application import Application
 from backlog_harness.contracts import digest
 from backlog_harness.evidence import atomic_json, component
-from backlog_harness.provider import TransitionBlocked, git
+from backlog_harness.provider import Item, TransitionBlocked, git
 from backlog_harness.workflow import validate_transition
 
 
@@ -243,9 +243,10 @@ def test_record_estimate_retains_decision_and_replays_same_operation(
     assert json.loads(app._stage_path(item.item_id, "estimate-decision").read_text()) == decision
 
 
+@pytest.mark.parametrize("automatic", [False, True])
 @pytest.mark.parametrize("normalized_owner", [None, "Unowned"])
 def test_real_document_without_owner_estimate_to_public_admission(
-    config_file, provider, monkeypatch, tmp_path, normalized_owner
+    config_file, provider, monkeypatch, tmp_path, normalized_owner, automatic
 ):
     """Canonical dev-methodology bytes caught the absent-Owner integration mismatch."""
     import asyncio
@@ -286,6 +287,11 @@ def test_real_document_without_owner_estimate_to_public_admission(
         provider_interaction="agent",
     )
     data["profiles"]["control"]["permissions"] = ["workspace-write"]
+    if automatic:
+        data["workflow"]["preparation"] = {
+            "allowed_roots": ["answer.py"],
+            "check_commands": data["workflow"]["checks"],
+        }
     for name in ("manage-work-items", "manage-work-items-file"):
         skill = Path(data["methodology_root"]) / "skills" / name / "SKILL.md"
         skill.parent.mkdir()
@@ -317,6 +323,7 @@ def test_real_document_without_owner_estimate_to_public_admission(
         binding = asdict(app.config.binding("coordinator"))
         return {
             "invocation_id": stage,
+            "config_digest": app.config.file_digest,
             "role": "coordinator",
             "outcome": "returned",
             "session": {
@@ -351,6 +358,17 @@ def test_real_document_without_owner_estimate_to_public_admission(
             },
         },
     )
+    if automatic:
+        value = json.loads(decision["text"])
+        value["workflow"] = {"allowed_paths": ["answer.py"], "checks": data["workflow"]["checks"]}
+        value["authority_evidence"] = [
+            {
+                "path": "PROJECT.yaml",
+                "reason": "Existing project workflow",
+                "sha256": sha256((provider.repository / "PROJECT.yaml").read_bytes()).hexdigest(),
+            }
+        ]
+        decision["text"] = json.dumps(value)
     decision_path = tmp_path / "prepared-estimate.json"
     atomic_json(decision_path, decision)
     mutations = []
@@ -358,7 +376,17 @@ def test_real_document_without_owner_estimate_to_public_admission(
     class AdmissionReached(Exception):
         pass
 
+    preparations = []
+
     async def model(item_id, stage, role, prompt, **kwargs):
+        if stage == "prepare":
+            preparations.append(stage)
+            assert kwargs["purpose"] == "provider"
+            assert (
+                source.read_text()
+                in json.loads(prompt.split("\nCanonical item: ", 1)[1])["content"]
+            )
+            return decision
         if stage == "admit":
             assert "Reconcile Documentation Semantic Checks" in prompt
             raise AdmissionReached
@@ -395,12 +423,22 @@ def test_real_document_without_owner_estimate_to_public_admission(
         return result
 
     monkeypatch.setattr(app, "invoke", model)
-    receipt = asyncio.run(record_estimate(app, item_id, decision_path))
-    assert receipt["advancement_verified"] is True
-    assert asyncio.run(record_estimate(app, item_id, decision_path))["commit"] == receipt["commit"]
+    if not automatic:
+        receipt = asyncio.run(record_estimate(app, item_id, decision_path))
+        assert receipt["advancement_verified"] is True
+        assert (
+            asyncio.run(record_estimate(app, item_id, decision_path))["commit"] == receipt["commit"]
+        )
+    for attempt in range(2):
+        with pytest.raises(AdmissionReached):
+            if automatic and attempt == 0:
+                from backlog_harness.coordination import RunController
+
+                asyncio.run(RunController(app).run("until-terminal"))
+            else:
+                asyncio.run(app.run_item(item_id))
     assert len(mutations) == 1
-    with pytest.raises(AdmissionReached):
-        asyncio.run(app.run_item(item_id))
+    assert len(preparations) == int(automatic)
     frozen = json.loads(app._stage_path(item_id, "assignment").read_text())
     assert frozen["original_high"] == 180000 and frozen["historical_original_high"] is None
     assert app.provider.item(item_id).owner == normalized_owner
@@ -410,3 +448,160 @@ def test_real_document_without_owner_estimate_to_public_admission(
     assert usage["historical_usage"] == "unknown"
     assert usage["historical_original_high"] is None
     assert usage["ceiling"] == 360000
+    if automatic:
+        # Simulate a crash before assignment persisted, then a changed canonical item.
+        from backlog_harness.estimation import prepare_item
+
+        app._stage_path(item_id, "assignment").unlink()
+        current = app.provider.item(item_id)
+        changed = replace(current, revision="changed", content=current.content + "New requirement")
+        with pytest.raises(TransitionBlocked, match="stale or unverified"):
+            asyncio.run(prepare_item(app, changed))
+        assert len(preparations) == 1 and len(mutations) == 1
+
+
+@pytest.mark.parametrize("defect", ["role", "path", "check", "gate", "blocked", "revision"])
+def test_preparation_rejects_invalid_authority(config_file, monkeypatch, defect):
+    from backlog_harness.estimation import configured_workflow, prepared_workflow
+
+    config, data = config_file
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": data["workflow"]["checks"],
+    }
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    value = {
+        "item_id": "one",
+        "provider_revision": "revision",
+        "workflow": {"allowed_paths": ["answer.py"], "checks": data["workflow"]["checks"]},
+    }
+    decision = {"role": "coordinator", "text": ""}
+    if defect == "role":
+        decision["role"] = "orchestrator"
+    elif defect == "path":
+        value["workflow"]["allowed_paths"] = ["other.py"]
+    elif defect == "check":
+        value["workflow"]["checks"] = [["sh", "-c", "true"]]
+    elif defect == "gate":
+        value["workflow"]["completion"] = "skip-review"
+    elif defect == "blocked":
+        value["blocked"] = "Required authority is missing"
+    elif defect == "revision":
+        value["provider_revision"] = "stale"
+    decision["text"] = json.dumps(value)
+    atomic_json(
+        app._stage_path("one", "preparation"),
+        {
+            "item": {"revision": "revision"},
+            "decision": decision,
+            "workflow_config_digest": digest(configured_workflow(app.config, "one")),
+        },
+    )
+    with pytest.raises(TransitionBlocked):
+        prepared_workflow(app, "one", app.config)
+
+
+def test_preparation_config_binding_ignores_other_item(config_file, monkeypatch):
+    from backlog_harness.contracts import load_config
+    from backlog_harness.estimation import configured_workflow, prepared_workflow
+
+    config, data = config_file
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": [["git", "diff", "--check"]],
+    }
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    decision = {
+        "role": "coordinator",
+        "text": json.dumps(
+            {
+                "item_id": "one",
+                "provider_revision": "revision",
+                "workflow": {
+                    "allowed_paths": ["answer.py"],
+                    "checks": [["git", "diff", "--check"]],
+                },
+            }
+        ),
+    }
+    atomic_json(
+        app._stage_path("one", "preparation"),
+        {
+            "item": {"revision": "revision"},
+            "decision": decision,
+            "workflow_config_digest": digest(configured_workflow(app.config, "one")),
+        },
+    )
+    expected = prepared_workflow(app, "one", app.config)
+    assert data["workflow"]["checks"][0] in expected["checks"]
+    data["workflow"]["items"] = {"other": {"allowed_paths": ["other.py"]}}
+    config.write_text(yaml.safe_dump(data))
+    assert prepared_workflow(app, "one", load_config(config)) == expected
+    data["workflow"]["items"]["one"] = {"allowed_paths": ["changed.py"]}
+    config.write_text(yaml.safe_dump(data))
+    with pytest.raises(TransitionBlocked, match="configuration changed"):
+        prepared_workflow(app, "one", load_config(config))
+
+
+@pytest.mark.parametrize("racing", [False, True])
+def test_preparation_uses_fresh_configuration(config_file, monkeypatch, racing):
+    import asyncio
+
+    from backlog_harness.estimation import prepare_item
+
+    config, data = config_file
+    app = Application(config)
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["fresh.py"],
+        "check_commands": [["git", "diff", "--check"]],
+    }
+    config.write_text(yaml.safe_dump(data))
+    item = Item("one", "one.md", "revision", "Ready", None, None, "Full canonical requirements")
+    calls = []
+    captured = app.config
+
+    async def invoke(*args, **kwargs):
+        calls.append(args)
+        assert "fresh.py" in args[3]
+        result = {
+            "role": "coordinator",
+            "config_digest": app.config.file_digest,
+            "text": json.dumps(
+                {
+                    "item_id": "one",
+                    "provider_revision": "revision",
+                    "blocked": "No source authority established",
+                }
+            ),
+        }
+        # Simulate another run-loop iteration replacing the shared config object.
+        app.config = captured
+        if racing:
+            result["config_digest"] = "different-invocation-config"
+        return result
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+    if racing:
+        with pytest.raises(TransitionBlocked, match="invocation configuration differs"):
+            asyncio.run(prepare_item(app, item))
+        assert not app._stage_path("one", "preparation").exists()
+    else:
+        # Reached the fresh configured invocation; invalid result cannot advance.
+        with pytest.raises(TransitionBlocked, match="Preparation blocked"):
+            asyncio.run(prepare_item(app, item))
+    assert len(calls) == 1
+    if not racing:
+        from backlog_harness.contracts import load_config
+        from backlog_harness.estimation import configured_workflow
+
+        saved = json.loads(app._stage_path("one", "preparation").read_text())
+        assert saved["workflow_config_digest"] == digest(
+            configured_workflow(load_config(config), "one")
+        )
+    assert not app._stage_path("one", "estimate-input").exists()
