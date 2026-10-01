@@ -355,6 +355,11 @@ def test_agent_observation_refresh_is_cached_and_never_parses_headers(
     assert len(calls) == 1
     assert calls[0]["purpose"] == "provider"
     assert app.provider.policy()["mode"] == "SOLO"
+    data["workflow"]["allowed_paths"] = ["another.py"]
+    data["workflow"]["checks"] = [["python3", "-m", "unittest"]]
+    config.write_text(yaml.safe_dump(data))
+    asyncio.run(app.refresh_provider())
+    assert len(calls) == 1
     data["profiles"]["control"]["model"] = "updated-observer"
     config.write_text(yaml.safe_dump(data))
     asyncio.run(app.refresh_provider())

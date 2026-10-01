@@ -52,7 +52,15 @@ class Application:
         async with async_operation_lock(self.root / "provider-refresh.lock"):
             revision = self.provider.source_revision()
             current = load_config(self.config_path)
-            observer = digest([current.file_digest, current.binding("coordinator").relevant_digest])
+            observer = digest(
+                [
+                    str(current.repository),
+                    current.data.get("methodology_root"),
+                    current.data.get("provider"),
+                    current.data.get("provider_interaction"),
+                    current.binding("coordinator").relevant_digest,
+                ]
+            )
             if self.provider.cache_path.exists():
                 cached = json.loads(self.provider.cache_path.read_text())
                 if (
