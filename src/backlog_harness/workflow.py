@@ -51,9 +51,16 @@ def validate_transition(item, target, authority):
             and authority.get("incident") in {"usage_unknown", "usage_limit"},
             "Holding requires Coordinator guard authority",
         )
-    elif (item.state, target) == ("Running", "User Action Required"):
+    elif target == "User Action Required" and (
+        item.state == "Running"
+        or (item.state == "User Action Required" and authority.get("operation") == "await-user")
+    ):
         require(
-            (actor == "orchestrator" and authority.get("session_id") == item.owner)
+            (
+                item.state == "Running"
+                and actor == "orchestrator"
+                and authority.get("session_id") == item.owner
+            )
             or (
                 actor == "coordinator"
                 and authority.get("operation") == "await-user"

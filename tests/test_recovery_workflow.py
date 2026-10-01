@@ -384,10 +384,11 @@ def test_incomplete_owner_release_is_corrected_once(
     assert reconciled["correction"]["after"]["owner"] == "Unowned"
 
 
+@pytest.mark.parametrize("state", ["Running", "User Action Required"])
 @pytest.mark.parametrize("bad_path", [None, "destination", "series", "omitted_series"])
 @pytest.mark.parametrize("owner", ["canonical", "another"])
 def test_question_handoff_requires_canonical_declined_result(
-    config_file, provider, monkeypatch, tmp_path, owner, bad_path
+    config_file, provider, monkeypatch, tmp_path, owner, bad_path, state
 ):
     import asyncio
 
@@ -403,7 +404,7 @@ def test_question_handoff_requires_canonical_declined_result(
     )
     config.write_text(yaml.safe_dump(data))
     app = Application(config)
-    item = replace(provider.item("item-one"), state="Running", owner="canonical")
+    item = replace(provider.item("item-one"), state=state, owner="canonical")
     if bad_path == "omitted_series":
         item = replace(item, content=item.content + "\nSeries: backlog/feature-backlog/index.md\n")
     monkeypatch.setattr(app.provider, "item", lambda _: item)
@@ -422,6 +423,9 @@ def test_question_handoff_requires_canonical_declined_result(
     }
     atomic_json(app._stage_path(item.item_id, "produce-review"), result)
     question = {"question_id": "q1", "text": "Authorize local browser verification?"}
+    monkeypatch.setattr(
+        app.provider, "question", lambda _: {**question, "item_id": item.item_id, "answer": None}
+    )
     paths = [item.path, "backlog/user-action-required/item-one.md"]
     if bad_path == "destination":
         paths[1] = "backlog/user-action-required/unrelated.md"
@@ -434,7 +438,7 @@ def test_question_handoff_requires_canonical_declined_result(
 
     async def invoke(*args, **kwargs):
         calls.append("decision")
-        assert "ALREADY PENDING" in args[3]
+        assert "do not ask it again" in args[3]
         return {
             "role": "coordinator",
             "outcome": "returned",
@@ -674,3 +678,83 @@ def test_provider_revision_and_content_hash_are_distinct(provider):
     content = (provider.repository / item.path).read_bytes()
     assert item.revision == sha256(item.path.encode() + b"\0" + content).hexdigest()
     assert item.revision != sha256(content).hexdigest()
+
+
+def test_question_routes_require_exact_series_evidence(provider):
+    from backlog_harness.recovery_flow import question_handoff_paths
+
+    source = "backlog/feature-backlog/series/item-one.md"
+    series = "backlog/feature-backlog/series/index.md"
+    item = replace(provider.item("item-one"), path=source, content="Series: " + series)
+    index = provider.repository / series
+    index.parent.mkdir(parents=True, exist_ok=True)
+    index.write_text("[Item](item-one.md)")
+    expected = [source, "backlog/user-action-required/item-one.md", series]
+    assert question_handoff_paths(provider.repository, item) == expected
+    assert question_handoff_paths(provider.repository, item, expected) == expected
+    for invalid in ([source], expected[:2], [source, "elsewhere.md", series]):
+        with pytest.raises(TransitionBlocked):
+            question_handoff_paths(provider.repository, item, invalid)
+    index.write_text("No membership evidence")
+    with pytest.raises(TransitionBlocked, match="not established"):
+        question_handoff_paths(provider.repository, item)
+
+
+@pytest.mark.parametrize("retained", [False, True])
+def test_normal_question_transition_routes_or_replays(config_file, provider, monkeypatch, retained):
+    import asyncio
+
+    app = Application(config_file[0])
+    app.provider = AgentProvider(provider.repository, provider.evidence_root)
+    item = replace(provider.item("item-one"), state="Running", owner="canonical")
+    series = str(__import__("pathlib").Path(item.path).parent / "index.md")
+    item = replace(item, content=item.content + "\nSeries: " + series)
+    (provider.repository / series).write_text("[Item](item-one.md)")
+    # Route reads the configured repository, just as the public runner does.
+    monkeypatch.setattr(app, "config", type("Config", (), {"repository": provider.repository})())
+    authority = {
+        "role": "orchestrator",
+        "invocation_id": "question",
+        "observed_result": True,
+        "item_id": item.item_id,
+        "session_id": item.owner,
+        "question": {"question_id": "q1", "text": "Approve?"},
+    }
+    expected = [item.path, "backlog/user-action-required/item-one.md", series]
+    if retained:
+        expected = [item.path]  # Historical operation remains immutable even after routing changes.
+        atomic_json(
+            app.root / "provider-agent-operations/old/requested.json",
+            {
+                "item": asdict(item),
+                "target": "User Action Required",
+                "authority": authority,
+                "paths": expected,
+                "source_manifest": {},
+            },
+        )
+        (provider.repository / series).unlink()
+    monkeypatch.setattr(app.provider, "item", lambda _: item)
+    monkeypatch.setattr(app.provider, "observation", dict)
+    monkeypatch.setattr(app.provider, "source_manifest", dict)
+    monkeypatch.setattr(app, "validate_management_readiness", lambda _: None)
+    atomic_json(app.provider.cache_path, {})
+
+    class Captured(Exception):
+        pass
+
+    async def capture(actual_item, target, actor, paths):
+        assert paths == expected
+        raise Captured
+
+    monkeypatch.setattr(app, "invoke_provider_transition", capture)
+    with pytest.raises(Captured):
+        asyncio.run(
+            app.transition(
+                item.item_id,
+                item.revision,
+                "User Action Required",
+                authority,
+                validate=validate_transition,
+            )
+        )

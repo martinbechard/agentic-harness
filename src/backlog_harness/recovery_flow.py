@@ -200,6 +200,33 @@ async def recover_item(app, item_id, evidence_path):
     return await app.run_item(item_id)
 
 
+def question_handoff_paths(repository, item, declared_paths=None):
+    """Bind a question move to its source and established series membership."""
+    series = [
+        line.removeprefix("Series: ")
+        for line in item.content.splitlines()
+        if line.startswith("Series: ")
+    ]
+    expected = [item.path, "backlog/user-action-required/" + Path(item.path).name, *series]
+    paths = expected if declared_paths is None else declared_paths
+    require(
+        len(series) <= 1
+        and paths == expected
+        and len(set(paths)) == len(paths)
+        and all(not Path(p).is_absolute() and ".." not in Path(p).parts for p in paths),
+        "Question handoff paths or series membership are invalid",
+    )
+    if series:
+        index = repository / series[0]
+        require(
+            series[0] == str(Path(item.path).parent / "index.md")
+            and index.is_file()
+            and "](" + Path(item.path).name + ")" in index.read_text(),
+            "Question handoff series membership is not established",
+        )
+    return paths
+
+
 async def defer_item(app, item_id, question_path):
     """Reconcile a stopped canonical rejection into the provider's question queue."""
     require(
@@ -218,7 +245,8 @@ async def defer_item(app, item_id, question_path):
             else:
                 item = app.provider.item(item_id)
                 require(
-                    item.state == "Running", "Only a stopped Running owner requires this handoff"
+                    item.state in {"Running", "User Action Required"},
+                    "Only a stopped canonical owner requires this handoff",
                 )
                 outcome = json.loads(app._stage_path(item_id, "produce-review").read_text())
                 app.validate_invocation_result(outcome)
@@ -226,36 +254,23 @@ async def defer_item(app, item_id, question_path):
                 require(
                     outcome["session"]["session_id"] == item.owner
                     and value.get("item_id") == item_id
-                    and value.get("request_completion") is False
-                    and value.get("blockers"),
+                    and (
+                        (value.get("request_completion") is False and value.get("blockers"))
+                        or value.get("question") == question
+                    )
+                    and (
+                        item.state != "User Action Required"
+                        or (
+                            all(
+                                (app.provider.question(item) or {}).get(key) == question.get(key)
+                                for key in ("question_id", "text")
+                            )
+                            and not (app.provider.question(item) or {}).get("answer")
+                        )
+                    ),
                     "Canonical declined completion evidence is missing",
                 )
-                paths = supplied["paths"]
-                require(
-                    len(paths) in {2, 3}
-                    and paths[0] == item.path
-                    and paths[1] == "backlog/user-action-required/" + Path(item.path).name
-                    and len(set(paths)) == len(paths)
-                    and all(not Path(p).is_absolute() and ".." not in Path(p).parts for p in paths),
-                    "Question handoff paths are invalid",
-                )
-                series = [
-                    line.removeprefix("Series: ")
-                    for line in item.content.splitlines()
-                    if line.startswith("Series: ")
-                ]
-                require(
-                    len(series) <= 1 and paths[2:] == series,
-                    "Question handoff series membership is required",
-                )
-                if len(paths) == 3:
-                    require(
-                        "Series: " + paths[2] in item.content.splitlines()
-                        and paths[2] == str(Path(item.path).parent / "index.md")
-                        and "](" + Path(item.path).name + ")"
-                        in (app.config.repository / paths[2]).read_text(),
-                        "Question handoff series membership is not established",
-                    )
+                question_handoff_paths(app.config.repository, item, supplied["paths"])
                 request = {
                     "item": asdict(item),
                     "outcome_invocation": outcome["invocation_id"],
@@ -269,10 +284,9 @@ async def defer_item(app, item_id, question_path):
                 item_id,
                 stage,
                 "coordinator",
-                "Reconcile this stopped canonical execution. Its explicit browser permission denial "
-                "must not be bypassed. The exact user question below is ALREADY PENDING; do not ask it "
-                "again, browse, mutate, or delegate. The unrelated bundle failure is established "
-                "pre-existing; retain it as residual evidence, not a second user question. Decide "
+                "Reconcile this stopped canonical execution, including an incomplete question move. "
+                "Preserve all permission boundaries. The exact question below is already recorded; "
+                "do not ask it again, execute implementation, mutate, or delegate. Decide "
                 "whether to record User Action Required with the exact pending question, preserved "
                 "native owner/candidate/evidence, prohibited browser action, and declared provider move "
                 "and series membership paths. Return JSON {operation:await-user|assess,item_id,"

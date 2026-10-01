@@ -347,6 +347,14 @@ class Application:
             else self.provider.observation().get("transition_paths", {}).get(item_id, {})
         )
         paths = retained[0]["paths"] if retained else declared_paths or routes.get(target)
+        if (
+            not retained
+            and target == "User Action Required"
+            and (item.state == "Running" or authority.get("operation") == "await-user")
+        ):
+            from .recovery_flow import question_handoff_paths
+
+            paths = question_handoff_paths(self.config.repository, item, paths)
         if paths is None and target != "Completed":
             paths = [item.path]
         require(paths and item.path in paths, "Provider transition paths are missing")
@@ -567,8 +575,21 @@ class Application:
                 outcome.get("role") == "orchestrator"
                 and outcome["session"]["session_id"] == item.owner
                 and value.get("item_id") == item.item_id
-                and value.get("request_completion") is False
-                and value.get("blockers"),
+                and (
+                    (value.get("request_completion") is False and value.get("blockers"))
+                    or value.get("question") == authority.get("question")
+                )
+                and (
+                    item.state != "User Action Required"
+                    or (
+                        all(
+                            (self.provider.question(item) or {}).get(key)
+                            == authority.get("question").get(key)
+                            for key in ("question_id", "text")
+                        )
+                        and not (self.provider.question(item) or {}).get("answer")
+                    )
+                ),
                 "Question handoff canonical outcome differs",
             )
         if (item.state, target) == ("Ready", "Ready"):
