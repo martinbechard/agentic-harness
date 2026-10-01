@@ -1,0 +1,21 @@
+{
+  "files": {
+    "IMPLEMENTATION-PLAN.md": "0e604e926eaf5be83eff68bc2f4a7474e7c3b7515633470d2ec4fba4e1738e64",
+    "README.md": "ddad26970f0ecee800d91a1b9a17892a9172e5797d25465e11c2fb3ecbedf6c8",
+    "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md": "1a864f6c1d047f2ac513c6be44ef1108cddfe746f5d67c1138c751d24f5205f3",
+    "docs/design/components/MOD-001-configuration.md": "6719928fdde58cf49a1fa899ac5c29c707516bcd0de163cb5928df2b1700465e",
+    "docs/design/components/MOD-002-execution.md": "a46c8d1b4df3e5939dc8dc1f9be373f2fda4b4df68ca051f01217dee9d8061c2",
+    "docs/design/components/MOD-003-provider-coordination.md": "9ecf3aa431f419543e71356d794d060c133672e32b480e820c37eec5a7f04ff2",
+    "docs/design/components/MOD-004-evidence.md": "c7562161a92d49aed4cffafccb18985d8fb27df3fe95b98624c26c18e847305a",
+    "docs/design/components/MOD-005-telemetry.md": "1ccd46c9f32412211b44aeb1ec68927bc59a619e69c9bd10bf075cc22171e2fa",
+    "docs/design/components/MOD-006-views.md": "783ef845b70c1f948699cee981004deec9be2a92bffb772c3e7a4a01b4b828a7",
+    "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md": "6ce651be8aa5d41830a9ffe44a2a0f2dcdeb082d913ee0a8bf40f73a3f9bd538",
+    "docs/operator-guide.md": "fbfa43a87686c5a12a4b9530ae5480d33a68e305ac87b08436de948fa42effef",
+    "docs/verification/final-source-review.json": "844f28fed47bd6b2ff44cbbd583640393c5bc35021b446e0e75b96e723949c37",
+    "docs/verification/native-exporter-evidence.json": "1a5170e0157ab09a6af32b3a47d0eb1268ae7ca2d7dd96d7851764d927ad53db",
+    "docs/verification/release-acceptance.json": "5ee9c86e9c9cc83e4612121f12f953b449e088ee4d06c46dbba43b8d27b988e1",
+    "docs/verification/requirements-matrix.md": "854bdf5726b6d55295b8ea40bf2bee103a1c0c90dfa185d065478e8a806ac656",
+    "docs/verification/six-item-acceptance.json": "ac37e54171799e130a72278de9e6f9b456273d3b3672240b95a3bd62426146f9"
+  },
+  "source_commit": "8f0e5dc5ed8fee097095178afe48ab152d0c61fd"
+}

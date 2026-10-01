@@ -1,0 +1,316 @@
+{
+  "status": "PAGE_VERIFICATION_EVIDENCE_READY",
+  "candidate": {
+    "path": ".agent-ops/document-review-candidate.json",
+    "sha256": "2f5011a9ba37a162e2201f82203534e2bf7629839c17da525000f75a4b4deeca"
+  },
+  "context": "docs/verification/document-acceptance-essential.md",
+  "checklists": [
+    {
+      "path": "/Users/martinbechard/.agents/skills/review-structured-artifact/references/review-checklist-structured.md",
+      "sha256": "510b081be79b1d24373e4164470fa06c9e971f34f4a237fcb25ab9a73fb4b681"
+    },
+    {
+      "path": "/Users/martinbechard/.agents/skills/review-architecture/references/review-checklist-architecture.md",
+      "sha256": "96648df3aa495598065accf0549dbb3d36e6eab40789f724cad15d01aed40ed0"
+    },
+    {
+      "path": "/Users/martinbechard/.agents/skills/review-high-level-design/references/review-checklist-high-level-design.md",
+      "sha256": "5c5d719b0caf802f7f9ab07668218944c89b09bd391b7ab4f2d5fc27bc908a26"
+    },
+    {
+      "path": "/Users/martinbechard/.agents/skills/review-module-design/references/review-checklist-module-design.md",
+      "sha256": "127f881322f10b3b5688a4761df0e7f2dc1784a395d81d6c53cd54a5ce4bd812"
+    },
+    {
+      "path": "/Users/martinbechard/.agents/skills/review-unit-test-plan/references/review-checklist-unit-test-plan.md",
+      "sha256": "6a0e81394b86ed97dc531cdb55371e9b17b172dc346a04b8fd534dd15f2aeba7"
+    },
+    {
+      "path": "/Users/martinbechard/.agents/skills/interface-patterns/references/review-checklist-interface-patterns.md",
+      "sha256": "80bb19e5354177501aaee41feac8fe6065a576eee14c02a3b29a99671a98fff5"
+    }
+  ],
+  "pages": [
+    {
+      "candidate": {
+        "path": "IMPLEMENTATION-PLAN.md",
+        "sha256": "0e604e926eaf5be83eff68bc2f4a7474e7c3b7515633470d2ec4fba4e1738e64"
+      },
+      "format": "Markdown plan, guide or matrix",
+      "shared_page_contract": "not applicable to selected format",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "No additional diagram necessary to interpret this selected format",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-01.json",
+      "sentence_count": 114,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-01.json",
+      "review_unit_count": 67
+    },
+    {
+      "candidate": {
+        "path": "README.md",
+        "sha256": "ddad26970f0ecee800d91a1b9a17892a9172e5797d25465e11c2fb3ecbedf6c8"
+      },
+      "format": "Markdown plan, guide or matrix",
+      "shared_page_contract": "not applicable to selected format",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "No additional diagram necessary to interpret this selected format",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-02.json",
+      "sentence_count": 11,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-02.json",
+      "review_unit_count": 5
+    },
+    {
+      "candidate": {
+        "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+        "sha256": "1a864f6c1d047f2ac513c6be44ef1108cddfe746f5d67c1138c751d24f5205f3"
+      },
+      "format": "structured design",
+      "shared_page_contract": "applicable; module headings exact; ARC/HLD authorized preface retained",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "18 non-blocking sibling provenance path_outside_root gaps for ARC/HLD; no others",
+      "diagram_check": "Editable Mermaid source reviewed for phase, ownership and flow consistency",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-03.json",
+      "sentence_count": 498,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-03.json",
+      "review_unit_count": 261
+    },
+    {
+      "candidate": {
+        "path": "docs/design/components/MOD-001-configuration.md",
+        "sha256": "6719928fdde58cf49a1fa899ac5c29c707516bcd0de163cb5928df2b1700465e"
+      },
+      "format": "structured design",
+      "shared_page_contract": "applicable; module headings exact; ARC/HLD authorized preface retained",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "Editable Mermaid source reviewed for phase, ownership and flow consistency",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-04.json",
+      "sentence_count": 114,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-04.json",
+      "review_unit_count": 73
+    },
+    {
+      "candidate": {
+        "path": "docs/design/components/MOD-002-execution.md",
+        "sha256": "a46c8d1b4df3e5939dc8dc1f9be373f2fda4b4df68ca051f01217dee9d8061c2"
+      },
+      "format": "structured design",
+      "shared_page_contract": "applicable; module headings exact; ARC/HLD authorized preface retained",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "Editable Mermaid source reviewed for phase, ownership and flow consistency",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-05.json",
+      "sentence_count": 132,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-05.json",
+      "review_unit_count": 83
+    },
+    {
+      "candidate": {
+        "path": "docs/design/components/MOD-003-provider-coordination.md",
+        "sha256": "9ecf3aa431f419543e71356d794d060c133672e32b480e820c37eec5a7f04ff2"
+      },
+      "format": "structured design",
+      "shared_page_contract": "applicable; module headings exact; ARC/HLD authorized preface retained",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "Editable Mermaid source reviewed for phase, ownership and flow consistency",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-06.json",
+      "sentence_count": 149,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-06.json",
+      "review_unit_count": 100
+    },
+    {
+      "candidate": {
+        "path": "docs/design/components/MOD-004-evidence.md",
+        "sha256": "c7562161a92d49aed4cffafccb18985d8fb27df3fe95b98624c26c18e847305a"
+      },
+      "format": "structured design",
+      "shared_page_contract": "applicable; module headings exact; ARC/HLD authorized preface retained",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "Editable Mermaid source reviewed for phase, ownership and flow consistency",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-07.json",
+      "sentence_count": 135,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-07.json",
+      "review_unit_count": 89
+    },
+    {
+      "candidate": {
+        "path": "docs/design/components/MOD-005-telemetry.md",
+        "sha256": "1ccd46c9f32412211b44aeb1ec68927bc59a619e69c9bd10bf075cc22171e2fa"
+      },
+      "format": "structured design",
+      "shared_page_contract": "applicable; module headings exact; ARC/HLD authorized preface retained",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "Editable Mermaid source reviewed for phase, ownership and flow consistency",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-08.json",
+      "sentence_count": 137,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-08.json",
+      "review_unit_count": 86
+    },
+    {
+      "candidate": {
+        "path": "docs/design/components/MOD-006-views.md",
+        "sha256": "783ef845b70c1f948699cee981004deec9be2a92bffb772c3e7a4a01b4b828a7"
+      },
+      "format": "structured design",
+      "shared_page_contract": "applicable; module headings exact; ARC/HLD authorized preface retained",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "Editable Mermaid source reviewed for phase, ownership and flow consistency",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-09.json",
+      "sentence_count": 150,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-09.json",
+      "review_unit_count": 87
+    },
+    {
+      "candidate": {
+        "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+        "sha256": "6ce651be8aa5d41830a9ffe44a2a0f2dcdeb082d913ee0a8bf40f73a3f9bd538"
+      },
+      "format": "structured design",
+      "shared_page_contract": "applicable; module headings exact; ARC/HLD authorized preface retained",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "18 non-blocking sibling provenance path_outside_root gaps for ARC/HLD; no others",
+      "diagram_check": "Editable Mermaid source reviewed for phase, ownership and flow consistency",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-10.json",
+      "sentence_count": 983,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-10.json",
+      "review_unit_count": 600
+    },
+    {
+      "candidate": {
+        "path": "docs/operator-guide.md",
+        "sha256": "fbfa43a87686c5a12a4b9530ae5480d33a68e305ac87b08436de948fa42effef"
+      },
+      "format": "Markdown plan, guide or matrix",
+      "shared_page_contract": "not applicable to selected format",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "No additional diagram necessary to interpret this selected format",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-11.json",
+      "sentence_count": 102,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-11.json",
+      "review_unit_count": 21
+    },
+    {
+      "candidate": {
+        "path": "docs/verification/final-source-review.json",
+        "sha256": "844f28fed47bd6b2ff44cbbd583640393c5bc35021b446e0e75b96e723949c37"
+      },
+      "format": "machine-readable receipt",
+      "shared_page_contract": "not applicable to selected format",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "JSON has no Markdown link syntax",
+      "diagram_check": "No additional diagram necessary to interpret this selected format",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-12.json",
+      "sentence_count": 26,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-12.json",
+      "review_unit_count": 26
+    },
+    {
+      "candidate": {
+        "path": "docs/verification/native-exporter-evidence.json",
+        "sha256": "1a5170e0157ab09a6af32b3a47d0eb1268ae7ca2d7dd96d7851764d927ad53db"
+      },
+      "format": "machine-readable receipt",
+      "shared_page_contract": "not applicable to selected format",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "JSON has no Markdown link syntax",
+      "diagram_check": "No additional diagram necessary to interpret this selected format",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-13.json",
+      "sentence_count": 45,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-13.json",
+      "review_unit_count": 41
+    },
+    {
+      "candidate": {
+        "path": "docs/verification/release-acceptance.json",
+        "sha256": "5ee9c86e9c9cc83e4612121f12f953b449e088ee4d06c46dbba43b8d27b988e1"
+      },
+      "format": "machine-readable receipt",
+      "shared_page_contract": "not applicable to selected format",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "JSON has no Markdown link syntax",
+      "diagram_check": "No additional diagram necessary to interpret this selected format",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-14.json",
+      "sentence_count": 154,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-14.json",
+      "review_unit_count": 154
+    },
+    {
+      "candidate": {
+        "path": "docs/verification/requirements-matrix.md",
+        "sha256": "854bdf5726b6d55295b8ea40bf2bee103a1c0c90dfa185d065478e8a806ac656"
+      },
+      "format": "Markdown plan, guide or matrix",
+      "shared_page_contract": "not applicable to selected format",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "Official check has no finding for this Markdown file",
+      "diagram_check": "No additional diagram necessary to interpret this selected format",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-15.json",
+      "sentence_count": 75,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-15.json",
+      "review_unit_count": 39
+    },
+    {
+      "candidate": {
+        "path": "docs/verification/six-item-acceptance.json",
+        "sha256": "ac37e54171799e130a72278de9e6f9b456273d3b3672240b95a3bd62426146f9"
+      },
+      "format": "machine-readable receipt",
+      "shared_page_contract": "not applicable to selected format",
+      "source_check": "Current source-review/release identities and historical receipt boundaries reconciled; see essential operation ledger.",
+      "link_check": "JSON has no Markdown link syntax",
+      "diagram_check": "No additional diagram necessary to interpret this selected format",
+      "steady_state_check": "Historical observations are labeled; no unresolved placeholder changes current contract.",
+      "sentence_evidence": "docs/verification/document-acceptance-sentences-16.json",
+      "sentence_count": 348,
+      "review_unit_manifest": "docs/verification/document-acceptance-units-16.json",
+      "review_unit_count": 348
+    }
+  ],
+  "nonblocking_findings": [
+    {
+      "check": "Steady-State Checks 7",
+      "target": "docs/operator-guide.md:21",
+      "text": "The Coordinator requests admission against the current provider revision. Ready becomes Starting before a canonical Orchestrator starts. That Orchestrator accepts ownership while read-only; the provider records Running for its portable session before writable source work. The agent may use native specialists and arrange a native independent review.",
+      "correction": "At the next authorized prose edit, expose these admission steps as a numbered list without changing actor or state ordering.",
+      "impact": "Presentation only; the same ordered contract has a current HLD sequence diagram."
+    },
+    {
+      "check": "Source And Link Checks 9-10",
+      "target": "docs/verification/document-acceptance-links.json",
+      "correction": "Retain the eighteen unresolved sibling provenance links in Open Questions; a future authorized link representation can improve portability.",
+      "impact": "No current acceptance conclusion requires those exact historical linked files."
+    }
+  ],
+  "terminology": {
+    "outcome": "TERMINOLOGY STANDARDS LOADED",
+    "status": "ABSENT",
+    "catalog_revision": "d801aa1fb7ddcc330a5e3173372ea6af4a3d08ec58074478e85aa5603e926658",
+    "source_count": 0,
+    "sources": [],
+    "review": "PASS within the configured snapshot; no claim about unlisted roots"
+  },
+  "ste": "Meaning, modality, code and ownership preserved. No formal ASD-STE100 compliance claim."
+}

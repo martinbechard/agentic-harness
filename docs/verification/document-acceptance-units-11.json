@@ -1,0 +1,451 @@
+{
+  "schema": "review-structured-artifact.review-unit-evidence.v1",
+  "candidate": {
+    "path": "docs/operator-guide.md",
+    "sha256": "fbfa43a87686c5a12a4b9530ae5480d33a68e305ac87b08436de948fa42effef"
+  },
+  "review_units": [
+    {
+      "id": "F11-L5",
+      "location": "docs/operator-guide.md:5",
+      "text": "Use an explicit absolute repository, candidate workspace, methodology installation, and evidence root. The application never imports arbitrary configured adapters. Configuration reload happens before each harness-issued CLI invocation. The complete snapshot and resolved dependency digests govern that invocation. Accepted item scopes, checks and candidate storage remain frozen; incompatible edits fence the next invocation. The effective Codex home is recorded in the session binding and applied to both capability validation and launch; changing it cannot silently resume another authentication context. Changes to the originating CLI, authentication context, or profile cannot silently replace a retained native session.",
+      "text_sha256": "f819d4a1302a221641ee97c71f6cefd623d95af65c4d259479708f1677d6d9a7",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L5-S1: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L5-S2: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L5-S3: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L5-S4: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L5-S5: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L5-S6: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L5-S7: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L5-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L5-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L5-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L5-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L5-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L5-S6: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L5-S7: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L5-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L5-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L5-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L5-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L5-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L5-S6: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L5-S7: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L7",
+      "location": "docs/operator-guide.md:7",
+      "text": "Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a1-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.",
+      "text_sha256": "b498e00ba1c8ceb63c110dba2a2cc22ca539e179fd024559f0fe9286834b33c6",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L7-S1: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L7-S2: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L7-S3: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L7-S4: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L7-S5: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L7-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L7-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L7-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L7-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L7-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L7-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L7-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L7-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L7-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L7-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L9",
+      "location": "docs/operator-guide.md:9",
+      "text": "The fixture generator is a concrete configuration example:",
+      "text_sha256": "efd560e00041d01ab0bb739f63b4622df434c61929b43f41bde1ba8246ad7cce",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L9-S1: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L9-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L9-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L17",
+      "location": "docs/operator-guide.md:17",
+      "text": "It creates separate SOLO and MULTITASK provider repositories, each with three dummy items and unchanged authoritative tests. It refuses to replace an existing fixture. Creating fixtures makes no model call. Run their generated config through `validate`, then `run --until-terminal` or `app`.",
+      "text_sha256": "2489851915bb1c59007b0d826f40e52eac7b15116336814d1d3bc7a53ae1805e",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L17-S1: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L17-S2: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L17-S3: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.; F11-L17-S4: Adds a scope, contract, evidence, limitation or operator fact required by Configuration And Installation.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L17-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L17-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L17-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L17-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L17-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L17-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L17-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L17-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L21",
+      "location": "docs/operator-guide.md:21",
+      "text": "The Coordinator requests admission against the current provider revision. Ready becomes Starting before a canonical Orchestrator starts. That Orchestrator accepts ownership while read-only; the provider records Running for its portable session before writable source work. The agent may use native specialists and arrange a native independent review.",
+      "text_sha256": "af0d242f523fac1d74df85646f77dab13820467240eacc1f463daa8b5c303e68",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L21-S1: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L21-S2: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L21-S3: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L21-S4: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L21-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L21-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L21-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L21-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L21-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L21-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L21-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L21-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L23",
+      "location": "docs/operator-guide.md:23",
+      "text": "A completion request must identify the exact candidate. The harness independently reads native producer and reviewer records, verifies fresh context and distinct identity, verifies the candidate and passing checks, merges it into the configured primary branch, runs integrated checks, and closes and archives the provider record in a separate exact-path Git commit. Neither a successful launch nor a report of done permits closure.",
+      "text_sha256": "799a0d312c7d071bdb3b495a1de6db53fc6db26a3d14bf8836d70e58b0adf23d",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L23-S1: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L23-S2: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L23-S3: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L23-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L23-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L23-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L23-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L23-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L23-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L25",
+      "location": "docs/operator-guide.md:25",
+      "text": "Provider and delivery effects have durable requested records. If a commit completed but its receipt was lost, reconciliation proves its unique parent, paths and bytes and rebuilds the receipt. A merge is recovered by its exact parents. Unproven mutations stay unresolved. For a request that is proven uncommitted, `recover-provider OPERATION_ID` explicitly finishes the recorded bytes under the provider transaction lock. It requires the original main HEAD, exact original/intended checkout and index bytes, the recorded actor gate, and no unrelated changes. A committed operation recovers its receipt without another commit. The application does not reset a checkout or repeat an unknown paid launch.",
+      "text_sha256": "481451a83bf2c4c7a70499175e517a3facbe2f7d59e8c4e877097058520d2566",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L25-S1: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L25-S2: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L25-S3: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L25-S4: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L25-S5: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L25-S6: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L25-S7: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.; F11-L25-S8: Adds a scope, contract, evidence, limitation or operator fact required by Workflow And Authority.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L25-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L25-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L25-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L25-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L25-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L25-S6: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L25-S7: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L25-S8: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L25-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L25-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L25-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L25-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L25-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L25-S6: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L25-S7: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L25-S8: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L29",
+      "location": "docs/operator-guide.md:29",
+      "text": "SOLO permits one executing Work Item. MULTITASK requires the provider's explicit concurrent setting. Each item uses an independent clone under `candidate_root`. Admission conservatively blocks overlapping declared paths, and actual candidate diffs and current-main compatibility are checked again during integration.",
+      "text_sha256": "1fd70f052446b481b7bd5c0277eabdd337f27ee9de54db6e3d151e1181395fad",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L29-S1: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.; F11-L29-S2: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.; F11-L29-S3: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.; F11-L29-S4: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L29-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L29-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L29-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L29-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L29-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L29-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L29-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L29-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L31",
+      "location": "docs/operator-guide.md:31",
+      "text": "`max_active_invocations` controls harness-issued invocations. Durable slots retain uncertain executions after process-lock loss. A lowered cap includes existing higher-numbered slots. `native_max_threads` is a Codex-native request governing native child work; those children remain internal to the CLI. The harness verifies independent review and reconciles their generated tokens with native telemetry before permitting subsequent advancement. It does not select another CLI or reload a profile for each internal child.",
+      "text_sha256": "021e55d31be42f05eeea8e5f7dfdceb80be4fba6abec2f041d19db020b8b294a",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L31-S1: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.; F11-L31-S2: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.; F11-L31-S3: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.; F11-L31-S4: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.; F11-L31-S5: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.; F11-L31-S6: Adds a scope, contract, evidence, limitation or operator fact required by Modes And Capacity.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L31-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L31-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L31-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L31-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L31-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L31-S6: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L31-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L31-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L31-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L31-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L31-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L31-S6: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L35",
+      "location": "docs/operator-guide.md:35",
+      "text": "The admitted item's original high generated-token estimate is frozen. The default ceiling is twice that estimate. Root cumulative counts, resumed calls, per-request OTLP usage, and observed native child counts are reconciled without adding output and reasoning tokens twice. Missing, partial or conflicting data stays unknown.",
+      "text_sha256": "3954542908180f7b56d3f8fb330edfcf37cfbd93afc786e8a08b461814676d0b",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L35-S1: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L35-S2: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L35-S3: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L35-S4: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L35-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L35-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L35-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L35-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L35-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L35-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L35-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L35-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L37",
+      "location": "docs/operator-guide.md:37",
+      "text": "At a safe boundary, an affected item is held before further generation when usage is unknown or crosses the ceiling. Its canonical owner and session are retained. A bounded Coordinator review can release the hold only with trustworthy usage below an authorized cumulative ceiling. A higher ceiling needs an operator approval reference. An allowance never bypasses unknown usage. `review-hold ITEM_ID CEILING APPROVAL_REFERENCE` is the interactive command; the noninteractive command accepts `--ceiling` and `--reference`.",
+      "text_sha256": "dc48ffa63f388a1f4667ae5efb3d25bb72cc4c7ced01be3f53a5b6bdc4ee0cce",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L37-S1: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L37-S2: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L37-S3: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L37-S4: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L37-S5: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L37-S6: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L37-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L37-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L37-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L37-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L37-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L37-S6: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L37-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L37-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L37-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L37-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L37-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L37-S6: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L39",
+      "location": "docs/operator-guide.md:39",
+      "text": "Coordinator and administrative call budgets are verified from observed CLI turns and generated output before their decisions can authorize advancement. A single opaque native CLI call may overshoot a requested budget; the harness gates subsequent effects and records that fact. Native internal tool cycles are managed by the CLI.",
+      "text_sha256": "c8cf26828b1377c35d2a6f02c79fd886942cfe5a07eedc6b5c1b063102b1ecc3",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L39-S1: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L39-S2: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.; F11-L39-S3: Adds a scope, contract, evidence, limitation or operator fact required by Usage And Holds.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L39-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L39-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L39-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L39-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L39-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L39-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L43",
+      "location": "docs/operator-guide.md:43",
+      "text": "`item show ITEM_ID` displays the exact provider record and usage. `item answer ITEM_ID QUESTION_ID` presents the current exact question, captures the provider revision, and prompts for text. The answer is durably persisted before the canonical session classifies it. Only `approve` permits continuation; defer, decline and ambiguous retain the question. An answer to a stale revision is rejected. After a crash, `resume-answer ITEM_ID` resumes the unique persisted answer operation with its original revision and canonical session. Scheduling fences the item while that operation is incomplete; an approval cannot be lost between its provider commit and continuation record.",
+      "text_sha256": "02c7102073d4a225975baac5abd952b5a54d6ef61108d132d9df0b0009a043e8",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L43-S1: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L43-S2: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L43-S3: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L43-S4: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L43-S5: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L43-S6: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L43-S7: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L43-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L43-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L43-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L43-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L43-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L43-S6: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L43-S7: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L43-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L43-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L43-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L43-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L43-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L43-S6: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L43-S7: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L45",
+      "location": "docs/operator-guide.md:45",
+      "text": "Pause closes admission while accepted work continues. Resume reconciles before reopening the retained run intent. Stop closes admission, cancels owned requests through their adapter, and reports proven stopped processes separately from unresolved workflow evidence. Quit cannot substitute for stop. Restart preserves pending identities and keeps admission closed until an explicit run or resume request.",
+      "text_sha256": "0f991e075546d22ef9e4fab9bcbb49c601e513d902fd55df7644fb425799cf4a",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L45-S1: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L45-S2: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L45-S3: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L45-S4: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L45-S5: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L45-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L45-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L45-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L45-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L45-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L45-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L45-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L45-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L45-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L45-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L47",
+      "location": "docs/operator-guide.md:47",
+      "text": "Watch polls deterministically and calls no model for unchanged scope. Status, validation, dashboard refresh, and evidence reconciliation make no model calls. Until-terminal success requires every in-scope item to be Completed and no unresolved effect. A terminal scope containing Failed, Abandoned or other nondelivery outcomes reports settlement without success.",
+      "text_sha256": "0757e5308fe0d8624551a42e23318e9cf5dd6751c725185a397e196843cfd17d",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L47-S1: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L47-S2: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L47-S3: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.; F11-L47-S4: Adds a scope, contract, evidence, limitation or operator fact required by Questions And Run Controls.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L47-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L47-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L47-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L47-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L47-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L47-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L47-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L47-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L51",
+      "location": "docs/operator-guide.md:51",
+      "text": "The loopback OTLP/HTTP JSON receiver lives inside the foreground application, independently of the dashboard. It attributes standard native spans to the provider, item and invocation using a private invocation token. It preserves native trace relationships, deduplicates retries, rejects conflicting correlation, and fsyncs before acknowledging storage. A transient storage failure remains an unresolved export until that exact batch is durably received; an overlapping partial batch cannot clear it. New receipts bind the actual span contents, so an unchanged count cannot hide changed evidence.",
+      "text_sha256": "3dbf60360b5f48e1f4ead8b66329062fbca8fbc9a0f8d9eebc35b67a93d974f7",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L51-S1: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L51-S2: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L51-S3: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L51-S4: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L51-S5: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L51-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L51-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L51-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L51-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L51-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L51-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L51-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L51-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L51-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L51-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L53",
+      "location": "docs/operator-guide.md:53",
+      "text": "The dashboard and terminal use the same projection of provider records, invocation evidence, usage and traces. Missing observations are unknown; stale runtime data does not prove a process stopped. Raw invocation and native telemetry evidence stays under the configured operational root. Keep that directory when recovering a run. Status, dashboard, terminal controls and reconciliation resolve current provider/evidence storage even when a generation profile is missing or invalid. They report the configuration error. Every new CLI invocation still requires complete current validation; control inspection never authorizes generation from stale configuration. An invalid generation edit pauses admission without cancelling a running invocation.",
+      "text_sha256": "6a8ab22868ee5b6894892ac641ff47947eb47a1fac8d423b32a4b2144d90743e",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L53-S1: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L53-S2: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L53-S3: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L53-S4: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L53-S5: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L53-S6: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L53-S7: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L53-S8: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L53-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L53-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L53-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L53-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L53-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L53-S6: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L53-S7: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L53-S8: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L53-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L53-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L53-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L53-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L53-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L53-S6: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L53-S7: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L53-S8: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L55",
+      "location": "docs/operator-guide.md:55",
+      "text": "If an item is blocked, inspect its provider record, `scheduling-blocks.json`, invocation outcomes, native session evidence and provider/delivery requested records. Correct the actual missing evidence or authorization. Do not delete an uncertain operation directory to force another launch.",
+      "text_sha256": "d836d1683d620cefcb225e32574650b7390b86047169b130e34f71771f3254f0",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L55-S1: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L55-S2: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.; F11-L55-S3: Adds a scope, contract, evidence, limitation or operator fact required by Telemetry And Inspection.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L55-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L55-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L55-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L55-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L55-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L55-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L59",
+      "location": "docs/operator-guide.md:59",
+      "text": "On Codex 0.159.2, no retry was observed in the tested first-export 503 scenario. The first 512 spans were lost while 1200 later spans and all 11 measured output tokens arrived. Matching usage and later spans did not restore the rejected batch. The generation gate rejected the result. Shutdown establishes observed drain/process exit with stable retained spans; it does not prove complete flush while an export is missing. See [native exporter evidence](verification/native-exporter-evidence.json).",
+      "text_sha256": "10e9af9dedd3785345e76ccdf2a9efb4106c47afefc0fd7c097891fdc64b7826",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L59-S1: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L59-S2: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L59-S3: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L59-S4: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L59-S5: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L59-S6: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L59-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L59-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L59-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L59-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L59-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L59-S6: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L59-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L59-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L59-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L59-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L59-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L59-S6: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L61",
+      "location": "docs/operator-guide.md:61",
+      "text": "The receiver does not promise lossless export or introduce a separate durable spool. If the original validated batch is available, re-ingest those exact bytes through the existing authenticated receiver/correlation boundary and verify persistence before clearing its incident. If it was not retained, keep the gap and affected transition held. The operator must use the selected provider management workflow for an explicit nondelivery disposition; a larger allowance, a fabricated span or another paid invocation cannot substitute for the missing evidence. Inspection, other safe items and operator controls remain available.",
+      "text_sha256": "58c0077de97731cca08ca9130b236a0e5896a9510fe82ab04c75a4f94c11a4bf",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L61-S1: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L61-S2: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L61-S3: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L61-S4: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L61-S5: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L61-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L61-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L61-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L61-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L61-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L61-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L61-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L61-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L61-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L61-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F11-L63",
+      "location": "docs/operator-guide.md:63",
+      "text": "The dashboard caches complete trace records by file identity and byte offset, reads appended records once, exposes a partial tail as uncertainty, and orders the displayed recent spans by native timestamp. Counts and item details use the same captured provider revisions; a changed provider snapshot is rejected for refresh. Display configuration reload does not replace an executing invocation’s snapshot. Legacy receipts from the earlier completed acceptance remain historical display evidence; they cannot authorize new advancement without the current content binding.",
+      "text_sha256": "73a2ad6945ddca2d23295559414b9cee3ae304483348bba8e400076ec9fb2822",
+      "needed": {
+        "status": "pass",
+        "evidence": "F11-L63-S1: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L63-S2: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L63-S3: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.; F11-L63-S4: Adds a scope, contract, evidence, limitation or operator fact required by Tested Native Export Failure Boundary.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F11-L63-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L63-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L63-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F11-L63-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F11-L63-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L63-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L63-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F11-L63-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    }
+  ],
+  "manifest_sha256": "f4c975fe857ba7813a577b3e9e3aa8c8d64adee9359be4000d49d6d5cd25529c"
+}

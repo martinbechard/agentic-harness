@@ -1,0 +1,176 @@
+{
+  "schema": "review-structured-artifact.validation-receipt.v2",
+  "valid": true,
+  "semantic_approval": false,
+  "stage": "pass-2",
+  "pass_one_status": "clear",
+  "declared_verdict": "GOOD",
+  "candidate": {
+    "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+    "sha256": "737999745588bc7f9a5644ba80f065c324edb78530f45629e088bcea88131996"
+  },
+  "authorities": [
+    {
+      "path": "PROJECT.yaml",
+      "sha256": "90cfcd76fad21e9c2eb13eb5f2ed59af9f13eab6e5ef21106f25706502582c89"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "d66441ee42fc0a2a9c38b26ebb6cfb967459ebab76e2d047820d6c1698ad4e3d"
+    },
+    {
+      "path": "docs/project-taxonomy.md",
+      "sha256": "0d8bf22329aa1596d7154876ffd1fe3d887f7324330c1b06dce6caa55e890264"
+    },
+    {
+      "path": "skills/route-documentation-work/assets/templates/architecture-template.md",
+      "sha256": "6bde888cf1f45e2f26ce18c3bbf1a6b16ce19d762d7b8f49bfaab32370e1cceb"
+    },
+    {
+      "path": "skills/coordinate-work-items/SKILL.md",
+      "sha256": "de4a06a37ff561528cd293b8b40acec275f1342323825fc0303313fb27f02e0f"
+    },
+    {
+      "path": "skills/manage-work-items/SKILL.md",
+      "sha256": "e023d08ad3b05f1d41aa4caf08c1f5d874c358e7bf1e4f7e9229c5fe5bd29b9c"
+    },
+    {
+      "path": "skills/manage-work-items-file/SKILL.md",
+      "sha256": "6225ced28e94d40bdd10ab442d00aff7d6150bc69b74baeb66a5a1d433325fe8"
+    },
+    {
+      "path": "skills/coordinate-codex-tasks/SKILL.md",
+      "sha256": "74ade9f372dd2688c393c3728f370123b950d7b6ad3114706bb522d361a99cb6"
+    },
+    {
+      "path": ".agents/skills/backlog-dispatcher/SKILL.md",
+      "sha256": "2135314f9ae6ad40866a9389bea0984f6f09c9ad5dbf2950247b238292c63a43"
+    },
+    {
+      "path": "skills/estimate-agent-work/SKILL.md",
+      "sha256": "5c5066825390cb55dfcb3625c5b5fb2afc386a771c8f5ac30380a6a223f0a370"
+    },
+    {
+      "path": "skills/resolve-backlog-blockage/SKILL.md",
+      "sha256": "0c060a04fe83ec54872e85ceb50f3f89630787670416204ba3adacea79e04e08"
+    },
+    {
+      "path": "skills/set-solo-mode/SKILL.md",
+      "sha256": "5543496f837882659afb1f0f9124aafa9d74a9294873ec3bf002c3b6b924a7d4"
+    },
+    {
+      "path": "skills/interface-patterns/SKILL.md",
+      "sha256": "260a74d2d53fcbc0baa2b4cdda06d1fff485ad3a106c66a5c5ff3f93ba63bbbc"
+    },
+    {
+      "path": "skills/interface-patterns/references/design-guidelines-interface-patterns.md",
+      "sha256": "8518c336a56f7363ece8077c6e8e4f631723de64eda7aab6f9cd6fad85740e0a"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/README.md",
+      "sha256": "7513d52026c70332457617f9fbd88f103f258eb2ee4c24be508ebd0923fa0a9b"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/pyproject.toml",
+      "sha256": "2440f6275c00506fabfac60a1d0239471fcd07249b352826fc1a0f6f190e742c"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/codex_backlog/provider.py",
+      "sha256": "29aa9e3581014bba883fb9f200386341f6526c46558aef702737cb012fa8c0d8"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/codex_backlog/scheduling.py",
+      "sha256": "b140cd1aa3b3ba4436162ea2ce730434e4ecfe61547a2d4952a4a3e700bc1602"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/codex_backlog/codex.py",
+      "sha256": "b821e0ad59b63236e0d266b5f99c68fd356cd3df2c56e53b2b2efb0af6789bcb"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/codex_backlog/analytics.py",
+      "sha256": "0da7f69f8abfc47065cbe8d7cea59f2d4f87f257ef9c28572e3d4bac9c4fb5bf"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/codex_backlog/dashboard.py",
+      "sha256": "e737a8316e91a140949bd312f6308c5574d38687b8fc431f3a407fa4adb88d36"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/codex_backlog/cli.py",
+      "sha256": "1da9b07c71462f948495153ae664eabe9febacbcb49256f9178855fb6d2f5dfd"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/tests/test_scheduling.py",
+      "sha256": "5e3db146b6f5ce6844a9171dea94a61539e4a95a91dc8e4db8260dc8679e5e65"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/tests/test_dashboard_scheduling.py",
+      "sha256": "9662f09e93c01cbcc601c65867bebe2a3e331f11f83f9b87318e69aa97081b0f"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/tests/test_codex.py",
+      "sha256": "b4115880f8adb664068d2c23d5bc94aa0af9ae31e069d546bf01a3c47caca0cd"
+    },
+    {
+      "path": "adapters/codex/backlog-harness/tests/test_campaign.py",
+      "sha256": "416fe4feb705772549878970a2e075fee394672238fb9932a8d6319cfa317e91"
+    },
+    {
+      "path": "backlog/feature-backlog/operate-backlog-harness-unattended.md",
+      "sha256": "5cba7ff8ac4a73afe28787103d20bcc15b4fa0a9148ee4ecdad81e983036c8cf"
+    },
+    {
+      "path": "docs/architecture/ARC-001-codex-cli-backlog-harness.md",
+      "sha256": "c02c786d91fac373eb517aeb3c22051950576cdf25b9ad89f0ca1b7520999738"
+    }
+  ],
+  "expected_checklists": [
+    "skills/review-structured-artifact/references/review-checklist-structured.md",
+    "skills/review-architecture/references/review-checklist-architecture.md",
+    "skills/interface-patterns/references/review-checklist-interface-patterns.md"
+  ],
+  "checklists": [
+    {
+      "canonical": "skills/review-structured-artifact/references/review-checklist-structured.md",
+      "canonical_sha256": "510b081be79b1d24373e4164470fa06c9e971f34f4a237fcb25ab9a73fb4b681",
+      "completed": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.review-checklist-structured.md",
+      "completed_sha256": "bffc94a19e6748a7c593f2be52302b374cf992a0da2255b25eac83225cb6aaf3",
+      "expected_count": 36,
+      "completed_count": 36,
+      "valid": true,
+      "errors": []
+    },
+    {
+      "canonical": "skills/review-architecture/references/review-checklist-architecture.md",
+      "canonical_sha256": "96648df3aa495598065accf0549dbb3d36e6eab40789f724cad15d01aed40ed0",
+      "completed": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.review-checklist-architecture.md",
+      "completed_sha256": "a84b37abb429011c8ee33c4f64a4c4a721c7d94251cd6b58419521275690d756",
+      "expected_count": 39,
+      "completed_count": 39,
+      "valid": true,
+      "errors": []
+    },
+    {
+      "canonical": "skills/interface-patterns/references/review-checklist-interface-patterns.md",
+      "canonical_sha256": "80bb19e5354177501aaee41feac8fe6065a576eee14c02a3b29a99671a98fff5",
+      "completed": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.review-checklist-interface-patterns.md",
+      "completed_sha256": "a0b29e08801a29ed45a702953701d55d3fbd9a3d4c31cb7be21bef227048fde4",
+      "expected_count": 8,
+      "completed_count": 8,
+      "valid": true,
+      "errors": []
+    }
+  ],
+  "review_unit_manifest": {
+    "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.review-units.json",
+    "sha256": "ec8eb71d8a5eedff60b800283003f58a9fbd3f30d26f44a39758442b5b30b46b",
+    "manifest_sha256": "3165f7868ea649eeafeebf0879071b67d722e9176389fb61d625b5c630636dd4",
+    "review_unit_count": 292,
+    "valid": true,
+    "errors": []
+  },
+  "expected_coverage": 83,
+  "completed_coverage": 83,
+  "evidence_sha256": "24aa2f7e8c78de6e4c1b8d65819ad9e3565b032103dcf39c4e286fbbac27467f",
+  "prior_approval_eligible": true,
+  "errors": []
+}

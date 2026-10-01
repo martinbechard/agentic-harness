@@ -1,0 +1,581 @@
+{
+  "candidate": {
+    "path": "docs/verification/final-source-review.json",
+    "sha256": "844f28fed47bd6b2ff44cbbd583640393c5bc35021b446e0e75b96e723949c37"
+  },
+  "sentence_count": 26,
+  "sentences": [
+    {
+      "id": "F12-L2-S1",
+      "location": "docs/verification/final-source-review.json:2",
+      "text": "  \"verdict\": \"ACCEPT\",",
+      "text_sha256": "c9125fb9752520f5b0d3b9b27acc29b428b8596ec12588762c7e5c454624cc41",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L3-S1",
+      "location": "docs/verification/final-source-review.json:3",
+      "text": "  \"reviewer\": \"/root/final_source_review\",",
+      "text_sha256": "53a9edfbddbad38f977c8bfb6e5afe65f02983a4aefa3fea0c6e965a2bbc89d3",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L4-S1",
+      "location": "docs/verification/final-source-review.json:4",
+      "text": "  \"source_commit\": \"8f0e5dc5ed8fee097095178afe48ab152d0c61fd\",",
+      "text_sha256": "153d60aa74c3c4a6d25e910b78cea00dc146121e07e0a5b62cc0822049270e12",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L5-S1",
+      "location": "docs/verification/final-source-review.json:5",
+      "text": "  \"source_tree\": \"1781fab046c4066e52a96d5966d18e726651547b\",",
+      "text_sha256": "7b985ade8af1f5d269959b51a2416af2167d99c54d32f64ea3df03c7081090ad",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L6-S1",
+      "location": "docs/verification/final-source-review.json:6",
+      "text": "  \"commit_object_sha256\": \"efec56b0a2ad9d9b1e7f7bb88b203ee77e94446d81366f32155d2d0f0762ae71\",",
+      "text_sha256": "f6e8ac152c4db8a08371c1cccd54eda89546395819c67f00fbe4f31804ddc41e",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L7-S1",
+      "location": "docs/verification/final-source-review.json:7",
+      "text": "  \"installed_wheel_sha256\": \"54de2bec6c820b08756e2b5ec62e0dc7e11c3324cb4d07ffc31445e8421598c1\",",
+      "text_sha256": "2234d1447cdd66fdf0b983d1db90f416f8596c03310683021a73d8e6e1258941",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L8-S1",
+      "location": "docs/verification/final-source-review.json:8",
+      "text": "  \"material_findings\": [],",
+      "text_sha256": "b0722e88a626949cd470ca4ba03f358764b1cf2928af1ff66bb9664cc623a790",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L9-S1",
+      "location": "docs/verification/final-source-review.json:9",
+      "text": "  \"independent_checks\": {",
+      "text_sha256": "3c96b6e967f2f31b9bea7d41087a699ef179c5521a72591ce38078c7d9caf943",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L10-S1",
+      "location": "docs/verification/final-source-review.json:10",
+      "text": "    \"focused_recovery_coordination_passed\": 33,",
+      "text_sha256": "1032cb43eaca3a26412c74f11e2e197258e58eb5d95aa835b38e496db3658fc1",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L11-S1",
+      "location": "docs/verification/final-source-review.json:11",
+      "text": "    \"full_tests_passed\": 78,",
+      "text_sha256": "1bafd857215120630efcae8071c19d921e8a3bf31f6af273a860361c0cd09c58",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L12-S1",
+      "location": "docs/verification/final-source-review.json:12",
+      "text": "    \"ruff\": \"passed\",",
+      "text_sha256": "cca3ae657b9c08b739a5f8412639b47bfb15c5cc040103dab5e55994b60bf767",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L13-S1",
+      "location": "docs/verification/final-source-review.json:13",
+      "text": "    \"installed_package_matches_source\": true,",
+      "text_sha256": "e80cfc67b0d54aba0eaa1126f1e6672e6509a614681a9198ce799d8a2272821f",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L14-S1",
+      "location": "docs/verification/final-source-review.json:14",
+      "text": "    \"solo_new_invocations\": 0,",
+      "text_sha256": "451e9f8abef66d749bc92deb464ff1e06bf2d224ae0b3e71ad6d4aa79c1d8b45",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L15-S1",
+      "location": "docs/verification/final-source-review.json:15",
+      "text": "    \"multitask_new_invocations\": 0",
+      "text_sha256": "412bd7a2fc22e25570c93db74c640325b3a374fc3e14bed84b25e7b4daebbe47",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L17-S1",
+      "location": "docs/verification/final-source-review.json:17",
+      "text": "  \"reviewed_boundaries\": [",
+      "text_sha256": "c20b9fe5fa37f2f29376673e4dbf1b50643ab83c388b0a92a768098f24096181",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L18-S1",
+      "location": "docs/verification/final-source-review.json:18",
+      "text": "    \"Frozen provider revision/content and retained admission operation\",",
+      "text_sha256": "5fd1a2bba3cc72c131354f44cdcb07caf18c4ec179d9aae53065f2c2da0732a8",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L19-S1",
+      "location": "docs/verification/final-source-review.json:19",
+      "text": "    \"Running canonical acceptance recovery\",",
+      "text_sha256": "e09cb6b5460a201c5c3d7a86b5be6029dd2657adea88cc744e06f9d218939fd9",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L20-S1",
+      "location": "docs/verification/final-source-review.json:20",
+      "text": "    \"Paused watch and later-item discovery\",",
+      "text_sha256": "320524ec95ce8b8c581ad3148781d29635665304473a88acd8fa91625fa506a7",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L21-S1",
+      "location": "docs/verification/final-source-review.json:21",
+      "text": "    \"Content-bound telemetry before projection\",",
+      "text_sha256": "11315890b9f90bfcc7a63a3bc6a16160600661ce7c2bea191f5c6f06dd048e08",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L22-S1",
+      "location": "docs/verification/final-source-review.json:22",
+      "text": "    \"Actors, independent review, exact candidate checks and completion\"",
+      "text_sha256": "69062f2067d72387ba4a591b1e321c905b6c9d4678089b400b88d14bd064d772",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L24-S1",
+      "location": "docs/verification/final-source-review.json:24",
+      "text": "  \"residual_risks\": [",
+      "text_sha256": "6c54b7d888069267be55d72844018231dc5c7e1dacfe7388b81ba321b7cacbef",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L25-S1",
+      "location": "docs/verification/final-source-review.json:25",
+      "text": "    \"Selected file/main-branch route with explicit coordination none; claim-helper projects are fenced.\",",
+      "text_sha256": "c29efb6e3bafc2b22c77b8f9d4ef4b522a8308c3c5a08a064542a61a096d6e76",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L26-S1",
+      "location": "docs/verification/final-source-review.json:26",
+      "text": "    \"Real six deliveries predate final source; corrections have current deterministic and installed replay coverage.\",",
+      "text_sha256": "e71cbe9e19d7987e63eeb0de2063a36952aeb181fa5c884da6a3f1eb1d431c75",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L27-S1",
+      "location": "docs/verification/final-source-review.json:27",
+      "text": "    \"Native first-export 503 probe observed no retry; missing batch remains fenced, lossless flush unproved.\",",
+      "text_sha256": "b9251430791d48dac24f8a6c5e95a55cddf1cb8adb479e467260e07cc846f033",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L28-S1",
+      "location": "docs/verification/final-source-review.json:28",
+      "text": "    \"Legacy Completed receipts bind counts only; they cannot authorize new protected transitions.\"",
+      "text_sha256": "6b3bea8a5936269c55faad2b7d910f0e390ab7c7d01bb5145b99e3a7e49dcfd1",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F12-L30-S1",
+      "location": "docs/verification/final-source-review.json:30",
+      "text": "  \"provenance\": \"Recorded by Northstar from final_source_review final response; this record is not a new review execution.\"",
+      "text_sha256": "93f1a8618898409b4533c8703d36e822645f2d5846f1e3d72ccfd44d18fb26d9",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    }
+  ]
+}

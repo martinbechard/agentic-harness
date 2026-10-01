@@ -1,0 +1,1816 @@
+{
+  "schema": "review-structured-artifact.review-unit-evidence.v1",
+  "candidate": {
+    "path": "docs/design/components/MOD-005-telemetry.md",
+    "sha256": "1ccd46c9f32412211b44aeb1ec68927bc59a619e69c9bd10bf075cc22171e2fa"
+  },
+  "review_units": [
+    {
+      "id": "F08-L13",
+      "location": "docs/design/components/MOD-005-telemetry.md:13",
+      "text": "This module receives invocation-authenticated OTLP/HTTP JSON, preserves native trace structure, adds trusted harness correlation, and derives conservative usage evidence. Its primary responsibility is to make telemetry durable and attributable without converting missing evidence into zero usage.",
+      "text_sha256": "170b43dd75286fd7288986710e3c25c2bb447c927f345c08086d316bc494fbf6",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L13-S1: Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.; F08-L13-S2: Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L13-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L13-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L13-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L13-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L15",
+      "location": "docs/design/components/MOD-005-telemetry.md:15",
+      "text": "Design mode: **EXISTING_IMPLEMENTATION**. The receiver tracks failed export payload fingerprints until the exact export becomes durable. A missing native batch remains an explicit gap and fences the affected next generation boundary.",
+      "text_sha256": "e7639979e5a661f422a081960d9d7e5126248f2609502c7ed80145d6a8fe66a5",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L15-S1: Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.; F08-L15-S2: Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.; F08-L15-S3: Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L15-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L15-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L15-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L15-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L15-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L15-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L19",
+      "location": "docs/design/components/MOD-005-telemetry.md:19",
+      "text": "Current behavior comes from [telemetry.py](../../../src/backlog_harness/telemetry.py), [analytics.py](../../../src/backlog_harness/analytics.py), [application.py](../../../src/backlog_harness/application.py), [test_telemetry.py](../../../tests/test_telemetry.py), [test_analytics.py](../../../tests/test_analytics.py), and telemetry cases in [test_recovery.py](../../../tests/test_recovery.py). The bounded native observation is [native-exporter-evidence.json](../../verification/native-exporter-evidence.json).",
+      "text_sha256": "67ad28e7dc12f866b3794334f9adc8a88f73af2e2249385602455f04c7a1557b",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L19-S1: Adds a scope, contract, evidence, limitation or operator fact required by Authoritative Sources.; F08-L19-S2: Adds a scope, contract, evidence, limitation or operator fact required by Authoritative Sources.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L19-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L19-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L19-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L19-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L21",
+      "location": "docs/design/components/MOD-005-telemetry.md:21",
+      "text": "[The implementation plan](../../../IMPLEMENTATION-PLAN.md), [ARC-002](../../architecture/ARC-002-codex-work-item-dispatch-harness.md), and [HLD-003](../high-level/HLD-003-codex-work-item-dispatch-service.md) define intent. Source and retained runtime evidence win for current behavior.",
+      "text_sha256": "f0880c6d517ae82382d8b482cbd225da0ff3fa19cc7e94ec3a40e968c83dcd9c",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L21-S1: Adds a scope, contract, evidence, limitation or operator fact required by Authoritative Sources.; F08-L21-S2: Adds a scope, contract, evidence, limitation or operator fact required by Authoritative Sources.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L21-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L21-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L21-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L21-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L25",
+      "location": "docs/design/components/MOD-005-telemetry.md:25",
+      "text": "- [telemetry.py](../../../src/backlog_harness/telemetry.py) owns validation, trusted correlation, deduplication, durable exports, retry-gap tracking, and the loopback receiver.",
+      "text_sha256": "bd805f3d3e57da67c71cc90e75a5bb5cff0bbb24ac643a11fba27d2b699114f1",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L25-S1: Adds a scope, contract, evidence, limitation or operator fact required by Related Code.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L25-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L25-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L26",
+      "location": "docs/design/components/MOD-005-telemetry.md:26",
+      "text": "- [analytics.py](../../../src/backlog_harness/analytics.py) owns event accounting, cumulative-to-delta conversion, guard views, and invocation/native reconciliation.",
+      "text_sha256": "20703e62afdc8030756a78f6b1d2861330fe64fdfda09dcb224cb4f1276ab9f5",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L26-S1: Adds a scope, contract, evidence, limitation or operator fact required by Related Code.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L26-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L26-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L27",
+      "location": "docs/design/components/MOD-005-telemetry.md:27",
+      "text": "- [application.py](../../../src/backlog_harness/application.py) registers destinations, waits for exporter drain, saves content-bound reports, validates results, and applies the item-local guard.",
+      "text_sha256": "66fb602e9ae7ffa57982ffd1de89fcd23111241c8361ee8f147fb75928c0f1af",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L27-S1: Adds a scope, contract, evidence, limitation or operator fact required by Related Code.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L27-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L27-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L28",
+      "location": "docs/design/components/MOD-005-telemetry.md:28",
+      "text": "- [native_evidence.py](../../../src/backlog_harness/native_evidence.py) provides native-child usage totals.",
+      "text_sha256": "b51e18aab1fb43a19f6cc26881c779bd6c52365f23c107bb9caa146f564c5d89",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L28-S1: Adds a scope, contract, evidence, limitation or operator fact required by Related Code.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L28-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L28-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L32",
+      "location": "docs/design/components/MOD-005-telemetry.md:32",
+      "text": "- [test_telemetry.py](../../../tests/test_telemetry.py): HTTP attribution and gzip; invalid, conflicting, oversized, and storage-failure inputs; exact export retry closure; partial-batch retry fencing.",
+      "text_sha256": "56542fd9ca8af5cb33710e3d83bd2ef0a8cac941ec407f17d1dfee89878a6e8d",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L32-S1: Adds a scope, contract, evidence, limitation or operator fact required by Related Tests.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L32-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L32-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L33",
+      "location": "docs/design/components/MOD-005-telemetry.md:33",
+      "text": "- [test_analytics.py](../../../tests/test_analytics.py): unknown evidence, deduplication, cumulative counters, crossing, and reviewed ceiling.",
+      "text_sha256": "99c23583b5912890a129d114dceed72291580d867b20ff1902308645a6255bb7",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L33-S1: Adds a scope, contract, evidence, limitation or operator fact required by Related Tests.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L33-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L33-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L34",
+      "location": "docs/design/components/MOD-005-telemetry.md:34",
+      "text": "- [test_recovery.py](../../../tests/test_recovery.py): bad telemetry, frozen estimate, missing telemetry file, changed content at equal span count, and hold-review recovery.",
+      "text_sha256": "90df154f3a2e1d48783a2624c2b99f96bd5d751f1b972927a9bf2e4125c08379",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L34-S1: Adds a scope, contract, evidence, limitation or operator fact required by Related Tests.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L34-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L34-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L38",
+      "location": "docs/design/components/MOD-005-telemetry.md:38",
+      "text": "No separate file-provider Work Item is identified. Telemetry and usage are part of [the implementation plan](../../../IMPLEMENTATION-PLAN.md).",
+      "text_sha256": "ff72cc2e701efa8ece97af97ee7e5c2370cd282fc322dd3b698f6a4bc99f217f",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L38-S1: Adds a scope, contract, evidence, limitation or operator fact required by Related Backlog Items.; F08-L38-S2: Adds a scope, contract, evidence, limitation or operator fact required by Related Backlog Items.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L38-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L38-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L38-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L38-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L42",
+      "location": "docs/design/components/MOD-005-telemetry.md:42",
+      "text": "The project has no wiki. See [ARC-002](../../architecture/ARC-002-codex-work-item-dispatch-harness.md), [HLD-003](../high-level/HLD-003-codex-work-item-dispatch-service.md), and the [requirements matrix](../../verification/requirements-matrix.md).",
+      "text_sha256": "dcf1d42a65156c8269bd1178ec3bca402e7ece1f93da540c6253dcdc47f4a58b",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L42-S1: Adds a scope, contract, evidence, limitation or operator fact required by Related Wiki Pages.; F08-L42-S2: Adds a scope, contract, evidence, limitation or operator fact required by Related Wiki Pages.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L42-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L42-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L42-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L42-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L46",
+      "location": "docs/design/components/MOD-005-telemetry.md:46",
+      "text": "No additional paid probe or retry framework is required. Codex CLI 0.159.2 did not retry the deliberately rejected first 512-span batch. Complete shutdown flush remains unproved because that batch is missing. Current policy preserves the gap and blocks affected generation.",
+      "text_sha256": "a73f18f71e203039820d3d34e19a814b72d5be4dbaefbf3783be9a299fd4163d",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L46-S1: Adds a scope, contract, evidence, limitation or operator fact required by Open Questions.; F08-L46-S2: Adds a scope, contract, evidence, limitation or operator fact required by Open Questions.; F08-L46-S3: Adds a scope, contract, evidence, limitation or operator fact required by Open Questions.; F08-L46-S4: Adds a scope, contract, evidence, limitation or operator fact required by Open Questions.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L46-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L46-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L46-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L46-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L46-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L46-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L46-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L46-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L50",
+      "location": "docs/design/components/MOD-005-telemetry.md:50",
+      "text": "Revalidate OTLP fields, usage attributes, exporter batching, retry behavior, drain timing, and shutdown behavior when the supported CLI changes. Recheck content fingerprints when resource or scope metadata handling changes. The last source reconciliation was 2026-09-30.",
+      "text_sha256": "e65a4d817e981d59f20f14b3999b05b45d9c610b259e6258fb21c70805acdda2",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L50-S1: Adds a scope, contract, evidence, limitation or operator fact required by Maintenance Notes.; F08-L50-S2: Adds a scope, contract, evidence, limitation or operator fact required by Maintenance Notes.; F08-L50-S3: Adds a scope, contract, evidence, limitation or operator fact required by Maintenance Notes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L50-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L50-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L50-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L50-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L50-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L50-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L54",
+      "location": "docs/design/components/MOD-005-telemetry.md:54",
+      "text": "| Requirement source and ID | Claim mode | Required outcome | Satisfying contract | Status | Out-of-scope authority, rationale, and owning artifact | Verification |",
+      "text_sha256": "41004a2b3f5e54a61612643b2bde188bc54e41cd01830748c469bf16de720d9a",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L54-S1: Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L54-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L54-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L56",
+      "location": "docs/design/components/MOD-005-telemetry.md:56",
+      "text": "| Plan: standard OTLP JSONL | CURRENT_BEHAVIOR | Preserve standard OTLP export framing and native relationships while adding trusted Work Item and invocation correlation. | `normalize`, `Sink.write`, `TelemetryReceiver.register` | DEFINED | External parent-trace injection is not claimed. | `test_http_attribution_retry_and_gzip`; six-item traces |",
+      "text_sha256": "9b32c10d07a2adb9ad5a14ae3f61cb4bac85f9fbcf5dffdda183757631088e57",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L56-S1: Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L56-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L56-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L57",
+      "location": "docs/design/components/MOD-005-telemetry.md:57",
+      "text": "| Plan: retry and durability | CURRENT_BEHAVIOR | Acknowledge only durable exports; retain an unresolved fingerprint after 503 until the exact export is durable. | `Sink.pending_exports`, `TelemetryReceiver.report` | DEFINED | Native retry is not guaranteed. | `test_storage_failure_remains_fenced_until_same_export_is_durable`; `test_partial_export_retry_does_not_clear_whole_batch_gap` |",
+      "text_sha256": "d485bac411fc17e37c859fb4c4ed2307be6853023b0438249bc836a4535c34d3",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L57-S1: Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L57-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L57-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L58",
+      "location": "docs/design/components/MOD-005-telemetry.md:58",
+      "text": "| Plan: usage guard | CURRENT_BEHAVIOR | Attribute generated output once, preserve unknown data, and hold at the configured threshold. | `invocation_usage`, `UsageLedger.guard`, `Application.usage_view`, `guard` | DEFINED | Unknown usage cannot receive an allowance. | analytics test; call-budget, estimate, and hold-review recovery tests |",
+      "text_sha256": "d78da9d8943f6f96f24d1925f482db1a803ad8e81d1f51add2d95068be2a59a7",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L58-S1: Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L58-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L58-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L59",
+      "location": "docs/design/components/MOD-005-telemetry.md:59",
+      "text": "| Telemetry gate: Codex 0.159.2 | CURRENT_LIMITATION | Record observed fields, usage, retry, and drain behavior without claiming complete flush. | Native exporter receipt and fail-closed validation | DEFINED | Another paid probe is not required. | First 512 spans rejected with 503; no retry observed; 1,200 later spans and 11 output tokens persisted. |",
+      "text_sha256": "ee55c56adc0599018e73667ec6c2dbc0b1704f7199a0a5cc3e44a886c207d264",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L59-S1: Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L59-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L59-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L60",
+      "location": "docs/design/components/MOD-005-telemetry.md:60",
+      "text": "| Plan: content-bound receipts | CURRENT_BEHAVIOR | A saved report must bind current unique native spans and their resource, scope, and span content. | `Sink.entries`, `evidence_digest`, `Application.validate_invocation_result` | DEFINED | Missing native data is not synthesized. | `test_cached_telemetry_same_span_count_with_changed_content_is_rejected` |",
+      "text_sha256": "4c6c871c729eb6a6636aa76e6bd0dc62e3e5a551a5c4f73322b0aa464fb6562a",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L60-S1: Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L60-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L60-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L78",
+      "location": "docs/design/components/MOD-005-telemetry.md:78",
+      "text": "Symbol and placement ledger:",
+      "text_sha256": "ccf5f9347dfcb8f4f8af1e5571f96834fbd596254e5882aa543d8653f71f9f2f",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L78-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L78-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L78-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L80",
+      "location": "docs/design/components/MOD-005-telemetry.md:80",
+      "text": "| Leaf | Complete public symbol or signature | Responsibility |",
+      "text_sha256": "448433512f29f401e450a7f6ee3a9be8457e3ebedd99121647ba8970b2db36fc",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L80-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L80-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L80-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L82",
+      "location": "docs/design/components/MOD-005-telemetry.md:82",
+      "text": "| `telemetry.py` | `TelemetryDestination(invocation_id: str, endpoint: str, token: str, path: Path)` | Carries one transient authenticated receiver destination. |",
+      "text_sha256": "19dbbeba868682abde828dcc1502a29ee4c7698d890bffe1c5de11ffd460ddc3",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L82-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L82-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L82-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L83",
+      "location": "docs/design/components/MOD-005-telemetry.md:83",
+      "text": "| `telemetry.py` | `normalize(payload, correlation)` | Validates an OTLP trace request and adds trusted reserved attributes. |",
+      "text_sha256": "f2be14d9864a7f5d5e251d39449a21fe12e1e4d1a0edd2c780fa07f8c868d4df",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L83-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L83-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L83-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L84",
+      "location": "docs/design/components/MOD-005-telemetry.md:84",
+      "text": "| `telemetry.py` | `spans(payload)` | Iterates resource, scope, and span triples. |",
+      "text_sha256": "e23129ca119ee374947df84450f067455df425285c6d34b6f592af87166c7bb1",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L84-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L84-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L84-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L85",
+      "location": "docs/design/components/MOD-005-telemetry.md:85",
+      "text": "| `telemetry.py` | `Sink(path, correlation)`; `entries(payload)`; `evidence_digest()`; `write(payload)` | Persists, fingerprints, deduplicates, and fences trace exports. |",
+      "text_sha256": "6bdebede0798717edf9770d23ff2052f3b8705ace95c74bf30b49ed3c1df022b",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L85-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L85-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L85-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L86",
+      "location": "docs/design/components/MOD-005-telemetry.md:86",
+      "text": "| `telemetry.py` | `TelemetryReceiver(root: Path)`; `register(*, run_id, invocation_id, role, adapter, item_id=None, provider_id=None)`; `report(destination)` | Hosts the loopback OTLP endpoint and produces a content-bound report. |",
+      "text_sha256": "b704c370e8f08e84f31deb797ec61c4660f52afd579f917bcb504340b9b3af1b",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L86-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L86-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L86-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L87",
+      "location": "docs/design/components/MOD-005-telemetry.md:87",
+      "text": "| `analytics.py` | `UsageEvidence(event_id: str, item_id: str, scope: str, generated_tokens: int | None, form: str = \"delta\", trustworthy: bool = True)` | Represents one normalized usage observation. |",
+      "text_sha256": "83978db926282a71c62a333592aefca35c95b2d3cf25dc2b62986f781917f898",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L87-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L87-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L87-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L88",
+      "location": "docs/design/components/MOD-005-telemetry.md:88",
+      "text": "| `analytics.py` | `UsageLedger()`; `add(event: UsageEvidence)`; `guard(item_id, original_high, *, multiplier=2.0, reviewed_ceiling=None, complete=False)` | Deduplicates usage and produces fail-closed guard state. |",
+      "text_sha256": "98508e7dc1909369e79796b38d97ffb4d2177df39b8a9cce6a8f9966e4e45071",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L88-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L88-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L88-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L89",
+      "location": "docs/design/components/MOD-005-telemetry.md:89",
+      "text": "| `analytics.py` | `invocation_usage(result, previous_session_output=0, *, child_outputs=0)` | Reconciles cumulative turn output, per-response OTLP usage, and native child output. |",
+      "text_sha256": "1b932470a229af6f3300cf284aa5f9d7b4106e5dd6ad1c94bfd6c87d272b4b4b",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L89-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L89-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L89-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L90",
+      "location": "docs/design/components/MOD-005-telemetry.md:90",
+      "text": "| `application.py` | `usage_view(self, item_id, *, observed_item=None)`; `guard(self, item_id)`; `async review_hold(self, item_id, *, requested_ceiling=None, reference=None)` | Applies content validation, immutable estimate, hold, and reviewed allowance. |",
+      "text_sha256": "8d8cd31424bab540d297cf0698c36e5c10495510555dc4f29c6518a18af3b021",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L90-S1: Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L90-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L90-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L94",
+      "location": "docs/design/components/MOD-005-telemetry.md:94",
+      "text": "The receiver runs inside each foreground invocation boundary even when the dashboard is disabled. The application adds correlation after authenticating the destination token. Provider state and invocation records remain authoritative for lifecycle and joins.",
+      "text_sha256": "b08a038c7f3ed32cc2f754066ad5647b181b02a54661e6d1cfec0fcb5ac00604",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L94-S1: Adds a scope, contract, evidence, limitation or operator fact required by Parent Context.; F08-L94-S2: Adds a scope, contract, evidence, limitation or operator fact required by Parent Context.; F08-L94-S3: Adds a scope, contract, evidence, limitation or operator fact required by Parent Context.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L94-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L94-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L94-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L94-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L94-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L94-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L109",
+      "location": "docs/design/components/MOD-005-telemetry.md:109",
+      "text": "- Bind to loopback on an ephemeral port.",
+      "text_sha256": "f0ed792e478d1501c6c5eb0ce829808bfe8314aee304360a6273c513fbfe125c",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L109-S1: Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L109-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L109-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L110",
+      "location": "docs/design/components/MOD-005-telemetry.md:110",
+      "text": "- Authenticate each invocation with a private token.",
+      "text_sha256": "e01b0a79d6da74817a54d91ad99bea870b5d37bb032fe01fa5efb2c6956f5c85",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L110-S1: Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L110-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L110-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L111",
+      "location": "docs/design/components/MOD-005-telemetry.md:111",
+      "text": "- Enforce JSON, body-size, gzip, OTLP tree, identifier, and reserved-attribute rules.",
+      "text_sha256": "5453dac5b246cae49a49d3fc7d9a643fc27f3d664c98400098552dca9a3d2310",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L111-S1: Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L111-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L111-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L112",
+      "location": "docs/design/components/MOD-005-telemetry.md:112",
+      "text": "- Preserve resource, scope, trace, parent, and native span fields.",
+      "text_sha256": "b828565eb16b268acb692ee2b1aec84e4546aff4a2f55e5171e88b7cef8ebf07",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L112-S1: Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L112-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L112-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L113",
+      "location": "docs/design/components/MOD-005-telemetry.md:113",
+      "text": "- Persist one complete normalized export per JSONL line.",
+      "text_sha256": "cac2d09ae44baca3d24eef3c82ef828b564d802ed4d4ebd98f1fcb63dbcdb8b5",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L113-S1: Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L113-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L113-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L114",
+      "location": "docs/design/components/MOD-005-telemetry.md:114",
+      "text": "- Deduplicate identical overlapping spans and reject conflicting native identity.",
+      "text_sha256": "74e7d37dc13280a7f898fcacd1232e9daa2549c4ae375684d20d8ef6f4f8581c",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L114-S1: Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L114-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L114-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L115",
+      "location": "docs/design/components/MOD-005-telemetry.md:115",
+      "text": "- Keep failed export fingerprints unresolved until the exact payload becomes durable.",
+      "text_sha256": "27af51a8a52564a626ba0f3e10c1a38aead94e48fff5a6f947a4ed9dbb2d6d4b",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L115-S1: Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L115-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L115-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L116",
+      "location": "docs/design/components/MOD-005-telemetry.md:116",
+      "text": "- Reconcile native output counters without double-counting child spans.",
+      "text_sha256": "10deebb88f9850e0e2f20c201fcb393422507526e6a435b0e36ef8d2e6c44a05",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L116-S1: Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L116-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L116-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L120",
+      "location": "docs/design/components/MOD-005-telemetry.md:120",
+      "text": "- `Application._invoke` creates the receiver, registers one destination, and saves its report.",
+      "text_sha256": "c7d2220a1ba0322259c6b85db06fc8b6b275fc9aa545ddd40bc99a7c1d4485d2",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L120-S1: Adds a scope, contract, evidence, limitation or operator fact required by Callers.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L120-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L120-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L121",
+      "location": "docs/design/components/MOD-005-telemetry.md:121",
+      "text": "- `CodexAdapter.prepare_telemetry` sends endpoint and token through process-local overrides.",
+      "text_sha256": "b7776f9130f461727775c4ae893fd38bf56a820e80fa08242795e4861f15a74f",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L121-S1: Adds a scope, contract, evidence, limitation or operator fact required by Callers.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L121-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L121-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L122",
+      "location": "docs/design/components/MOD-005-telemetry.md:122",
+      "text": "- `Application.validate_invocation_result` reconstructs `Sink` state from disk.",
+      "text_sha256": "8f50ff5d8cdebbf20cf6142070c01aa258b09de34cff20767ad397204fc8e671",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L122-S1: Adds a scope, contract, evidence, limitation or operator fact required by Callers.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L122-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L122-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L123",
+      "location": "docs/design/components/MOD-005-telemetry.md:123",
+      "text": "- Projection and analytics code read stored OTLP JSONL.",
+      "text_sha256": "f4a8f5c1739fd2173d0db3b20f2bc676610b2895d3be9e0cffa22f9a4a919186",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L123-S1: Adds a scope, contract, evidence, limitation or operator fact required by Callers.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L123-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L123-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L127",
+      "location": "docs/design/components/MOD-005-telemetry.md:127",
+      "text": "- [MOD-004](MOD-004-evidence.md) supplies `JsonlWriter`, `read_jsonl`, and evidence errors.",
+      "text_sha256": "69281bd5e4f2c468326b2381200869a238237fcba58cd74159fea8297b43d29b",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L127-S1: Adds a scope, contract, evidence, limitation or operator fact required by Dependencies.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L127-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L127-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L128",
+      "location": "docs/design/components/MOD-005-telemetry.md:128",
+      "text": "- The Python HTTP server, gzip decoder, secrets, locks, and SHA-256 support the receiver.",
+      "text_sha256": "097d97f50dfa50786dcabc30e5be1f2c7dfa292490677ccb20842bc8e72a51f8",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L128-S1: Adds a scope, contract, evidence, limitation or operator fact required by Dependencies.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L128-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L128-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L129",
+      "location": "docs/design/components/MOD-005-telemetry.md:129",
+      "text": "- Native Codex OTLP spans supply `gen_ai.usage.output_tokens`.",
+      "text_sha256": "ba43b71393be717b9372536eb89b662defba35c94207c848984c94429af33edc",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L129-S1: Adds a scope, contract, evidence, limitation or operator fact required by Dependencies.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L129-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L129-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L130",
+      "location": "docs/design/components/MOD-005-telemetry.md:130",
+      "text": "- Provider items supply immutable original-high estimates and authoritative hold state.",
+      "text_sha256": "8033d0d10baa5d17427ac49e8ac62234d5f154bb784cc4d13e928815b42dfbb1",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L130-S1: Adds a scope, contract, evidence, limitation or operator fact required by Dependencies.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L130-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L130-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L134",
+      "location": "docs/design/components/MOD-005-telemetry.md:134",
+      "text": "`TelemetryReceiver.register` returns a destination with a loopback `/v1/traces` endpoint, random token, and hashed run-or-item path. Item telemetry requires a provider identity.",
+      "text_sha256": "79f14475c9af735a845c69f08c8a06cb066d045f263c4c0111cec295b6fbeeee",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L134-S1: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.; F08-L134-S2: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L134-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L134-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L134-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L134-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L136",
+      "location": "docs/design/components/MOD-005-telemetry.md:136",
+      "text": "`POST /v1/traces` requires one valid token, `Content-Length`, `application/json`, and identity or gzip content encoding. It returns 200 only after durable write, 400 for invalid data or conflicts, 403 for an unknown token, 404 for another path, 413 for an oversized body, and 503 with `Retry-After: 1` for storage failure.",
+      "text_sha256": "3038692c91af0e100c2012487fdcd0518fafed0b2dbdadc0718fa8e4a2b65c3e",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L136-S1: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.; F08-L136-S2: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L136-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L136-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L136-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L136-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L138",
+      "location": "docs/design/components/MOD-005-telemetry.md:138",
+      "text": "`Sink.write(payload)` fingerprints the complete normalized export and each unique `(traceId, spanId)` with resource, scope, and span content. An identical overlap is idempotent. A conflicting identity is invalid. A failed persistence adds the export fingerprint to `pending_exports`. Only durable receipt of the exact export removes that fingerprint.",
+      "text_sha256": "b1b2d596cd86b28a9610c21aac0b6090654c3d3d61278ca94ddb866ab68b2e45",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L138-S1: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.; F08-L138-S2: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.; F08-L138-S3: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.; F08-L138-S4: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.; F08-L138-S5: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L138-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L138-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L138-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L138-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L138-S5: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L138-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L138-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L138-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L138-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L138-S5: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L140",
+      "location": "docs/design/components/MOD-005-telemetry.md:140",
+      "text": "`TelemetryReceiver.report(destination)` returns `span_count`, `evidence_sha256`, `rejected_exports`, `storage_failures`, `unresolved_retries`, and coverage.",
+      "text_sha256": "5882db58edc282a684763880fa994866ef35e1280b48abcf75962a66067f99a6",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L140-S1: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L140-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L140-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L142",
+      "location": "docs/design/components/MOD-005-telemetry.md:142",
+      "text": "`invocation_usage` accepts only complete, unrejected telemetry whose per-response output sum equals the cumulative session delta plus completed child output. Otherwise it returns `None`.",
+      "text_sha256": "538f3c919eded77824bab1c32e1a1e5a61631098e3397ded88d764da00950ab1",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L142-S1: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.; F08-L142-S2: Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L142-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L142-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L142-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L142-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L146",
+      "location": "docs/design/components/MOD-005-telemetry.md:146",
+      "text": "| Effect and phase | Trigger | State already committed | Initiator | Submission owner | Executor or delivery owner | Response visibility and failure outcome | Retry or compensation | Completion evidence | Source and claim mode |",
+      "text_sha256": "1002a0fa27cdf360c059687141f2efc91397c311fcd72dd320705ffd90444dd7",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L146-S1: Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L146-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L146-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L148",
+      "location": "docs/design/components/MOD-005-telemetry.md:148",
+      "text": "| Register | Application opens an invocation receiver. | Invocation identity exists. | `Application` | `TelemetryReceiver` | In-process HTTP server | Returns transient endpoint and token. | Re-register only within the same unsubmitted invocation boundary. | `TelemetryDestination` | Source, CURRENT_BEHAVIOR |",
+      "text_sha256": "d919a32f21c22627247e4413fb16de473a10668f90383fcabd1cc53400fae251",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L148-S1: Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L148-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L148-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L149",
+      "location": "docs/design/components/MOD-005-telemetry.md:149",
+      "text": "| Export validate | Native exporter posts a batch. | Destination is registered. | Codex exporter | HTTP handler | `normalize` | 400, 403, 413, or 503 exposes failure to exporter. | Exporter may retry; harness makes no retry guarantee. | HTTP response | Source, CURRENT_BEHAVIOR |",
+      "text_sha256": "8b525b69683005a7e8e786bbf5107a9611c0bfdc00c5c1a661151d0ba7befd90",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L149-S1: Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L149-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L149-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L150",
+      "location": "docs/design/components/MOD-005-telemetry.md:150",
+      "text": "| Persist | Valid normalized batch reaches `Sink.write`. | No new spans from this batch are durable yet. | HTTP handler | `Sink` | `JsonlWriter` | 200 follows fsync. Storage failure records the exact export fingerprint and returns 503. | Only the same durable export closes its gap. | JSONL line plus sink state | Source, CURRENT_BEHAVIOR |",
+      "text_sha256": "e6d7b17c3a31eefbe9ab29d1ea8649c53dd1c7f02155197d7a2c7196fd826972",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L150-S1: Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.; F08-L150-S2: Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L150-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L150-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L150-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L150-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L151",
+      "location": "docs/design/components/MOD-005-telemetry.md:151",
+      "text": "| Report and gate | Invocation receiver closes after a two-second drain wait. | All observed exports are fixed on disk. | `Application` | `TelemetryReceiver` | Application guard | Any pending export or missing spans sets rejected/unknown and fences generation. | Preserve the incident; do not invent spans. | Content-bound report | Source and probe, CURRENT_BEHAVIOR |",
+      "text_sha256": "77a2dc25f7187a93b35450bd00a306cd531dcf194c7d7488586bebe852c8befb",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L151-S1: Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L151-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L151-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L155",
+      "location": "docs/design/components/MOD-005-telemetry.md:155",
+      "text": "| Operation or data flow | Actor and authentication source | Authorization, ownership, tenancy, and data filtering | Selector and mismatch behavior | Validation owner | Success response and disclosure | State owner and transition | Failure timing and side effects | Sensitive data and logging |",
+      "text_sha256": "6f34ff918956d9228039ebd4f8afe7f18cbb098ba42c929409f1091d33df0bf3",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L155-S1: Adds a scope, contract, evidence, limitation or operator fact required by Trust And Identity Boundaries.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L155-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L155-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L157",
+      "location": "docs/design/components/MOD-005-telemetry.md:157",
+      "text": "| OTLP export | Codex process presents the per-invocation random token. | Token selects one sink and trusted correlation set. | Header token; unknown token returns 403. Reserved attribute mismatch returns 400. | `TelemetryReceiver` and `normalize` | Empty JSON response; no token disclosure. | Sink owns telemetry durability; provider owns Work Item lifecycle. | Rejection occurs before or during persistence; failed exports remain visible in report. | Token is transient, excluded from path and JSONL, and hidden from dataclass repr. |",
+      "text_sha256": "2d0d7702e9ada1604d3ffe55eec1f0858f7686c6b0d85e77f178543d8f7dd247",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L157-S1: Adds a scope, contract, evidence, limitation or operator fact required by Trust And Identity Boundaries.; F08-L157-S2: Adds a scope, contract, evidence, limitation or operator fact required by Trust And Identity Boundaries.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L157-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L157-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L157-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L157-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L161",
+      "location": "docs/design/components/MOD-005-telemetry.md:161",
+      "text": "Each sink keeps `seen` identity-to-content fingerprints, failure counts, storage failure count, and `pending_exports`. `UsageLedger` keeps event fingerprints, cumulative counters, item totals, and unknown item IDs. The application keeps the original estimate from frozen assignment evidence and optional reviewed allowance.",
+      "text_sha256": "10c4bdf65d33fb91753eccdb7303747791938aa61efe6278fd952c107161a6a0",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L161-S1: Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.; F08-L161-S2: Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.; F08-L161-S3: Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L161-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L161-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L161-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L161-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L161-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L161-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L165",
+      "location": "docs/design/components/MOD-005-telemetry.md:165",
+      "text": "1. Authenticate the invocation token and bound the request body.",
+      "text_sha256": "53a5b706fa62884234d64d1488718e6658b486401caa2085027d94943bdc4c71",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L165-S1: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.; F08-L165-S2: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L165-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L165-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L165-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L165-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L166",
+      "location": "docs/design/components/MOD-005-telemetry.md:166",
+      "text": "2. Decode JSON or gzip and validate the OTLP tree.",
+      "text_sha256": "fcd59a4512325cf6531bc146742849f100ecc1e8f27c88378dd68fa313e4857f",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L166-S1: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.; F08-L166-S2: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L166-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L166-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L166-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L166-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L167",
+      "location": "docs/design/components/MOD-005-telemetry.md:167",
+      "text": "3. Add only trusted missing harness attributes.",
+      "text_sha256": "eca381faec421c1868314e6dba090b1d7b52bb1e53ce6dc44caa714137eff7a9",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L167-S1: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.; F08-L167-S2: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L167-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L167-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L167-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L167-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L168",
+      "location": "docs/design/components/MOD-005-telemetry.md:168",
+      "text": "4. Fingerprint the complete export and every native span with resource and scope metadata.",
+      "text_sha256": "e86850a51125b544d8a780d3e60ded8df7ee71eb865f6c9275a79e4b86e7d75f",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L168-S1: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.; F08-L168-S2: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L168-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L168-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L168-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L168-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L169",
+      "location": "docs/design/components/MOD-005-telemetry.md:169",
+      "text": "5. Reject conflicts, skip fully durable duplicates, or fsync the complete export.",
+      "text_sha256": "bac9c14423663df63648e1546ffff777d3b4f80e4085ab5eec16a34994ac29fe",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L169-S1: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.; F08-L169-S2: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L169-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L169-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L169-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L169-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L170",
+      "location": "docs/design/components/MOD-005-telemetry.md:170",
+      "text": "6. Report unresolved export fingerprints and a content digest.",
+      "text_sha256": "9b0d8eeae28f36fc19873e7aca9e78ce7d00f984d816b1d29b82e73c6ca78530",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L170-S1: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.; F08-L170-S2: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L170-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L170-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L170-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L170-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L171",
+      "location": "docs/design/components/MOD-005-telemetry.md:171",
+      "text": "7. Reconcile native usage sources. Unknown or conflicting evidence blocks generation.",
+      "text_sha256": "bb27e84de4d743b6be26489d24ccdbd55833cd5618a6bac14c874d5d4d9ae986",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L171-S1: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.; F08-L171-S2: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.; F08-L171-S3: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L171-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L171-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L171-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L171-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L171-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L171-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L172",
+      "location": "docs/design/components/MOD-005-telemetry.md:172",
+      "text": "8. At or above the active ceiling, request provider Holding for that item only.",
+      "text_sha256": "b34fdeb17ba5b0295722a2119edf4193f368fccc12497d44059be87c309614bb",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L172-S1: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.; F08-L172-S2: Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L172-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L172-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L172-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L172-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L196",
+      "location": "docs/design/components/MOD-005-telemetry.md:196",
+      "text": "The following diagram shows the separate effect boundaries described above. Failed or ambiguous proof retains evidence and prevents advancement.",
+      "text_sha256": "88a64c81651391abb9e742162e6ee047fb09bbb1a1c804b5d91c52b34add8458",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L196-S1: Adds a scope, contract, evidence, limitation or operator fact required by Processing Diagram.; F08-L196-S2: Adds a scope, contract, evidence, limitation or operator fact required by Processing Diagram.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L196-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L196-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L196-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L196-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L215",
+      "location": "docs/design/components/MOD-005-telemetry.md:215",
+      "text": "- Missing, rejected, conflicting, or incomplete telemetry is never counted as zero.",
+      "text_sha256": "eee191110472e2a1327ee3b1e2f6a1606b7131679acbc72104b79ca542ad51b6",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L215-S1: Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L215-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L215-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L216",
+      "location": "docs/design/components/MOD-005-telemetry.md:216",
+      "text": "- Reserved harness attributes come from receiver registration.",
+      "text_sha256": "34c9fabd7fa9a3ee6ef44ebed2ba130f100cd32c985adf55f845be7044f8ed57",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L216-S1: Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L216-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L216-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L217",
+      "location": "docs/design/components/MOD-005-telemetry.md:217",
+      "text": "- Native trace relationships and resource/scope metadata remain intact.",
+      "text_sha256": "2d3f5bb80da382b19421533d8a201991655eab542f05c6146b3f9b5b8338ac1e",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L217-S1: Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L217-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L217-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L218",
+      "location": "docs/design/components/MOD-005-telemetry.md:218",
+      "text": "- Span identity includes content fingerprint checking.",
+      "text_sha256": "1ebeca873358d4848b7d937acc707d35fa3a18297bf2380bbe6f79231a95ac67",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L218-S1: Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L218-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L218-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L219",
+      "location": "docs/design/components/MOD-005-telemetry.md:219",
+      "text": "- A different or partial retry cannot clear a failed export fingerprint.",
+      "text_sha256": "31a4b44407c0cc2d6a177633dc841bdd81cdcaecbba1096d7e57273dcb279122",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L219-S1: Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L219-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L219-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L220",
+      "location": "docs/design/components/MOD-005-telemetry.md:220",
+      "text": "- Cumulative counters cannot decrease.",
+      "text_sha256": "15674f815e99b773292b8803c1aa2ed38ff236377349fcf9b51a617807139355",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L220-S1: Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L220-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L220-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L221",
+      "location": "docs/design/components/MOD-005-telemetry.md:221",
+      "text": "- Native child and parent output are counted once.",
+      "text_sha256": "49e3a7a27790572cf62f1d1f73f84c41d5787460caa2a19906bd481433ea4e38",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L221-S1: Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L221-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L221-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L222",
+      "location": "docs/design/components/MOD-005-telemetry.md:222",
+      "text": "- The guard uses the immutable original high estimate and holds only the affected item.",
+      "text_sha256": "a110229179ad604ef2661d7ec413e4abae5a26d045d1e045db0bbf56e49b594d",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L222-S1: Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L222-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L222-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L226",
+      "location": "docs/design/components/MOD-005-telemetry.md:226",
+      "text": "`generation_guard_multiplier` defaults to 2.0. Another value requires an exact approval record. `administrative_review_limits` bounds hold review. The receiver body limit is 8 MiB compressed input and 8 MiB decoded output.",
+      "text_sha256": "0f22bed9d772cb250240ab80b5beec757be5e63cbfd582036972062632bb78c1",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L226-S1: Adds a scope, contract, evidence, limitation or operator fact required by Configuration.; F08-L226-S2: Adds a scope, contract, evidence, limitation or operator fact required by Configuration.; F08-L226-S3: Adds a scope, contract, evidence, limitation or operator fact required by Configuration.; F08-L226-S4: Adds a scope, contract, evidence, limitation or operator fact required by Configuration.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L226-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L226-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L226-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L226-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L226-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L226-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L226-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L226-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L230",
+      "location": "docs/design/components/MOD-005-telemetry.md:230",
+      "text": "The external interface is invocation-local OTLP/HTTP JSON on loopback. Stored files remain standard OTLP export JSONL with trusted span attributes. No dashboard dependency or separate telemetry daemon exists.",
+      "text_sha256": "67c7aff820d8e6c9992fe8e71067ad224eae42b148096cc5df5ca4a2e6fc9d4c",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L230-S1: Adds a scope, contract, evidence, limitation or operator fact required by External Interfaces.; F08-L230-S2: Adds a scope, contract, evidence, limitation or operator fact required by External Interfaces.; F08-L230-S3: Adds a scope, contract, evidence, limitation or operator fact required by External Interfaces.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L230-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L230-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L230-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L230-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L230-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L230-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L234",
+      "location": "docs/design/components/MOD-005-telemetry.md:234",
+      "text": "Views show generated tokens, original baseline, ceiling, overshoot, and whether generation may continue. Unknown evidence stays `unknown`. A hold review requires measured usage and an operator reference for a higher ceiling.",
+      "text_sha256": "2ea7e6467502a17bb79b8a128ca50b62fd05216069be7626bd953d56703f4ca0",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L234-S1: Adds a scope, contract, evidence, limitation or operator fact required by UI And Notification Behavior.; F08-L234-S2: Adds a scope, contract, evidence, limitation or operator fact required by UI And Notification Behavior.; F08-L234-S3: Adds a scope, contract, evidence, limitation or operator fact required by UI And Notification Behavior.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L234-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L234-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L234-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L234-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L234-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L234-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L238",
+      "location": "docs/design/components/MOD-005-telemetry.md:238",
+      "text": "`InvalidPayload`, `TooLarge`, and `StorageFailure` map to explicit HTTP responses. A report with zero spans, rejected exports, missing file, changed span content, unknown child usage, or inconsistent counters blocks the affected next generation boundary.",
+      "text_sha256": "cbda20e1ba44d4338708fdc61c9440f8b42f61173dc162e2a20b20248e51a4c2",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L238-S1: Adds a scope, contract, evidence, limitation or operator fact required by Error Handling.; F08-L238-S2: Adds a scope, contract, evidence, limitation or operator fact required by Error Handling.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L238-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L238-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L238-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L238-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L242",
+      "location": "docs/design/components/MOD-005-telemetry.md:242",
+      "text": "ACCEPTED for independent review. This artifact records implemented telemetry, focused tests, and bounded native limitations. It does not claim complete native flush or release acceptance.",
+      "text_sha256": "950e3382ac34e01ae682bca948b2678ae2ac3d2a0fef8608324b52c347f33bac",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L242-S1: Adds a scope, contract, evidence, limitation or operator fact required by Documentation Acceptance.; F08-L242-S2: Adds a scope, contract, evidence, limitation or operator fact required by Documentation Acceptance.; F08-L242-S3: Adds a scope, contract, evidence, limitation or operator fact required by Documentation Acceptance.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L242-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L242-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L242-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L242-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L242-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L242-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L246",
+      "location": "docs/design/components/MOD-005-telemetry.md:246",
+      "text": "READY for bounded maintenance of the implemented fail-closed telemetry and usage module. Current authority accepts the documented native retry gap without another paid probe or broader framework. The [release receipt](../../verification/release-acceptance.json) records accepted current source, 78 tests, the rebuilt installation, and installed acceptance. Independent documentation review remains pending.",
+      "text_sha256": "e60df55b0843f9b33e3f7014042d05722e5b6e50cba21116561de1a5a2e6b3b7",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L246-S1: Adds a scope, contract, evidence, limitation or operator fact required by Implementation Readiness.; F08-L246-S2: Adds a scope, contract, evidence, limitation or operator fact required by Implementation Readiness.; F08-L246-S3: Adds a scope, contract, evidence, limitation or operator fact required by Implementation Readiness.; F08-L246-S4: Adds a scope, contract, evidence, limitation or operator fact required by Implementation Readiness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L246-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L246-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L246-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L246-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L246-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L246-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L246-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L246-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F08-L250",
+      "location": "docs/design/components/MOD-005-telemetry.md:250",
+      "text": "[native-exporter-evidence.json](../../verification/native-exporter-evidence.json) is the real 0.159.2 receipt. It records one deliberately rejected 512-span batch, no observed retry, 1,200 later spans, and matching native/OTLP output usage of 11. The report explicitly does not prove complete flush. The deterministic 63-test receipt predates the newest fingerprint and content-binding cases; the [requirements matrix](../../verification/requirements-matrix.md) distinguishes baseline and current checks.",
+      "text_sha256": "8c08ce9295fdd04171f4fe72a0887eeffb3d26a3882a43f4b9829aabfdfbd236",
+      "needed": {
+        "status": "pass",
+        "evidence": "F08-L250-S1: Adds a scope, contract, evidence, limitation or operator fact required by Verification.; F08-L250-S2: Adds a scope, contract, evidence, limitation or operator fact required by Verification.; F08-L250-S3: Adds a scope, contract, evidence, limitation or operator fact required by Verification.; F08-L250-S4: Adds a scope, contract, evidence, limitation or operator fact required by Verification.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F08-L250-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L250-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L250-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F08-L250-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F08-L250-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L250-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L250-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F08-L250-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    }
+  ],
+  "manifest_sha256": "9eadaadb656190a7bf0537244c71241665da7f4624753fb028deb7ecedde9e2b"
+}

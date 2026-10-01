@@ -1,0 +1,829 @@
+{
+  "schema": "review-structured-artifact.review-unit-evidence.v1",
+  "candidate": {
+    "path": "docs/verification/requirements-matrix.md",
+    "sha256": "854bdf5726b6d55295b8ea40bf2bee103a1c0c90dfa185d065478e8a806ac656"
+  },
+  "review_units": [
+    {
+      "id": "F15-L11",
+      "location": "docs/verification/requirements-matrix.md:11",
+      "text": "This matrix covers all 10 required outcomes, 11 end-to-end scenarios, and six phases in the [implementation plan](../../IMPLEMENTATION-PLAN.md). It distinguishes real native execution from deterministic fixture checks and installed recovery replay.",
+      "text_sha256": "c834ed0d7eb4330f295cf4ce70e14ffebd53f8f04fae5cfb7082386660e6530a",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L11-S1: Adds a scope, contract, evidence, limitation or operator fact required by Requirements-to-verification matrix.; F15-L11-S2: Adds a scope, contract, evidence, limitation or operator fact required by Requirements-to-verification matrix.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L11-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L11-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L11-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L11-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L15",
+      "location": "docs/verification/requirements-matrix.md:15",
+      "text": "- **Current source:** commit `8f0e5dc5ed8fee097095178afe48ab152d0c61fd`, independently accepted in [final-source-review.json](final-source-review.json). All **78 tests** and Ruff pass. The [release receipt](release-acceptance.json) binds source files and the installed wheel.",
+      "text_sha256": "a4114a47690951b26c96c685377949f1e2f6e5508cf0a4336fc3947e9ed6aace",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L15-S1: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.; F15-L15-S2: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.; F15-L15-S3: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L15-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L15-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L15-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L15-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L15-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L15-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L16",
+      "location": "docs/verification/requirements-matrix.md:16",
+      "text": "- **Real execution:** [six-item-acceptance.json](six-item-acceptance.json) records three Completed items in each mode, native independent reviews, source and integrated checks, question continuation, and a reviewed usage hold. These executions predate the final corrections; their original manifests remain intact.",
+      "text_sha256": "4d629bebf85b2b2d1c8b06db82fbd00d5c8b2cac9b84a8334a36e6999216a5dc",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L16-S1: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.; F15-L16-S2: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L16-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L16-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L16-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L16-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L17",
+      "location": "docs/verification/requirements-matrix.md:17",
+      "text": "- **Installed current package:** all 24 packaged implementation files match reviewed source. Both retained batches replay successfully with exactly the original invocation IDs: SOLO 9 and MULTITASK 12, with zero new invocations. Configuration reload, later-item discovery, pause/resume, and exact-revision terminal/dashboard parity pass against the installed package using explicit deterministic fixtures.",
+      "text_sha256": "546f1a79a13c6053dc083bf3d317d2327986301569b8ff95bbd0fe786d4bf869",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L17-S1: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.; F15-L17-S2: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.; F15-L17-S3: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L17-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L17-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L17-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L17-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L17-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L17-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L18",
+      "location": "docs/verification/requirements-matrix.md:18",
+      "text": "- **Native exporter limitation:** [native-exporter-evidence.json](native-exporter-evidence.json) records the tested first-export 503 gap and the accepted fail-closed boundary. It does not establish lossless export or complete flush.",
+      "text_sha256": "ab0f57332e8dd405af20a0f9002e0727e65d046bb5da5f149a7797d523d57e2b",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L18-S1: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.; F15-L18-S2: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L18-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L18-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L18-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L18-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L19",
+      "location": "docs/verification/requirements-matrix.md:19",
+      "text": "- **Documentation review:** current ARC/HLD and six module designs require their independent artifact verdict. Source acceptance alone does not approve documentation.",
+      "text_sha256": "141bae870883bdb995920f770fd568d1894234aa13ba863df9f1f3f84b45d62e",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L19-S1: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.; F15-L19-S2: Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L19-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L19-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L19-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L19-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L23",
+      "location": "docs/verification/requirements-matrix.md:23",
+      "text": "| ID | Required outcome | Implementation and focused tests | Evidence and boundary |",
+      "text_sha256": "6dd0c357458dc8aa5b7bf40baac84f7ab1b3cddab09d6254fab696fce1788969",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L23-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L23-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L23-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L25",
+      "location": "docs/verification/requirements-matrix.md:25",
+      "text": "| RO-01 | Terminal-first application with read-only overall dashboard. | [MOD-006](../design/components/MOD-006-views.md); `cli.main`, `terminal`, `snapshot`, `create_dashboard_server`; `test_dashboard_serves_exact_projection_and_rejects_mutation`. | Current installed terminal controls and populated dashboard pass. The dashboard labels persisted run state as recorded evidence, rather than claiming process liveness. |",
+      "text_sha256": "5e34cfa21f3b84b1f84ab8320f9b804b48b0c9487071839a4abd5f4ff6c35bbc",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L25-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L25-S2: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L25-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L25-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L25-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L25-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L26",
+      "location": "docs/verification/requirements-matrix.md:26",
+      "text": "| RO-02 | Until-terminal execution and optional watch for later items. | [MOD-003](../design/components/MOD-003-provider-coordination.md); `RunController.run`; `test_three_item_execution_obeys_selected_mode`; `test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work`. | Both installed batches settle with Completed=3. Installed watch fixture sees no idle or paused dispatch, then admits one later Ready item once after resume. That discovery fixture substitutes delivery; real delivery is established separately by the six native items. |",
+      "text_sha256": "7985a5a5d4478a48a34236f2d40b4a165167be6073b51a95c6c20072c22efbc8",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L26-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L26-S2: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L26-S3: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L26-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L26-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L26-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L26-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L26-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L26-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L27",
+      "location": "docs/verification/requirements-matrix.md:27",
+      "text": "| RO-03 | Provider lifecycle, Coordinator scheduling, Orchestrator delivery. | MOD-003; `validate_transition`, `FileProvider.transition`, `Application._run_item`; `test_valid_admission_and_reject_missing_actor_stale_revision`; `test_candidate_bound_independent_review`; `test_stale_frozen_assignment_blocks_admission_before_invocation`; `test_starting_continuation_requires_content_bound_provider_admission`. | Six native items bind actor, candidate, reviewer, checks, merge, and provider completion. Current regressions prevent stale Ready assignments or unbound Starting continuations from launching acceptance. |",
+      "text_sha256": "11fb5da18c77772357aac88cf1204e4874efdf04aa36934ab7e7606e7a6e9de1",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L27-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L27-S2: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L27-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L27-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L27-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L27-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L28",
+      "location": "docs/verification/requirements-matrix.md:28",
+      "text": "| RO-04 | Configurable role CLI bindings and common adapter interface; Codex first. | [MOD-001](../design/components/MOD-001-configuration.md), [MOD-002](../design/components/MOD-002-execution.md); `AgentBinding`, `AgentCliAdapter`, registry, `CodexAdapter`; `test_duplicate_keys_and_unsupported_adapter`; `test_effective_authentication_context_is_bound_to_session`. | Codex 0.159.2 matches the registry latest and remains authenticated. Other production adapters are outside version 1. Native children remain managed by their CLI. |",
+      "text_sha256": "4918489615c06cd36c449cf50cdf673fc1d24f723f13713ce308e33b5bff5090",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L28-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L28-S2: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L28-S3: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L28-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L28-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L28-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L28-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L28-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L28-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L29",
+      "location": "docs/verification/requirements-matrix.md:29",
+      "text": "| RO-05 | Per-call reload and immutable in-flight configuration. | MOD-001; `load_config`, `ConfigSnapshot`, `Application._invoke`; `test_reload_is_deeply_immutable`; `test_skill_change_invalidates_binding`; `test_accepted_workflow_remains_frozen_and_changed_scope_blocks_invocation`. | Installed fixture changes the model between two harness calls, preserves the first snapshot, applies the new model to the second, and rejects changed-profile resume. It makes zero model calls. |",
+      "text_sha256": "2cd937f7aa3ce5c63896419d1f98042f95c5dadbde0f4682d80bf389daf7ed1e",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L29-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L29-S2: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L29-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L29-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L29-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L29-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L30",
+      "location": "docs/verification/requirements-matrix.md:30",
+      "text": "| RO-06 | CLI-specific OpenTelemetry and attributable standard OTLP JSONL. | [MOD-005](../design/components/MOD-005-telemetry.md); `prepare_telemetry`, receiver, sink; `test_http_attribution_retry_and_gzip`; `test_invalid_conflict_oversize_and_durability_failure`. | Six real deliveries retain native root/child/run telemetry. The 503 probe retains later spans while fencing its missing batch; no complete-flush claim. |",
+      "text_sha256": "525789acbcd82f2743313098abb39965ebd619a39022bfb078be2c62324afb0a",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L30-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L30-S2: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L30-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L30-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L30-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L30-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L31",
+      "location": "docs/verification/requirements-matrix.md:31",
+      "text": "| RO-07 | Trace views joined to provider and invocation authority. | MOD-006; incremental `trace_snapshot`, `capture`; `test_trace_projection_reads_only_appended_complete_lines_and_orders_by_time`; `test_cold_projection_rejects_same_count_content_change`. | Installed dashboard shows 39,220 native spans and zero unresolved observations for the completed concurrent fixture. Historical receipts are labeled `legacy_count_only`; new receipts verify count and content. |",
+      "text_sha256": "ceb94e1052503aa4d4eb62c3988d53e180f080563b87f86bcf6b5adc876a0c03",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L31-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L31-S2: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L31-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L31-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L31-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L31-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L32",
+      "location": "docs/verification/requirements-matrix.md:32",
+      "text": "| RO-08 | Warning and item-local hold at initially 2 times original high estimate. | MOD-005; analytics, `usage_view`, `guard`, `review_hold`; `test_unknown_dedup_cumulative_and_crossing`; `test_original_estimate_cannot_be_reset_by_provider_edit`; `test_hold_review_retries_frozen_request_after_allowance_write`. | Real concurrent slug held at 1,264 generated tokens over original ceiling 200, retained its owner, and completed after bounded review raised the ceiling to 5,000. |",
+      "text_sha256": "f393ba9fd40236a86df84bfa2fb6029cf1ea086d3fbb74b19283ae79b4b41eb8",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L32-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L32-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L32-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L33",
+      "location": "docs/verification/requirements-matrix.md:33",
+      "text": "| RO-09 | Recovery without duplicate execution; unknown usage never zero. | [MOD-004](../design/components/MOD-004-evidence.md), MOD-005; invocation/provider/answer/delivery recovery; `test_submitted_unobserved_invocation_is_not_relaunched`; `test_existing_reservation_without_retained_session_evidence_never_relaunches`; `test_saved_bad_telemetry_never_advances_on_retry`. | Current installed replays preserve all original IDs. Deterministic crash tests cover unknown submission, missing owner evidence, exact provider recovery, merge/check boundaries, answer continuation, and frozen hold-review recovery. |",
+      "text_sha256": "95017a52322e4b2e00b403d4956d20ed62eb8396181203aa87e089d94608553f",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L33-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.; F15-L33-S2: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L33-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L33-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L33-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L33-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L34",
+      "location": "docs/verification/requirements-matrix.md:34",
+      "text": "| RO-10 | No model calls for unchanged polls, status, validation, or dashboard refresh. | MOD-003, MOD-006; `test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work`; `test_control_storage_remains_inspectable_when_generation_profile_is_missing`; `test_long_lived_view_observes_invalid_configuration_without_reusing_generation_settings`. | Installed status, terminal controls, dashboard refresh, both batch replays, and idle-watch fixture create no model calls. |",
+      "text_sha256": "700d0ceed798168a68f50b48bc781ce6d9a1be79b9e59639af4dba5e500e91d2",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L34-S1: Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L34-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L34-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L38",
+      "location": "docs/verification/requirements-matrix.md:38",
+      "text": "| ID | Scenario | Focused test evidence | Installed or native evidence |",
+      "text_sha256": "81e56d1aa2bfadb1fce418a66425ba5630a8a7629d35a298620ec05b8b355ca5",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L38-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L38-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L38-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L40",
+      "location": "docs/verification/requirements-matrix.md:40",
+      "text": "| E2E-01 | Valid workflow evidence advances; missing, wrong, stale, or unauthorized evidence blocks. | `test_valid_admission_and_reject_missing_actor_stale_revision`; `test_candidate_bound_independent_review`; `test_native_child_freshness_candidate_verdict`; stale-assignment and content-bound-admission cases. | Native fresh reviewers accept exact candidates for all six items. Current missing/invalid cases block before protected advancement. |",
+      "text_sha256": "b485cfd13a9c4d4e820b40be822420fa2871656f547c002dac7a219167ecd6e6",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L40-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.; F15-L40-S2: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L40-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L40-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L40-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L40-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L41",
+      "location": "docs/verification/requirements-matrix.md:41",
+      "text": "| E2E-02 | Delivery and independent review produce provider-backed completion. | Candidate review and `test_delivery_crash_boundaries_reconcile_once`. | Every native item has producer, reviewer, candidate, main commit, both check boundaries, and archived Completed provider receipt. |",
+      "text_sha256": "9d3eb2a19f12c337405796ffd477c11466c1daf72e4a4e8696e03a2033a82e85",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L41-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L41-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L41-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L42",
+      "location": "docs/verification/requirements-matrix.md:42",
+      "text": "| E2E-03 | Capacity and isolated concurrent attribution. | `test_three_item_execution_obeys_selected_mode`; `test_capacity_serializes_actual_async_requests`; HTTP attribution tests. | Real maximum overlap SOLO=1 and MULTITASK=2, with separate item telemetry. |",
+      "text_sha256": "cbdeb0cc93c0503509dde2a4780c7e69f3d9b9c5ed49bb88edb233bcb2142841",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L42-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L42-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L42-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L43",
+      "location": "docs/verification/requirements-matrix.md:43",
+      "text": "| E2E-04 | Edit changes next call without mutating current settings or session identity. | Immutable reload, authentication binding, frozen-workflow tests. | Current installed deterministic adapter fixture checks two actual application invocation boundaries and changed-profile resume rejection. |",
+      "text_sha256": "c0fa50e3d9648589bf9254e44f0a31f180bfdc1aceb41a1729c018bb8b6898d4",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L43-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L43-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L43-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L44",
+      "location": "docs/verification/requirements-matrix.md:44",
+      "text": "| E2E-05 | Answer resumes exact item and canonical session. | `test_question_gate_requires_canonical_owner_and_exact_approval`; `test_crash_after_answer_commit_resumes_exact_operation`. | Real concurrent greeting uses exact question `greeting-default`, answer digest, canonical owner, approve disposition, and provider commit. |",
+      "text_sha256": "a1a0d8bdb03e404a33351d43ac885a0615c9c9537f031084bbaf47de68ab4e53",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L44-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L44-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L44-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L45",
+      "location": "docs/verification/requirements-matrix.md:45",
+      "text": "| E2E-06 | Restart reconciles without duplicate launch. | `test_submitted_unobserved_invocation_is_not_relaunched`; `test_returned_observations_rebuild_missing_stage`; reservation, provider, and delivery recovery tests. | Current installed SOLO and MULTITASK replay create zero invocation IDs. |",
+      "text_sha256": "d16fd36f9dde21ff335eae1e59faaeed4bf74ae1560f3c88e675ef5e2e36af9e",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L45-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L45-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L45-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L46",
+      "location": "docs/verification/requirements-matrix.md:46",
+      "text": "| E2E-07 | Threshold holds one item while safe independent work continues. | Usage crossing, canonical hold, frozen review-retry, and MULTITASK tests. | Real concurrent slug hold and reviewed release retain its owner; all three concurrent items complete. |",
+      "text_sha256": "299a4c6566ff34a37c1872cc41cb2ba4b262ac5d92b4f0ea1f037730a42fdc44",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L46-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L46-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L46-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L47",
+      "location": "docs/verification/requirements-matrix.md:47",
+      "text": "| E2E-08 | Missing/conflicting telemetry stays unknown and fences next generation. | Saved bad telemetry, missing receipt file, same-count changed content, exact retry-gap tests. | Real native probe rejects a 512-span first batch, observes no retry, retains later 1,200 spans, and fences advancement despite matching native/OTLP output of 11 tokens. |",
+      "text_sha256": "d0fa5657a22cd754a739a2dfbd7708b3f3091576e4f2c2daf4f051ad8827b49a",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L47-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L47-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L47-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L48",
+      "location": "docs/verification/requirements-matrix.md:48",
+      "text": "| E2E-09 | Until-terminal settles and watch discovers later items without idle calls. | Three-item mode tests and watch/pause/resume/discovery regression. | Both installed retained batches settle; current installed deterministic watch admits one later item only after resume and does not repeat it. |",
+      "text_sha256": "bf6d6387cb1963de52716c5ae68bc806c9e6019f54f71fe073ef835af223569c",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L48-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L48-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L48-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L49",
+      "location": "docs/verification/requirements-matrix.md:49",
+      "text": "| E2E-10 | Equal terminal/dashboard facts for the same projection revision. | Read-only projection, provider-revision coherence, current-config-view tests. | Installed actual terminal renderer and HTTP dashboard receive the same captured projection; all 11 terminal status fields match, including exact revision, items, counts, usage, freshness, blockers, and uncertainty. |",
+      "text_sha256": "d88e6b4c2980d7507b7e9a168f95347416811acee6540a206f719c493431d0f6",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L49-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L49-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L49-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L50",
+      "location": "docs/verification/requirements-matrix.md:50",
+      "text": "| E2E-11 | Retry deduplication, resume/run spans, partial lines, exporter failure, incremental reads. | HTTP/gzip/durability tests; exact/partial retry tests; `test_partial_line_is_not_published_or_overwritten`; incremental trace tests. | Native resumed answer/root/child/run spans and tested exporter behavior are retained. Lossless native shutdown remains an explicit limitation, accepted by design authority with fail-closed advancement. |",
+      "text_sha256": "9fa2547b69a14ab153fcaa75712f6df825bded385b79f8c14519ff81fbeea7a0",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L50-S1: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.; F15-L50-S2: Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L50-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L50-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L50-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L50-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L54",
+      "location": "docs/verification/requirements-matrix.md:54",
+      "text": "| Phase | Completion evidence |",
+      "text_sha256": "9e3309bb2495b5603ddc98692ee626b176d16a382b5f933ccaac38174aa196c9",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L54-S1: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L54-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L54-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L56",
+      "location": "docs/verification/requirements-matrix.md:56",
+      "text": "| 1. Project boundary | Installed package, CLI, independent repository, source/test roots, transferred provenance, reconciled ARC/HLD paths, operator guide. |",
+      "text_sha256": "cc2b8223297a7b60efa5dd9c1ae6c2db12c6cc425bbee4c1737d922b7f5a8db7",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L56-S1: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.; F15-L56-S2: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L56-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L56-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L56-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L56-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L57",
+      "location": "docs/verification/requirements-matrix.md:57",
+      "text": "| 2. Contracts and designs | Six source-backed module designs with mandatory section order, actual interfaces, gates, effects, and test plans; this matrix. Independent documentation verdict is tracked separately. |",
+      "text_sha256": "619e583275c1b8efd494759e083e9b41bed86aa7ad1c1dca9e60ffb3df96bc24",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L57-S1: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.; F15-L57-S2: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.; F15-L57-S3: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L57-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L57-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L57-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L57-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L57-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L57-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L58",
+      "location": "docs/verification/requirements-matrix.md:58",
+      "text": "| 3. First complete execution path | Six retained native deliveries establish provider, Codex, telemetry, review, checks, integration, terminal outcome. |",
+      "text_sha256": "41a4faa9c5e9223ef6b3aeca7fbddd5fdc5da24844b5b3be17fc5a89520113b9",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L58-S1: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.; F15-L58-S2: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L58-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L58-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L58-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L58-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L59",
+      "location": "docs/verification/requirements-matrix.md:59",
+      "text": "| 4. Sustained coordination | Three items per mode; actual overlap, exact answer, reviewed hold, current installed terminal controls, watch discovery, no-call replay. |",
+      "text_sha256": "39395f49ebc3e7ba40fe3b937f53f5faecd840cbb6996cf5330f0c450ef3331d",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L59-S1: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.; F15-L59-S2: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L59-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L59-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L59-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L59-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L60",
+      "location": "docs/verification/requirements-matrix.md:60",
+      "text": "| 5. Recovery and usage | Current 78-test source manifest, independent source ACCEPT, installed recovery replay, unknown/gap fences, immutable estimate and identity. |",
+      "text_sha256": "131ae898ae67ef7e57435c6e6a53bcc5e86af07646e734d8da1f95cd98d4b9d7",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L60-S1: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.; F15-L60-S2: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L60-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L60-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L60-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L60-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L61",
+      "location": "docs/verification/requirements-matrix.md:61",
+      "text": "| 6. Acceptance and delivery | Current built/installed wheel matches reviewed source, populated dashboard, terminal controls, exact-revision parity, package/operator instructions, release receipt. Documentation review remains its final gate. |",
+      "text_sha256": "b6248143a40b6bc55c40db1a9c44a45711548d7dc6a3e74035578166110215c9",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L61-S1: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.; F15-L61-S2: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.; F15-L61-S3: Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L61-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L61-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L61-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L61-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L61-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L61-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L65",
+      "location": "docs/verification/requirements-matrix.md:65",
+      "text": "The tested Codex 0.159.2 first-export 503 scenario showed no retry. Later exports persisted 1,200 spans and native/OTLP both reported 11 output tokens. Process exit and an unchanged two-second follow-up were observed. Complete flush is unproved because 512 rejected spans remain missing and original batch bytes were not retained.",
+      "text_sha256": "a1ce19319c6af87d806bfef3200f384f20a4b28006da64a02868b6a92c5cea39",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L65-S1: Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.; F15-L65-S2: Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.; F15-L65-S3: Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.; F15-L65-S4: Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L65-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L65-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L65-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L65-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L65-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L65-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L65-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L65-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L67",
+      "location": "docs/verification/requirements-matrix.md:67",
+      "text": "Design authority accepts truthful gap preservation and fail-closed advancement. This evidence neither requires another paid probe nor authorizes a replacement invocation or invented spans. If original batch bytes are available in another incident, reingest through the existing correlation/dedup boundary and clear the gap only after durability is verified.",
+      "text_sha256": "1f5688009e81f56ffc70fde5e366377475483b81b80240e3fd1aa83514753e91",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L67-S1: Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.; F15-L67-S2: Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.; F15-L67-S3: Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L67-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L67-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L67-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L67-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L67-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L67-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L71",
+      "location": "docs/verification/requirements-matrix.md:71",
+      "text": "The executable route is file-provider/main-branch delivery with explicit coordination `none`, SOLO or authorized MULTITASK, independent candidate clones, and Codex 0.159.2. Claim-helper projects and other production CLI adapters remain unsupported and fenced. Real delivery evidence remains bound to its historical source; current corrections are established by deterministic regressions, independent review, installed content matching, and zero-invocation recovery replay. See [release-acceptance.json](release-acceptance.json) for current release status and [progress.md](progress.md) for the final documentation verdict.",
+      "text_sha256": "de59af4b2d90cac5d862b8fafa8aa4caafb89b73987b18e757323858baa07e07",
+      "needed": {
+        "status": "pass",
+        "evidence": "F15-L71-S1: Adds a scope, contract, evidence, limitation or operator fact required by Release boundary.; F15-L71-S2: Adds a scope, contract, evidence, limitation or operator fact required by Release boundary.; F15-L71-S3: Adds a scope, contract, evidence, limitation or operator fact required by Release boundary.; F15-L71-S4: Adds a scope, contract, evidence, limitation or operator fact required by Release boundary.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F15-L71-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L71-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L71-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F15-L71-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F15-L71-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L71-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L71-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F15-L71-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    }
+  ],
+  "manifest_sha256": "7313377524df1ee5f4d7230a2e3ba3175da1d6ddef8b0d594ee102046dd49586"
+}

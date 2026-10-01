@@ -1,0 +1,131 @@
+{
+  "authorities": [
+    {
+      "path": "docs/verification/document-acceptance-essential.md",
+      "sha256": "895c0735bce50833dbdd6e21a75ca332e84ce64f94975322bc1edc2b66a62bb7"
+    },
+    {
+      "path": ".agent-ops/document-review-candidate.json",
+      "sha256": "2f5011a9ba37a162e2201f82203534e2bf7629839c17da525000f75a4b4deeca"
+    },
+    {
+      "path": "IMPLEMENTATION-PLAN.md",
+      "sha256": "0e604e926eaf5be83eff68bc2f4a7474e7c3b7515633470d2ec4fba4e1738e64"
+    },
+    {
+      "path": "docs/verification/final-source-review.json",
+      "sha256": "844f28fed47bd6b2ff44cbbd583640393c5bc35021b446e0e75b96e723949c37"
+    },
+    {
+      "path": "docs/verification/release-acceptance.json",
+      "sha256": "5ee9c86e9c9cc83e4612121f12f953b449e088ee4d06c46dbba43b8d27b988e1"
+    },
+    {
+      "path": "docs/verification/native-exporter-evidence.json",
+      "sha256": "1a5170e0157ab09a6af32b3a47d0eb1268ae7ca2d7dd96d7851764d927ad53db"
+    },
+    {
+      "path": "docs/verification/six-item-acceptance.json",
+      "sha256": "ac37e54171799e130a72278de9e6f9b456273d3b3672240b95a3bd62426146f9"
+    },
+    {
+      "path": "README.md",
+      "sha256": "ddad26970f0ecee800d91a1b9a17892a9172e5797d25465e11c2fb3ecbedf6c8"
+    },
+    {
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "sha256": "1a864f6c1d047f2ac513c6be44ef1108cddfe746f5d67c1138c751d24f5205f3"
+    },
+    {
+      "path": "docs/design/components/MOD-001-configuration.md",
+      "sha256": "6719928fdde58cf49a1fa899ac5c29c707516bcd0de163cb5928df2b1700465e"
+    },
+    {
+      "path": "docs/design/components/MOD-002-execution.md",
+      "sha256": "a46c8d1b4df3e5939dc8dc1f9be373f2fda4b4df68ca051f01217dee9d8061c2"
+    },
+    {
+      "path": "docs/design/components/MOD-003-provider-coordination.md",
+      "sha256": "9ecf3aa431f419543e71356d794d060c133672e32b480e820c37eec5a7f04ff2"
+    },
+    {
+      "path": "docs/design/components/MOD-004-evidence.md",
+      "sha256": "c7562161a92d49aed4cffafccb18985d8fb27df3fe95b98624c26c18e847305a"
+    },
+    {
+      "path": "docs/design/components/MOD-005-telemetry.md",
+      "sha256": "1ccd46c9f32412211b44aeb1ec68927bc59a619e69c9bd10bf075cc22171e2fa"
+    },
+    {
+      "path": "docs/design/components/MOD-006-views.md",
+      "sha256": "783ef845b70c1f948699cee981004deec9be2a92bffb772c3e7a4a01b4b828a7"
+    },
+    {
+      "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+      "sha256": "6ce651be8aa5d41830a9ffe44a2a0f2dcdeb082d913ee0a8bf40f73a3f9bd538"
+    },
+    {
+      "path": "docs/operator-guide.md",
+      "sha256": "fbfa43a87686c5a12a4b9530ae5480d33a68e305ac87b08436de948fa42effef"
+    },
+    {
+      "path": "docs/verification/requirements-matrix.md",
+      "sha256": "854bdf5726b6d55295b8ea40bf2bee103a1c0c90dfa185d065478e8a806ac656"
+    },
+    {
+      "path": "docs/verification/document-acceptance-pages.json",
+      "sha256": "7cb1e7e92035f9bd8bd50c7cc9fef3b527fc54c05d7ec385c0a8b4cb8be51551"
+    },
+    {
+      "path": "docs/verification/document-acceptance-links.json",
+      "sha256": "de32ba76c77999ae7fc3e0c194bee5a7ebdcd584642a1c4ebc1a20f654060e96"
+    }
+  ],
+  "candidate": {
+    "path": "docs/verification/final-source-review.json",
+    "sha256": "844f28fed47bd6b2ff44cbbd583640393c5bc35021b446e0e75b96e723949c37"
+  },
+  "checklists": [
+    {
+      "canonical": "/Users/martinbechard/.agents/skills/review-structured-artifact/references/review-checklist-structured.md",
+      "canonical_sha256": "510b081be79b1d24373e4164470fa06c9e971f34f4a237fcb25ab9a73fb4b681",
+      "completed": "docs/verification/document-acceptance-checklist-structured.md",
+      "completed_count": 36,
+      "completed_sha256": "fc2319ec789961e264deccec32637d72dfd856431af9ba416e81853fb9ef4deb",
+      "errors": [],
+      "expected_count": 36,
+      "valid": true
+    }
+  ],
+  "completed_coverage": 36,
+  "declared_verdict": "GOOD",
+  "errors": [],
+  "evidence_sha256": "1681fbc02dffe90854cd0a8c7c2f16cdb353275f88cb56081957bb240e2c4e7b",
+  "expected_checklists": [
+    "/Users/martinbechard/.agents/skills/review-structured-artifact/references/review-checklist-structured.md"
+  ],
+  "expected_coverage": 36,
+  "pass_one_status": "clear",
+  "prior_approval_eligible": true,
+  "review_unit_manifest": {
+    "errors": [],
+    "manifest_sha256": "7ff940e39b40ea92831e3e28876deeae8913e6a21c0d10eb23fb23138e7f5f32",
+    "path": "docs/verification/document-acceptance-units-12.json",
+    "review_unit_count": 26,
+    "sha256": "4960d6a491e83c3bf591572a99caf63c426fbd7174a545b62f2a5cba78827d77",
+    "valid": true
+  },
+  "roots": {
+    "project": "/Users/martinbechard/dev/agentic-harness",
+    "references": [
+      "/Users/martinbechard/dev/dev-methodology"
+    ],
+    "skills": [
+      "/Users/martinbechard/.agents/skills"
+    ]
+  },
+  "schema": "review-structured-artifact.validation-receipt.v3",
+  "semantic_approval": false,
+  "stage": "pass-2",
+  "valid": true
+}

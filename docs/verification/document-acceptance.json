@@ -1,0 +1,311 @@
+{
+  "verdict": "GOOD",
+  "stage": "pass-2",
+  "reviewer": "Northstar /root/documentation_acceptance",
+  "independent_semantic_judgment": true,
+  "at": "2026-10-01T02:17:25.043960+00:00",
+  "candidate": {
+    "path": ".agent-ops/document-review-candidate.json",
+    "sha256": "2f5011a9ba37a162e2201f82203534e2bf7629839c17da525000f75a4b4deeca",
+    "files": {
+      "IMPLEMENTATION-PLAN.md": "0e604e926eaf5be83eff68bc2f4a7474e7c3b7515633470d2ec4fba4e1738e64",
+      "README.md": "ddad26970f0ecee800d91a1b9a17892a9172e5797d25465e11c2fb3ecbedf6c8",
+      "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md": "1a864f6c1d047f2ac513c6be44ef1108cddfe746f5d67c1138c751d24f5205f3",
+      "docs/design/components/MOD-001-configuration.md": "6719928fdde58cf49a1fa899ac5c29c707516bcd0de163cb5928df2b1700465e",
+      "docs/design/components/MOD-002-execution.md": "a46c8d1b4df3e5939dc8dc1f9be373f2fda4b4df68ca051f01217dee9d8061c2",
+      "docs/design/components/MOD-003-provider-coordination.md": "9ecf3aa431f419543e71356d794d060c133672e32b480e820c37eec5a7f04ff2",
+      "docs/design/components/MOD-004-evidence.md": "c7562161a92d49aed4cffafccb18985d8fb27df3fe95b98624c26c18e847305a",
+      "docs/design/components/MOD-005-telemetry.md": "1ccd46c9f32412211b44aeb1ec68927bc59a619e69c9bd10bf075cc22171e2fa",
+      "docs/design/components/MOD-006-views.md": "783ef845b70c1f948699cee981004deec9be2a92bffb772c3e7a4a01b4b828a7",
+      "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md": "6ce651be8aa5d41830a9ffe44a2a0f2dcdeb082d913ee0a8bf40f73a3f9bd538",
+      "docs/operator-guide.md": "fbfa43a87686c5a12a4b9530ae5480d33a68e305ac87b08436de948fa42effef",
+      "docs/verification/final-source-review.json": "844f28fed47bd6b2ff44cbbd583640393c5bc35021b446e0e75b96e723949c37",
+      "docs/verification/native-exporter-evidence.json": "1a5170e0157ab09a6af32b3a47d0eb1268ae7ca2d7dd96d7851764d927ad53db",
+      "docs/verification/release-acceptance.json": "5ee9c86e9c9cc83e4612121f12f953b449e088ee4d06c46dbba43b8d27b988e1",
+      "docs/verification/requirements-matrix.md": "854bdf5726b6d55295b8ea40bf2bee103a1c0c90dfa185d065478e8a806ac656",
+      "docs/verification/six-item-acceptance.json": "ac37e54171799e130a72278de9e6f9b456273d3b3672240b95a3bd62426146f9"
+    }
+  },
+  "source_commit": "8f0e5dc5ed8fee097095178afe48ab152d0c61fd",
+  "pass_one": "clear; reconfirmed after non-material plan-status correction",
+  "checklist_unique_question_count": 218,
+  "checklist_counts": {
+    "structured": 36,
+    "architecture": 39,
+    "high-level-design": 51,
+    "module-design": 72,
+    "unit-test-plan": 12,
+    "interface-patterns": 8
+  },
+  "page_status": "PAGE_VERIFICATION_EVIDENCE_READY",
+  "exact_line_units": 2080,
+  "sentence_table_list_and_receipt_fragments": 3173,
+  "mechanical_receipts": [
+    {
+      "path": "docs/verification/document-acceptance-receipt-01.json",
+      "sha256": "f2b98420e00af9d97bbf4a9249fcedfae2f5821d6aba9cfd5a6579d2f1082a97",
+      "candidate": {
+        "path": "IMPLEMENTATION-PLAN.md",
+        "sha256": "0e604e926eaf5be83eff68bc2f4a7474e7c3b7515633470d2ec4fba4e1738e64"
+      },
+      "valid": true,
+      "expected_coverage": 48,
+      "completed_coverage": 48,
+      "review_units": 67
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-02.json",
+      "sha256": "a298056f844a1bb79e4c438e3e74bf2ac3ae209dfe8e0c767bd9fd92f98195e6",
+      "candidate": {
+        "path": "README.md",
+        "sha256": "ddad26970f0ecee800d91a1b9a17892a9172e5797d25465e11c2fb3ecbedf6c8"
+      },
+      "valid": true,
+      "expected_coverage": 36,
+      "completed_coverage": 36,
+      "review_units": 5
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-03.json",
+      "sha256": "f608a56a2322205feb2c3704943c5443b4b09a50582c4c53435695f783bc19fb",
+      "candidate": {
+        "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+        "sha256": "1a864f6c1d047f2ac513c6be44ef1108cddfe746f5d67c1138c751d24f5205f3"
+      },
+      "valid": true,
+      "expected_coverage": 83,
+      "completed_coverage": 83,
+      "review_units": 261
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-04.json",
+      "sha256": "bd83a28c115313ad6ad7cb54a54f3dbc859019481b675a9a8ab2611cf2585090",
+      "candidate": {
+        "path": "docs/design/components/MOD-001-configuration.md",
+        "sha256": "6719928fdde58cf49a1fa899ac5c29c707516bcd0de163cb5928df2b1700465e"
+      },
+      "valid": true,
+      "expected_coverage": 128,
+      "completed_coverage": 128,
+      "review_units": 73
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-05.json",
+      "sha256": "d2137edd6ad62b487691f8afe517b3b4dbaa97eed7dbe279fca10495a5e23029",
+      "candidate": {
+        "path": "docs/design/components/MOD-002-execution.md",
+        "sha256": "a46c8d1b4df3e5939dc8dc1f9be373f2fda4b4df68ca051f01217dee9d8061c2"
+      },
+      "valid": true,
+      "expected_coverage": 128,
+      "completed_coverage": 128,
+      "review_units": 83
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-06.json",
+      "sha256": "2016524a507e525daf678bca77e06295844c54155e32f23fa798ec24ba672d90",
+      "candidate": {
+        "path": "docs/design/components/MOD-003-provider-coordination.md",
+        "sha256": "9ecf3aa431f419543e71356d794d060c133672e32b480e820c37eec5a7f04ff2"
+      },
+      "valid": true,
+      "expected_coverage": 120,
+      "completed_coverage": 120,
+      "review_units": 100
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-07.json",
+      "sha256": "2f34a4c258994f653b8de4af9ea81693a5a055c2e68c7c4b5149e209be226fa8",
+      "candidate": {
+        "path": "docs/design/components/MOD-004-evidence.md",
+        "sha256": "c7562161a92d49aed4cffafccb18985d8fb27df3fe95b98624c26c18e847305a"
+      },
+      "valid": true,
+      "expected_coverage": 120,
+      "completed_coverage": 120,
+      "review_units": 89
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-08.json",
+      "sha256": "7c2bf811e754f9af149ab79d4be190c20e11a07307fe7ba089388eae2f35a613",
+      "candidate": {
+        "path": "docs/design/components/MOD-005-telemetry.md",
+        "sha256": "1ccd46c9f32412211b44aeb1ec68927bc59a619e69c9bd10bf075cc22171e2fa"
+      },
+      "valid": true,
+      "expected_coverage": 120,
+      "completed_coverage": 120,
+      "review_units": 86
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-09.json",
+      "sha256": "8cc6b24b374b53eac4ffe70e97a724c1b25cf103e99105b3d159661596403b3d",
+      "candidate": {
+        "path": "docs/design/components/MOD-006-views.md",
+        "sha256": "783ef845b70c1f948699cee981004deec9be2a92bffb772c3e7a4a01b4b828a7"
+      },
+      "valid": true,
+      "expected_coverage": 120,
+      "completed_coverage": 120,
+      "review_units": 87
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-10.json",
+      "sha256": "817334dd28d35493696d64ecde4fa3e611806b2775660ed02391da2472e6e56d",
+      "candidate": {
+        "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+        "sha256": "6ce651be8aa5d41830a9ffe44a2a0f2dcdeb082d913ee0a8bf40f73a3f9bd538"
+      },
+      "valid": true,
+      "expected_coverage": 95,
+      "completed_coverage": 95,
+      "review_units": 600
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-11.json",
+      "sha256": "bd3c391fbab899d317d6e9c34116074c0af6b614b6f04ae83c8709e109d92a0f",
+      "candidate": {
+        "path": "docs/operator-guide.md",
+        "sha256": "fbfa43a87686c5a12a4b9530ae5480d33a68e305ac87b08436de948fa42effef"
+      },
+      "valid": true,
+      "expected_coverage": 36,
+      "completed_coverage": 36,
+      "review_units": 21
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-12.json",
+      "sha256": "b65f0c36d54ec20339902be40ec2c50c8c4bb8bbf0bc5cbab1928c9eddf28b4d",
+      "candidate": {
+        "path": "docs/verification/final-source-review.json",
+        "sha256": "844f28fed47bd6b2ff44cbbd583640393c5bc35021b446e0e75b96e723949c37"
+      },
+      "valid": true,
+      "expected_coverage": 36,
+      "completed_coverage": 36,
+      "review_units": 26
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-13.json",
+      "sha256": "4c38c19c391fa7edb6955861a49eab4e32ddd5718017a0f4edd49eb7efddddf9",
+      "candidate": {
+        "path": "docs/verification/native-exporter-evidence.json",
+        "sha256": "1a5170e0157ab09a6af32b3a47d0eb1268ae7ca2d7dd96d7851764d927ad53db"
+      },
+      "valid": true,
+      "expected_coverage": 36,
+      "completed_coverage": 36,
+      "review_units": 41
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-14.json",
+      "sha256": "299e5abb4fc7fc66082d754b10454a440bb9c491147d5103aca00e9d5b912410",
+      "candidate": {
+        "path": "docs/verification/release-acceptance.json",
+        "sha256": "5ee9c86e9c9cc83e4612121f12f953b449e088ee4d06c46dbba43b8d27b988e1"
+      },
+      "valid": true,
+      "expected_coverage": 36,
+      "completed_coverage": 36,
+      "review_units": 154
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-15.json",
+      "sha256": "63fefaa527ec8984129384a3f587563ce945cebc4134397040fcbc0dd9b5e4a5",
+      "candidate": {
+        "path": "docs/verification/requirements-matrix.md",
+        "sha256": "854bdf5726b6d55295b8ea40bf2bee103a1c0c90dfa185d065478e8a806ac656"
+      },
+      "valid": true,
+      "expected_coverage": 48,
+      "completed_coverage": 48,
+      "review_units": 39
+    },
+    {
+      "path": "docs/verification/document-acceptance-receipt-16.json",
+      "sha256": "f0c6cfce78f394031c215ff3e625a0a160df4295bc52e693571245f883efd822",
+      "candidate": {
+        "path": "docs/verification/six-item-acceptance.json",
+        "sha256": "ac37e54171799e130a72278de9e6f9b456273d3b3672240b95a3bd62426146f9"
+      },
+      "valid": true,
+      "expected_coverage": 36,
+      "completed_coverage": 36,
+      "review_units": 348
+    }
+  ],
+  "material_findings": [],
+  "nonblocking_findings": [
+    "18 sibling provenance path_outside_root link findings; exact historical links are not indispensable to current conclusions",
+    "Operator-guide admission paragraph can expose its existing ordered steps as a list in a later authorized edit"
+  ],
+  "limitations": [
+    "Six real deliveries are historical; current correction evidence is deterministic and installed replay, not new native delivery.",
+    "Native first-export 512-span gap remains missing; complete flush is unproved.",
+    "Selected file/main route, coordination none and Codex 0.159.2 only."
+  ],
+  "new_model_calls": 0,
+  "source_or_candidate_edits_by_reviewer": 0,
+  "next_owner_action": "Record final documentation completion in existing progress/closeout record without changing accepted candidate bytes.",
+  "evidence_files": {
+    "docs/verification/document-acceptance-build.py": "f8649c53ebf8e54b3ad0daa2b15b7769386951bf63a6f872b7bc1b127cd59978",
+    "docs/verification/document-acceptance-checklist-architecture.md": "478c9b3a40752031051fd928fbdf07cc96725a91ccda970010047d36986f8e97",
+    "docs/verification/document-acceptance-checklist-high-level-design.md": "5987b557cfecd2766b1271990d1dbb6fb4dea7385f7c30a64192824da9afdb48",
+    "docs/verification/document-acceptance-checklist-interface-patterns.md": "be6aa22a2c3449b6ff34bec63e279be27497b178a48ef19856b7036999c6ffb4",
+    "docs/verification/document-acceptance-checklist-module-design.md": "0d07dede59a6174f9fa524277ee61bf600f58a21bc4cf6037df57f41dbdeda39",
+    "docs/verification/document-acceptance-checklist-structured.md": "fc2319ec789961e264deccec32637d72dfd856431af9ba416e81853fb9ef4deb",
+    "docs/verification/document-acceptance-checklist-unit-test-plan.md": "5f0e219cb2f82c1e95cb6fb0dc7c26611e9038ed48aec13e1d439f53f9fbb3af",
+    "docs/verification/document-acceptance-essential.md": "895c0735bce50833dbdd6e21a75ca332e84ce64f94975322bc1edc2b66a62bb7",
+    "docs/verification/document-acceptance-findings.md": "454720a5a64be2f4c1e0ab554a1a2946aea42f5e19e7cc84da2553ef64ae46c0",
+    "docs/verification/document-acceptance-links.json": "de32ba76c77999ae7fc3e0c194bee5a7ebdcd584642a1c4ebc1a20f654060e96",
+    "docs/verification/document-acceptance-pages.json": "7cb1e7e92035f9bd8bd50c7cc9fef3b527fc54c05d7ec385c0a8b4cb8be51551",
+    "docs/verification/document-acceptance-receipt-01.json": "f2b98420e00af9d97bbf4a9249fcedfae2f5821d6aba9cfd5a6579d2f1082a97",
+    "docs/verification/document-acceptance-receipt-02.json": "a298056f844a1bb79e4c438e3e74bf2ac3ae209dfe8e0c767bd9fd92f98195e6",
+    "docs/verification/document-acceptance-receipt-03.json": "f608a56a2322205feb2c3704943c5443b4b09a50582c4c53435695f783bc19fb",
+    "docs/verification/document-acceptance-receipt-04.json": "bd83a28c115313ad6ad7cb54a54f3dbc859019481b675a9a8ab2611cf2585090",
+    "docs/verification/document-acceptance-receipt-05.json": "d2137edd6ad62b487691f8afe517b3b4dbaa97eed7dbe279fca10495a5e23029",
+    "docs/verification/document-acceptance-receipt-06.json": "2016524a507e525daf678bca77e06295844c54155e32f23fa798ec24ba672d90",
+    "docs/verification/document-acceptance-receipt-07.json": "2f34a4c258994f653b8de4af9ea81693a5a055c2e68c7c4b5149e209be226fa8",
+    "docs/verification/document-acceptance-receipt-08.json": "7c2bf811e754f9af149ab79d4be190c20e11a07307fe7ba089388eae2f35a613",
+    "docs/verification/document-acceptance-receipt-09.json": "8cc6b24b374b53eac4ffe70e97a724c1b25cf103e99105b3d159661596403b3d",
+    "docs/verification/document-acceptance-receipt-10.json": "817334dd28d35493696d64ecde4fa3e611806b2775660ed02391da2472e6e56d",
+    "docs/verification/document-acceptance-receipt-11.json": "bd3c391fbab899d317d6e9c34116074c0af6b614b6f04ae83c8709e109d92a0f",
+    "docs/verification/document-acceptance-receipt-12.json": "b65f0c36d54ec20339902be40ec2c50c8c4bb8bbf0bc5cbab1928c9eddf28b4d",
+    "docs/verification/document-acceptance-receipt-13.json": "4c38c19c391fa7edb6955861a49eab4e32ddd5718017a0f4edd49eb7efddddf9",
+    "docs/verification/document-acceptance-receipt-14.json": "299e5abb4fc7fc66082d754b10454a440bb9c491147d5103aca00e9d5b912410",
+    "docs/verification/document-acceptance-receipt-15.json": "63fefaa527ec8984129384a3f587563ce945cebc4134397040fcbc0dd9b5e4a5",
+    "docs/verification/document-acceptance-receipt-16.json": "f0c6cfce78f394031c215ff3e625a0a160df4295bc52e693571245f883efd822",
+    "docs/verification/document-acceptance-sentences-01.json": "1fe723f9209ed75a6e20e08faaa8b7c6a7a5f22cbc325af31a9a50b614c21bac",
+    "docs/verification/document-acceptance-sentences-02.json": "ac82c698d20fcca81c9c7a2b550d7632247b91adeffda631548c0c15bb80e91e",
+    "docs/verification/document-acceptance-sentences-03.json": "546d55f67b06d6b6ea4fa3465bb3efc2943e8307d1eb5359f0f63571be352120",
+    "docs/verification/document-acceptance-sentences-04.json": "faf991d01af3d359b63d70279d3732bacea04d3bfa5c8ed0b8ff09d955ae05e1",
+    "docs/verification/document-acceptance-sentences-05.json": "d0616487a1178b06e54a0fee2b124a11af0f930b96a9ca1c9701658a04359bf3",
+    "docs/verification/document-acceptance-sentences-06.json": "f5f8e065ef9d5cf83bf0adfa854dc4e093d1f31d5673610a57cbee12c305bc9d",
+    "docs/verification/document-acceptance-sentences-07.json": "7afcc4c202908728a70ece948abd864dc5f82f82a6e692d31e6d33c2f8cc1afd",
+    "docs/verification/document-acceptance-sentences-08.json": "d9cedbee54d78d0ca8a222b948af2d048d8bb8325db84ec45353a1990d0c7155",
+    "docs/verification/document-acceptance-sentences-09.json": "0d7702a9fe70a7aa9b03c3f263692f4b424029aa2517dd88efe0baec5d509626",
+    "docs/verification/document-acceptance-sentences-10.json": "d195eed75b30a4ddfc879d9ff3e7ad0f6e0ca435d46329472360e64593130aad",
+    "docs/verification/document-acceptance-sentences-11.json": "9bbd6d141863b1fc6cb5ef2140c1775aa43fe39b40cd2cb4e2580674a74dffef",
+    "docs/verification/document-acceptance-sentences-12.json": "3c28fc136f54cbac4ec3fcc882a11f7877cde5ac5b96ae864e4c191d06bfb794",
+    "docs/verification/document-acceptance-sentences-13.json": "8cee0092467f62ce79dfe0f08f433bdca9b0d60d3afcf0ddb901237a42294290",
+    "docs/verification/document-acceptance-sentences-14.json": "ac8a5ff940b526878859edec9523ccef7cf467d75911062a0035351a18a6a1cf",
+    "docs/verification/document-acceptance-sentences-15.json": "1d8c30240b0bf287b8a870fcd5b2d663936449479cf079dd999b2a0b470d55aa",
+    "docs/verification/document-acceptance-sentences-16.json": "9c3f1303a6f99355b0c9510016fc01ef2a7384a7aca8184d5e1c810a7f2fdeca",
+    "docs/verification/document-acceptance-units-01.json": "35f8795a167e9c59c7133b6c19c664e5d4dfc013a9037aec0f3a1d89df44eb5b",
+    "docs/verification/document-acceptance-units-02.json": "6d11ffc59f727a4ada7bb3047cc970427f28d2381e59f22c965ee5071337722d",
+    "docs/verification/document-acceptance-units-03.json": "cce40a10cd6cf85d2f1971c5dcc443111999aadeeb83829c93db8707e3a778cf",
+    "docs/verification/document-acceptance-units-04.json": "73f67012dd04c183508f9576c8fd5caec390a515dd2940e73725c6c6c7bf8d3c",
+    "docs/verification/document-acceptance-units-05.json": "aa3c5f945c11b9783da1d2d76872c9f91beaf9413851991b44fc95e83ae4904f",
+    "docs/verification/document-acceptance-units-06.json": "f4467a1270ad311ad90eb811babb683e382ebeb194ee5ee0f2cd3584aed13912",
+    "docs/verification/document-acceptance-units-07.json": "85402ba9317e6eb61530d0a3e8ba4cd44180d4ead62f106b45b675a979665132",
+    "docs/verification/document-acceptance-units-08.json": "d569d854ec499b430f491dd1baa6aeacbacacf4d33fad0f62e1e88331ab890be",
+    "docs/verification/document-acceptance-units-09.json": "481312486630ea0f8526632cc8e6d784ef3e4dd701c4631968cb52bd3c4edb30",
+    "docs/verification/document-acceptance-units-10.json": "2245f138fe7994369571ebc9e2c701514c8d29603bf3c082afae5ff771742ba8",
+    "docs/verification/document-acceptance-units-11.json": "3e8143ae5afb7c078b4a5b188a600f1d1bee94f6cd3e06a7163383a0199c387f",
+    "docs/verification/document-acceptance-units-12.json": "4960d6a491e83c3bf591572a99caf63c426fbd7174a545b62f2a5cba78827d77",
+    "docs/verification/document-acceptance-units-13.json": "4c492c9281e6582b18e7d46e6854b83a6201fc0396bc9a032f82646151081398",
+    "docs/verification/document-acceptance-units-14.json": "5ab4a4cfea142c244eaf90a8d62d01e4e84d44f9d769446137162b280e91220b",
+    "docs/verification/document-acceptance-units-15.json": "a5bd8d1ce563373d827478b1644363a7ffd11d43bb9487148b704122fe8330c6",
+    "docs/verification/document-acceptance-units-16.json": "1cc43a1f808021deb3a9cedaceb2fe54b8d4ac2e921a094f68498b30ba6289ca"
+  }
+}

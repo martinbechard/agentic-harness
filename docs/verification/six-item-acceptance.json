@@ -1,0 +1,431 @@
+{
+  "status": "six_work_items_completed_release_audit_pending",
+  "cli_version": "0.159.2",
+  "modes": {
+    "solo": {
+      "provider_head": "386fa2e3feb8bd7a5458ac2ad9d0902cb2f0ef18",
+      "max_simultaneous_harness_invocations": 1,
+      "invocations": [
+        {
+          "invocation_id": "415903fd-f0f0-4450-8b30-4980aba07fd7",
+          "item": "dummy-greeting",
+          "action": "accept",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:27:41.078177+00:00",
+          "end": "2026-09-30T20:27:46.419291+00:00"
+        },
+        {
+          "invocation_id": "2399d84e-263b-4686-b84e-14685ae17dca",
+          "item": "dummy-greeting",
+          "action": "admit",
+          "role": "coordinator",
+          "start": "2026-09-30T20:27:28.464726+00:00",
+          "end": "2026-09-30T20:27:38.537473+00:00"
+        },
+        {
+          "invocation_id": "c7256b99-d6b9-4c74-9190-af3485ec5440",
+          "item": "dummy-greeting",
+          "action": "produce-review",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:27:49.052540+00:00",
+          "end": "2026-09-30T20:28:55.627652+00:00"
+        },
+        {
+          "invocation_id": "d3b52674-a07c-4279-a57b-9a5ca75e8b70",
+          "item": "dummy-slug",
+          "action": "produce-review",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:29:21.032194+00:00",
+          "end": "2026-09-30T20:30:22.504288+00:00"
+        },
+        {
+          "invocation_id": "07fc0e72-f7f1-4eda-a147-4bf8a916a249",
+          "item": "dummy-slug",
+          "action": "accept",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:29:12.314037+00:00",
+          "end": "2026-09-30T20:29:18.011229+00:00"
+        },
+        {
+          "invocation_id": "2859ea78-f570-4806-bc26-e2ecddeeedaf",
+          "item": "dummy-slug",
+          "action": "admit",
+          "role": "coordinator",
+          "start": "2026-09-30T20:29:00.875908+00:00",
+          "end": "2026-09-30T20:29:09.817562+00:00"
+        },
+        {
+          "invocation_id": "75ba3e34-f3c4-47bf-b9ae-cec31cdeafd0",
+          "item": "dummy-clamp",
+          "action": "produce-review",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:26:26.505398+00:00",
+          "end": "2026-09-30T20:27:24.100444+00:00"
+        },
+        {
+          "invocation_id": "1b7f9658-4a70-4197-bc0d-092c00fab5de",
+          "item": "dummy-clamp",
+          "action": "admit",
+          "role": "coordinator",
+          "start": "2026-09-30T20:26:01.925547+00:00",
+          "end": "2026-09-30T20:26:15.357629+00:00"
+        },
+        {
+          "invocation_id": "56c45fcb-26af-46b4-b3dd-3b0cf40814f8",
+          "item": "dummy-clamp",
+          "action": "accept",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:26:17.992490+00:00",
+          "end": "2026-09-30T20:26:23.314775+00:00"
+        }
+      ],
+      "items": [
+        {
+          "item_id": "dummy-clamp",
+          "state": "Completed",
+          "provider_revision": "6339b0b713ebe212a6a73ef155fb675c11eb22e2d9b36fcec42d85c73cd8ff51",
+          "candidate": "7ab36d063549a5e063d4f0f63a119492d2e298c4",
+          "integrated_commit": "abb4193d1cb7a1d2c1fb1dfbc5c97f2f2a5a71d3",
+          "reviewer": "01a0f3ff-cc16-79b1-ae6e-0319b312b878",
+          "producer": "01a0f3ff-1ea9-7382-ac57-6daf8d5fb2d8",
+          "review_evidence_sha256": "03a0dd6274268f69d80714bfd1348a03a67a2b681137871ec7309760fdca4b95",
+          "source_check_count": 1,
+          "integrated_check_count": 1,
+          "usage": {
+            "status": "below",
+            "generated_tokens": 1162,
+            "original_high": 5000,
+            "ceiling": 10000.0,
+            "may_generate": true,
+            "overshoot": 0
+          },
+          "delivery_sha256": "8ba3aed7955dec40a29d142abc5be8ee0ac619d881391087b1b0670fadd8fbcc"
+        },
+        {
+          "item_id": "dummy-greeting",
+          "state": "Completed",
+          "provider_revision": "4ec07afbec9419cccdeca06b1fa17e1a4fc177299eba83a79894bbf7479c9f1d",
+          "candidate": "c822b7e0b088a53554deb5f7f82915900c4abadd",
+          "integrated_commit": "3a9d8a5fe502c78c327e3a52d34e304605876808",
+          "reviewer": "01a0f401-3172-7880-8e26-bcb82850764a",
+          "producer": "01a0f400-6332-7812-8772-27f532fd04c8",
+          "review_evidence_sha256": "b05b3b2afeb1f27744202aa47a05c17dfa619e6ee7690ee632b223b699b7599b",
+          "source_check_count": 1,
+          "integrated_check_count": 1,
+          "usage": {
+            "status": "below",
+            "generated_tokens": 1105,
+            "original_high": 5000,
+            "ceiling": 10000.0,
+            "may_generate": true,
+            "overshoot": 0
+          },
+          "delivery_sha256": "e1ad91cfcc448887abeebce06d97dae6fe8a3ac89839193c1f285ac71bd7e3dd"
+        },
+        {
+          "item_id": "dummy-slug",
+          "state": "Completed",
+          "provider_revision": "e51e6f702cc942151c66d1fea56f984349936fe4ea18708bbee3788e4e6faa25",
+          "candidate": "3aeb38a1ff976809d028bfb0fa379dd8fd89e52b",
+          "integrated_commit": "e0df77f40b808faae43685d59b6196284d1b6f5b",
+          "reviewer": "01a0f402-8418-7ce3-8f52-33359dc9a7d8",
+          "producer": "01a0f401-c781-7361-ba6c-91e8accba426",
+          "review_evidence_sha256": "9ec49739512734155df7466f3eede2b5ccaa6b47106dc38bfed845d2c7cec029",
+          "source_check_count": 1,
+          "integrated_check_count": 1,
+          "usage": {
+            "status": "below",
+            "generated_tokens": 1220,
+            "original_high": 5000,
+            "ceiling": 10000.0,
+            "may_generate": true,
+            "overshoot": 0
+          },
+          "delivery_sha256": "6e922871986d2e45afa4f8733560f417bb70bb531eb995fc3b2cabe59916355a"
+        }
+      ],
+      "installed_replay": {
+        "outcome": "successful",
+        "new_invocations": 0,
+        "sha256": "c46c0c4c33719b4a327268a88e6be9248ffd053f4997d29da868eeaa87e81ca1"
+      }
+    },
+    "multitask": {
+      "provider_head": "0905ae5e2b472a5408a987479fa116c172c66021",
+      "max_simultaneous_harness_invocations": 2,
+      "invocations": [
+        {
+          "invocation_id": "9f28c77b-076c-42f0-b895-87e0e13fc12a",
+          "item": "dummy-greeting",
+          "action": "accept",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:29:02.546603+00:00",
+          "end": "2026-09-30T20:29:13.297342+00:00"
+        },
+        {
+          "invocation_id": "b05f7d73-05cd-4f9d-8294-a14a055739b8",
+          "item": "dummy-greeting",
+          "action": "admit",
+          "role": "coordinator",
+          "start": "2026-09-30T20:28:49.763052+00:00",
+          "end": "2026-09-30T20:28:59.990865+00:00"
+        },
+        {
+          "invocation_id": "4b9290e7-c757-4507-8108-694e4878e2fe",
+          "item": "dummy-greeting",
+          "action": "answer-8ed63e684b451ee76c142be2b44716613e04dc1df02d56213de4a1c870502b56",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:33:42.848931+00:00",
+          "end": "2026-09-30T20:33:51.377005+00:00"
+        },
+        {
+          "invocation_id": "14497049-e2c7-4d97-b0de-9ed0c240f10e",
+          "item": "dummy-greeting",
+          "action": "produce-review",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:29:15.991141+00:00",
+          "end": "2026-09-30T20:29:24.549252+00:00"
+        },
+        {
+          "invocation_id": "3634bbe1-2fa2-4c08-b427-f68dc427b88e",
+          "item": "dummy-greeting",
+          "action": "produce-review-8ed63e684b451ee76c142be2b44716613e04dc1df02d56213de4a1c870502b56",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:37:37.049580+00:00",
+          "end": "2026-09-30T20:38:34.539071+00:00"
+        },
+        {
+          "invocation_id": "a5a70a28-51ff-4bd7-9390-fe6666df3f10",
+          "item": "dummy-slug",
+          "action": "produce-review",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:29:49.681008+00:00",
+          "end": "2026-09-30T20:30:48.382922+00:00"
+        },
+        {
+          "invocation_id": "ad6c0943-87b4-4bf1-81f9-4df17eb33366",
+          "item": "dummy-slug",
+          "action": "accept",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:29:39.035766+00:00",
+          "end": "2026-09-30T20:29:47.023590+00:00"
+        },
+        {
+          "invocation_id": "0f12c57e-b34f-4c8e-8218-b24f7f8e2e75",
+          "item": "dummy-slug",
+          "action": "admit",
+          "role": "coordinator",
+          "start": "2026-09-30T20:29:27.931603+00:00",
+          "end": "2026-09-30T20:29:36.537413+00:00"
+        },
+        {
+          "invocation_id": "584fb1c0-ffae-487c-979d-c903ff915d71",
+          "item": "dummy-slug",
+          "action": "review-hold-cd7544b13d3c08ba94595c21bb1fdfdc948109f30d21db3a74021aa4ca0b56b2",
+          "role": "coordinator",
+          "start": "2026-09-30T20:33:54.693194+00:00",
+          "end": "2026-09-30T20:34:07.547687+00:00"
+        },
+        {
+          "invocation_id": "df85176e-ca69-40c7-a453-24ad680085f4",
+          "item": "dummy-clamp",
+          "action": "produce-review",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:28:58.542255+00:00",
+          "end": "2026-09-30T20:30:06.390517+00:00"
+        },
+        {
+          "invocation_id": "ba648664-9a73-4e71-a8f1-7dd84148d254",
+          "item": "dummy-clamp",
+          "action": "admit",
+          "role": "coordinator",
+          "start": "2026-09-30T20:28:38.228387+00:00",
+          "end": "2026-09-30T20:28:47.326670+00:00"
+        },
+        {
+          "invocation_id": "125ea20f-5850-4ff3-add7-385f5d740d49",
+          "item": "dummy-clamp",
+          "action": "accept",
+          "role": "orchestrator",
+          "start": "2026-09-30T20:28:49.755632+00:00",
+          "end": "2026-09-30T20:28:55.826298+00:00"
+        }
+      ],
+      "items": [
+        {
+          "item_id": "dummy-clamp",
+          "state": "Completed",
+          "provider_revision": "ec60a08a62f81f9f5585fc8058926100578cef1ea0e643430ce51fcae139301b",
+          "candidate": "6aee2c3dbcc74974601889d2c4eba32a4a2b0761",
+          "integrated_commit": "612d378b3ddf1249b6edbd6e210cde56af2bde23",
+          "reviewer": "01a0f402-354f-76d3-b57d-2f8362bb8c7c",
+          "producer": "01a0f401-6faf-7b72-a8ed-817a17eb5b2a",
+          "review_evidence_sha256": "203f262197b7a386237ec63ea4dd209757929dcc377d433358a62b2fc99900a8",
+          "source_check_count": 1,
+          "integrated_check_count": 1,
+          "usage": {
+            "status": "below",
+            "generated_tokens": 1256,
+            "original_high": 5000,
+            "ceiling": 10000.0,
+            "may_generate": true,
+            "overshoot": 0
+          },
+          "delivery_sha256": "e01434e2d0ad5834f6fab49bc81751f7b2dfb37343772b6a41ab94f054393fec"
+        },
+        {
+          "item_id": "dummy-greeting",
+          "state": "Completed",
+          "provider_revision": "5b240a17e6b34da30a20145c4b6dc86a97b473bfc898b7123a68eeacda8e1b66",
+          "candidate": "fc5af60f873770e96073c11e0973cbea754db942",
+          "integrated_commit": "c3832b00e97f3be4402721050593c8019b3658a0",
+          "reviewer": "01a0f40a-045d-7e13-a0da-0082c8dd2e07",
+          "producer": "01a0f401-a16b-7830-bee2-85d4969bb24a",
+          "review_evidence_sha256": "c533220e1303c0ebf817e38b1372e4511df3557588b862d8fe764b0ca4f475ea",
+          "source_check_count": 1,
+          "integrated_check_count": 1,
+          "usage": {
+            "status": "below",
+            "generated_tokens": 1129,
+            "original_high": 5000,
+            "ceiling": 10000.0,
+            "may_generate": true,
+            "overshoot": 0
+          },
+          "delivery_sha256": "229b7a48763f407c650ab78da7774a80119319205bf37883cab734e1b70c08e0"
+        },
+        {
+          "item_id": "dummy-slug",
+          "state": "Completed",
+          "provider_revision": "7199fe19498e72833858c7b422f4c0009d0ec7bce8249984b294a284749ffb75",
+          "candidate": "0f57ad781f0ee0400b40048e407185647b7f2f56",
+          "integrated_commit": "7f73bb14a945f9974c03081720262ec856409bfa",
+          "reviewer": "01a0f402-d392-7e53-8530-510354a2c1d7",
+          "producer": "01a0f402-2fe2-7b12-87c4-f44a2f14d16d",
+          "review_evidence_sha256": "5cd4107c9c7b104f102197cdbd52b7fa8714d786020ecb9bd6e8947c416c6f61",
+          "source_check_count": 1,
+          "integrated_check_count": 1,
+          "usage": {
+            "status": "below",
+            "generated_tokens": 1264,
+            "original_high": 100,
+            "ceiling": 5000,
+            "may_generate": true,
+            "overshoot": 0
+          },
+          "delivery_sha256": "2d6f7668882ef3760041ce847b02ace4bcc9c94e4ba55ebdf4898302b831300c"
+        }
+      ],
+      "installed_replay": {
+        "outcome": "successful",
+        "new_invocations": 0,
+        "sha256": "b44270bb988df4ccc2d4e0b7b8da3cc198fd59ac258306f71b69632195bad98a"
+      }
+    }
+  },
+  "controls": {
+    "question": {
+      "item_id": "dummy-greeting",
+      "question_id": "greeting-default",
+      "owner": "25b08061-9332-4918-a41b-c0c861023de3",
+      "answer_digest": "549e46e2b00fe003a96466790a877238c1f6a5b5a62857a8983a095ef5b90340",
+      "disposition": "approve",
+      "answer_provider_commit": "5c1c0eedf5438876343580c4ebd17976ece02135"
+    },
+    "usage_hold": {
+      "item_id": "dummy-slug",
+      "retained_owner": "caaaefe4-17d7-4892-8fc4-b717a7a8d3ad",
+      "original_high": 100,
+      "original_ceiling": 200.0,
+      "generated_tokens_at_hold": 1264,
+      "overshoot_at_hold": 1064.0,
+      "reviewed_ceiling": 5000,
+      "review_invocation": "584fb1c0-ffae-487c-979d-c903ff915d71"
+    }
+  },
+  "source_manifests": {
+    "source-manifest.json": {
+      "sha256": "2ff962129638a3e16d2ba18d25a8caaf5990ae2c0496ebf4634ebb4cd8e19bce",
+      "files": {
+        "src/backlog_harness/__init__.py": "7319cf50efca6c8fde68460c73bfc38f9f42ff3b91c5b53ecbf9c63384d6b6a4",
+        "src/backlog_harness/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+        "src/backlog_harness/adapters/__init__.py": "1378a6cb98d3dc5dc3eb00265a04a7d4c3205860532b00187473d33f9e571d17",
+        "src/backlog_harness/adapters/codex/__init__.py": "fe364cbe41f5044aa99c1ae734c838fdeb92736bcf74b79575b7830da0c133d1",
+        "src/backlog_harness/adapters/codex/adapter.py": "a14d9989e83b2f47103ed4c0e72ccd1bfdfdf7deaa07b3e598b1da77abce4837",
+        "src/backlog_harness/adapters/registry.py": "ef8c76257d7cfaaa83fb20b50ef160c7aba1df533ff97e5321aacf55aa25e07e",
+        "src/backlog_harness/analytics.py": "e471e7959fb4f8420a9693daa01e7499b6f936e0a7dd3e6a81a22d40895e2100",
+        "src/backlog_harness/application.py": "8e32d6331d4b53eebf2ddd3e66e04ad9ce57f09ba0eb7066438a8183dd3e9011",
+        "src/backlog_harness/cli.py": "d732c2c57e62ae0cda0086b7a5b2acbbf5095753bd1d77d2fb3a083362361ebe",
+        "src/backlog_harness/contracts.py": "c950fb33e64de11289178b2a7bc7d6b927aa66294a720b12f7acf6bd301964f8",
+        "src/backlog_harness/coordination.py": "c759e2bca2c0754e7e231bb74b87f2c631d2240c6313930a3afe060268f6bb47",
+        "src/backlog_harness/dashboard.py": "b35ca912ed9b4e6822a75bf2352691ce4e7bdee3901b26e73718cf72f9fca582",
+        "src/backlog_harness/delivery.py": "23813febd7ee262191298090e6c83fc4314a8182c1ff360930319540dcaecb9e",
+        "src/backlog_harness/evidence.py": "46221a62bf0bd70736bec4f6459bb75ba17643491beb2386576f7f9f2d334b6a",
+        "src/backlog_harness/native_evidence.py": "c2a6fdaa376bbae831651e7624528c8ebd586c8b969bacfa55875572dcb6c2d3",
+        "src/backlog_harness/projections.py": "bba3860a730a8a31ea00180df15f4a54d61ffc5cb926b4561ffa73acebfda762",
+        "src/backlog_harness/provider.py": "1e42e0e502f76df694bf9561154a0182cf0a928a872eac3e741e7ae90fc90daa",
+        "src/backlog_harness/runtime.py": "bc87ea8f7810bd65a53b213b327c1b79eed964a0ae02dc4b3b9eef042105a729",
+        "src/backlog_harness/static/dashboard.css": "f95cf3a62d068eb502832eff0991c9a753709ae517388cd0731bf85dcb9e5f08",
+        "src/backlog_harness/static/dashboard.js": "58a263f2d1f53e84b8e04554a96876101e3c4d68239452951cefb2937a6e81bd",
+        "src/backlog_harness/static/index.html": "5ad670d7c325f9d7e4c446a3932a48a224922c56370ccf6a63c8a8c6aebe1bb5",
+        "src/backlog_harness/telemetry.py": "8c3fbc55640f837173ceb85903286e62cbcfd8e5a3a6cd81fc5c0b98a0093d98",
+        "src/backlog_harness/terminal.py": "59e48fafad046de97b7f24214c05c03c46bb26902ceb54d6ff27d065e7e890e4",
+        "src/backlog_harness/workflow.py": "46d14b3d81c7b6e7b8a1daf6564fd902a61d1571e394facbd408f0c3cec957ef"
+      }
+    },
+    "resume-source-manifest.json": {
+      "sha256": "d0cda7e83182284d2cc083514a1e50c6e4e37554f36cd216dc56e75cff1fe6ea",
+      "files": {
+        "src/backlog_harness/__init__.py": "7319cf50efca6c8fde68460c73bfc38f9f42ff3b91c5b53ecbf9c63384d6b6a4",
+        "src/backlog_harness/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+        "src/backlog_harness/adapters/__init__.py": "1378a6cb98d3dc5dc3eb00265a04a7d4c3205860532b00187473d33f9e571d17",
+        "src/backlog_harness/adapters/codex/__init__.py": "fe364cbe41f5044aa99c1ae734c838fdeb92736bcf74b79575b7830da0c133d1",
+        "src/backlog_harness/adapters/codex/adapter.py": "a14d9989e83b2f47103ed4c0e72ccd1bfdfdf7deaa07b3e598b1da77abce4837",
+        "src/backlog_harness/adapters/registry.py": "ef8c76257d7cfaaa83fb20b50ef160c7aba1df533ff97e5321aacf55aa25e07e",
+        "src/backlog_harness/analytics.py": "e471e7959fb4f8420a9693daa01e7499b6f936e0a7dd3e6a81a22d40895e2100",
+        "src/backlog_harness/application.py": "69214ab5f832a99ed6896bc1551f9cbb27111c574fe11ed0e3c20b5f6858f50a",
+        "src/backlog_harness/cli.py": "d732c2c57e62ae0cda0086b7a5b2acbbf5095753bd1d77d2fb3a083362361ebe",
+        "src/backlog_harness/contracts.py": "c950fb33e64de11289178b2a7bc7d6b927aa66294a720b12f7acf6bd301964f8",
+        "src/backlog_harness/coordination.py": "5d7c3dd985f7239e8a070a076cb621a29c96960f852a87ecdfb4c484698fc1d1",
+        "src/backlog_harness/dashboard.py": "b35ca912ed9b4e6822a75bf2352691ce4e7bdee3901b26e73718cf72f9fca582",
+        "src/backlog_harness/delivery.py": "23813febd7ee262191298090e6c83fc4314a8182c1ff360930319540dcaecb9e",
+        "src/backlog_harness/evidence.py": "46221a62bf0bd70736bec4f6459bb75ba17643491beb2386576f7f9f2d334b6a",
+        "src/backlog_harness/native_evidence.py": "c2a6fdaa376bbae831651e7624528c8ebd586c8b969bacfa55875572dcb6c2d3",
+        "src/backlog_harness/projections.py": "bba3860a730a8a31ea00180df15f4a54d61ffc5cb926b4561ffa73acebfda762",
+        "src/backlog_harness/provider.py": "1e42e0e502f76df694bf9561154a0182cf0a928a872eac3e741e7ae90fc90daa",
+        "src/backlog_harness/runtime.py": "bc87ea8f7810bd65a53b213b327c1b79eed964a0ae02dc4b3b9eef042105a729",
+        "src/backlog_harness/static/dashboard.css": "f95cf3a62d068eb502832eff0991c9a753709ae517388cd0731bf85dcb9e5f08",
+        "src/backlog_harness/static/dashboard.js": "58a263f2d1f53e84b8e04554a96876101e3c4d68239452951cefb2937a6e81bd",
+        "src/backlog_harness/static/index.html": "5ad670d7c325f9d7e4c446a3932a48a224922c56370ccf6a63c8a8c6aebe1bb5",
+        "src/backlog_harness/telemetry.py": "8c3fbc55640f837173ceb85903286e62cbcfd8e5a3a6cd81fc5c0b98a0093d98",
+        "src/backlog_harness/terminal.py": "59e48fafad046de97b7f24214c05c03c46bb26902ceb54d6ff27d065e7e890e4",
+        "src/backlog_harness/workflow.py": "46d14b3d81c7b6e7b8a1daf6564fd902a61d1571e394facbd408f0c3cec957ef"
+      }
+    }
+  },
+  "deterministic_tests": {
+    "passed": 54,
+    "python": "3.12.7"
+  },
+  "installed_package": {
+    "version": "0.1.0a1",
+    "python": "3.13.0",
+    "wheel_sha256": "c54fa8f85a9197954cf32546ebf3156da9be00eba907d4978ea9dd2ea548ed5b"
+  },
+  "installed_terminal": {
+    "help": "passed",
+    "watch_idle": "passed",
+    "pause": "passed",
+    "resume": "passed",
+    "controlled_stop": "Available; admission closed; all invocation processes quiescent",
+    "quit": "tested",
+    "new_invocations": 0
+  },
+  "installed_dashboard": {
+    "completed_items": 3,
+    "trace_span_count": 39220,
+    "unresolved_observations": 0,
+    "url": "http://127.0.0.1:56964",
+    "visually_verified": true
+  }
+}

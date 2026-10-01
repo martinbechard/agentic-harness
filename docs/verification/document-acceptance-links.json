@@ -1,0 +1,163 @@
+{
+  "ok": false,
+  "checked_files": [
+    "IMPLEMENTATION-PLAN.md",
+    "README.md",
+    "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+    "docs/design/components/MOD-001-configuration.md",
+    "docs/design/components/MOD-002-execution.md",
+    "docs/design/components/MOD-003-provider-coordination.md",
+    "docs/design/components/MOD-004-evidence.md",
+    "docs/design/components/MOD-005-telemetry.md",
+    "docs/design/components/MOD-006-views.md",
+    "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+    "docs/operator-guide.md",
+    "docs/verification/requirements-matrix.md"
+  ],
+  "findings": [
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/skills/coordinate-work-items/SKILL.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/skills/coordinate-work-items/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/skills/manage-work-items/SKILL.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/skills/manage-work-items/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/skills/manage-work-items-file/SKILL.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/skills/manage-work-items-file/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/skills/coordinate-codex-tasks/SKILL.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/skills/coordinate-codex-tasks/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/.agents/skills/backlog-dispatcher/SKILL.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/.agents/skills/backlog-dispatcher/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/skills/estimate-agent-work/SKILL.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/skills/estimate-agent-work/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/skills/resolve-backlog-blockage/SKILL.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/skills/resolve-backlog-blockage/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/skills/set-solo-mode/SKILL.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/skills/set-solo-mode/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/backlog/feature-backlog/operate-backlog-harness-unattended.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/backlog/feature-backlog/operate-backlog-harness-unattended.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/architecture/../../../dev-methodology/docs/architecture/ARC-001-codex-cli-backlog-harness.md",
+      "path": "docs/architecture/ARC-002-codex-work-item-dispatch-harness.md",
+      "line": null,
+      "column": null,
+      "target": "../../../dev-methodology/docs/architecture/ARC-001-codex-cli-backlog-harness.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/design/high-level/../../../../dev-methodology/AGENTS.md",
+      "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+      "line": null,
+      "column": null,
+      "target": "../../../../dev-methodology/AGENTS.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/design/high-level/../../../../dev-methodology/docs/project-taxonomy.md",
+      "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+      "line": null,
+      "column": null,
+      "target": "../../../../dev-methodology/docs/project-taxonomy.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/design/high-level/../../../../dev-methodology/skills/coordinate-work-items/SKILL.md",
+      "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+      "line": null,
+      "column": null,
+      "target": "../../../../dev-methodology/skills/coordinate-work-items/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/design/high-level/../../../../dev-methodology/skills/manage-work-items/SKILL.md",
+      "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+      "line": null,
+      "column": null,
+      "target": "../../../../dev-methodology/skills/manage-work-items/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/design/high-level/../../../../dev-methodology/skills/coordinate-codex-tasks/SKILL.md",
+      "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+      "line": null,
+      "column": null,
+      "target": "../../../../dev-methodology/skills/coordinate-codex-tasks/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/design/high-level/../../../../dev-methodology/.agents/skills/backlog-dispatcher/SKILL.md",
+      "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+      "line": null,
+      "column": null,
+      "target": "../../../../dev-methodology/.agents/skills/backlog-dispatcher/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/design/high-level/../../../../dev-methodology/skills/estimate-agent-work/SKILL.md",
+      "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+      "line": null,
+      "column": null,
+      "target": "../../../../dev-methodology/skills/estimate-agent-work/SKILL.md"
+    },
+    {
+      "code": "path_outside_root",
+      "message": "Path is outside the allowed root: /Users/martinbechard/dev/agentic-harness/docs/design/high-level/../../../../dev-methodology/backlog/feature-backlog/operate-backlog-harness-unattended.md",
+      "path": "docs/design/high-level/HLD-003-codex-work-item-dispatch-service.md",
+      "line": null,
+      "column": null,
+      "target": "../../../../dev-methodology/backlog/feature-backlog/operate-backlog-harness-unattended.md"
+    }
+  ]
+}

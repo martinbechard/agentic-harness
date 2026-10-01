@@ -1,0 +1,115 @@
+{
+  "schema": "review-structured-artifact.review-unit-evidence.v1",
+  "candidate": {
+    "path": "README.md",
+    "sha256": "ddad26970f0ecee800d91a1b9a17892a9172e5797d25465e11c2fb3ecbedf6c8"
+  },
+  "review_units": [
+    {
+      "id": "F02-L3",
+      "location": "README.md:3",
+      "text": "A foreground Python application that lets agents organize delivery with their CLI's native delegation while enforcing provider transitions, independent review, exact candidate identity, checks, delivery, and usage holds.",
+      "text_sha256": "a180a7070dc4e3e13585f88d486abfccb901989eb22fa42c7b2221a52ec1286a",
+      "needed": {
+        "status": "pass",
+        "evidence": "F02-L3-S1: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F02-L3-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F02-L3-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L5",
+      "location": "README.md:5",
+      "text": "The first adapter supports Codex CLI 0.159.2. The selected workflow uses a file backlog, main-branch delivery, explicit resource coordination `none`, and either SOLO or MULTITASK. MULTITASK requires `project_setup.concurrent_tasking: true`, independent candidate clones, explicit item scopes, and serialized provider and integration transactions. Projects selecting a resource-claim helper need their existing helper boundary integrated before this route can execute them.",
+      "text_sha256": "795432d3ac0c0017206c0e6313cfc6d1a37bb81f1c306ab79e50a64b50f291d5",
+      "needed": {
+        "status": "pass",
+        "evidence": "F02-L5-S1: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.; F02-L5-S2: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.; F02-L5-S3: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.; F02-L5-S4: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F02-L5-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F02-L5-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F02-L5-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F02-L5-S4: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F02-L5-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F02-L5-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F02-L5-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F02-L5-S4: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L7",
+      "location": "README.md:7",
+      "text": "Install Python 3.12 or newer and Codex CLI, then use:",
+      "text_sha256": "4e78665bf8edbf244cf4c2941c81d5fd36f08a594ac6c6b4a5c86de45f650cbd",
+      "needed": {
+        "status": "pass",
+        "evidence": "F02-L7-S1: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F02-L7-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F02-L7-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L15",
+      "location": "README.md:15",
+      "text": "The asynchronous terminal supports `run --until-terminal`, `run --watch`, `pause`, `resume`, `stop`, `reconcile`, status, item and session inspection, exact question answers, and usage-hold review. The noninteractive `run` and `run-item` commands use the same application. A read-only dashboard starts with `dashboard --port 8767` (use port 0 to select a free port).",
+      "text_sha256": "eed3ff9e0481ba8f6ee674c225b3d095581feb0a6adfebf9504a4c0324db6d6c",
+      "needed": {
+        "status": "pass",
+        "evidence": "F02-L15-S1: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.; F02-L15-S2: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.; F02-L15-S3: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F02-L15-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F02-L15-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F02-L15-S3: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F02-L15-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F02-L15-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F02-L15-S3: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L17",
+      "location": "README.md:17",
+      "text": "See the [operator guide](docs/operator-guide.md), [implementation plan](IMPLEMENTATION-PLAN.md), and [verification progress](docs/verification/progress.md). The progress record distinguishes tests and live evidence from outstanding acceptance work.",
+      "text_sha256": "180b84284b19d95a2058dfa67052430d388a12a06874572b3be3c685735de677",
+      "needed": {
+        "status": "pass",
+        "evidence": "F02-L17-S1: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.; F02-L17-S2: Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "F02-L17-S1: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.; F02-L17-S2: The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "F02-L17-S1: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.; F02-L17-S2: Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    }
+  ],
+  "manifest_sha256": "ef212222670527739dccfcada1c399b874cb87d2ef689987c05dd142becaa76d"
+}

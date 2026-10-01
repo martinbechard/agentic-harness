@@ -1,0 +1,60 @@
+{
+  "status": "recovery_control_verified_release_audit_pending",
+  "tests": {
+    "command": "uv run pytest -q",
+    "passed": 63,
+    "lint": "uv run ruff check src tests scripts passed"
+  },
+  "source_sha256": "ba40e823a2e62ac802793d511bf4827c9155b35097413f37912917a6abef2815",
+  "files": {
+    "scripts/acceptance_fixtures.py": "0ed0bf37b8429b74d4c3491e31e561a29e932b24c70d905907061614c4d0a82f",
+    "scripts/probe_codex.py": "2ea7ce714ec028d75aceafc1c415a45f0d1ef6a271734b944d4d35b04fc59bcb",
+    "src/backlog_harness/__init__.py": "7319cf50efca6c8fde68460c73bfc38f9f42ff3b91c5b53ecbf9c63384d6b6a4",
+    "src/backlog_harness/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+    "src/backlog_harness/adapters/__init__.py": "1378a6cb98d3dc5dc3eb00265a04a7d4c3205860532b00187473d33f9e571d17",
+    "src/backlog_harness/adapters/codex/__init__.py": "fe364cbe41f5044aa99c1ae734c838fdeb92736bcf74b79575b7830da0c133d1",
+    "src/backlog_harness/adapters/codex/adapter.py": "c4711f9361d92af4b975587c80a0c2a2eeb4747407c84922bc61f7e50b5c4f58",
+    "src/backlog_harness/adapters/registry.py": "ef8c76257d7cfaaa83fb20b50ef160c7aba1df533ff97e5321aacf55aa25e07e",
+    "src/backlog_harness/analytics.py": "e471e7959fb4f8420a9693daa01e7499b6f936e0a7dd3e6a81a22d40895e2100",
+    "src/backlog_harness/application.py": "1e492b296fc1095024e37b624669040f54f22b49c5426923e8088981fd2f159a",
+    "src/backlog_harness/cli.py": "3c342baea551f59759561821f4ad0c0e7df6f8424aa017d2fa3464a8485663a1",
+    "src/backlog_harness/contracts.py": "ab5c4bc76230b8d462ee239a1ae552467c4a7e6b72fa2bfd07544f480646fcc1",
+    "src/backlog_harness/coordination.py": "a7393d9facbb92f60e5c804c6152a9273d099db4b0a23ad20539e21555c4e4f9",
+    "src/backlog_harness/dashboard.py": "b35ca912ed9b4e6822a75bf2352691ce4e7bdee3901b26e73718cf72f9fca582",
+    "src/backlog_harness/delivery.py": "23813febd7ee262191298090e6c83fc4314a8182c1ff360930319540dcaecb9e",
+    "src/backlog_harness/evidence.py": "46221a62bf0bd70736bec4f6459bb75ba17643491beb2386576f7f9f2d334b6a",
+    "src/backlog_harness/native_evidence.py": "c2a6fdaa376bbae831651e7624528c8ebd586c8b969bacfa55875572dcb6c2d3",
+    "src/backlog_harness/projections.py": "e3d1f487d50584d449a4a9e9c46274361ebac25cdb3f0af5dfab3ddbff461599",
+    "src/backlog_harness/provider.py": "fafe704fdfe8dff7e03ed2afd1a838cc736f58c4f1c2122c35240403dfa954d9",
+    "src/backlog_harness/runtime.py": "bc87ea8f7810bd65a53b213b327c1b79eed964a0ae02dc4b3b9eef042105a729",
+    "src/backlog_harness/static/dashboard.css": "dbb011f27c8e8efc68e82c4b7b8a8d397428c2871dc10ae7a9f59946ba6bb757",
+    "src/backlog_harness/static/dashboard.js": "58a263f2d1f53e84b8e04554a96876101e3c4d68239452951cefb2937a6e81bd",
+    "src/backlog_harness/static/index.html": "5ad670d7c325f9d7e4c446a3932a48a224922c56370ccf6a63c8a8c6aebe1bb5",
+    "src/backlog_harness/telemetry.py": "8c3fbc55640f837173ceb85903286e62cbcfd8e5a3a6cd81fc5c0b98a0093d98",
+    "src/backlog_harness/terminal.py": "851826428c24cce6da6cfd044f74b8670b7e0647b1f32deebf159a6ea5050d10",
+    "src/backlog_harness/workflow.py": "46d14b3d81c7b6e7b8a1daf6564fd902a61d1571e394facbd408f0c3cec957ef",
+    "tests/conftest.py": "42f661ba1413c200fa0ed26c9c7099743970aa390eb1322061d80ff791c8e7d3",
+    "tests/test_analytics.py": "a838ce7e926b3b2eed79fe213c0464af8cab8156a3dae3df0981c483a8584b75",
+    "tests/test_configuration.py": "09758237b0d06c33c2e405baa51ac3a9fa7beb92a874ae475ef2a03ba0574936",
+    "tests/test_coordination.py": "5507064a0bad81dd6956f0198d6a80f7834d68cac01be5a4f5acd9eb8a3d56fc",
+    "tests/test_evidence.py": "74155d178dec81578d8e70f46ec854fd1aec319857cd13dfb10d73f90542e64a",
+    "tests/test_execution.py": "a577a243bee47497d5dcefb7393dbaccfefb3d236fb0fd5b09b2fd0964af6fd9",
+    "tests/test_native_evidence.py": "2183455176251e150c66c0edd4c013968232ee0cdb52f5f948531d113318235f",
+    "tests/test_provider_coordination.py": "b0fea4805ea5ccce752c085347584fa92faaea6688473ddda7b0f6d3e3e7a84b",
+    "tests/test_recovery.py": "078b06aae5de024089de41feaabde4c4acfd430a6cb7f0f6773dabb5d5088946",
+    "tests/test_telemetry.py": "203701293ad79b00e50c33b109ab8766284db937ff404a11fee1080920a902ed",
+    "tests/test_views.py": "7bf592abd8f1c67b2357b508026eb64bdc8e4c0e81febd14f3e1e7c36b1933ef"
+  },
+  "replay": {
+    "SOLO": {
+      "Completed": 3,
+      "retained_invocations": 9,
+      "new_invocations": 0
+    },
+    "MULTITASK": {
+      "Completed": 3,
+      "retained_invocations": 12,
+      "new_invocations": 0
+    }
+  }
+}

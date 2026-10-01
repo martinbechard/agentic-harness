@@ -1,0 +1,2979 @@
+{
+  "candidate": {
+    "path": "docs/design/components/MOD-004-evidence.md",
+    "sha256": "c7562161a92d49aed4cffafccb18985d8fb27df3fe95b98624c26c18e847305a"
+  },
+  "sentence_count": 135,
+  "sentences": [
+    {
+      "id": "F07-L13-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:13",
+      "text": "This module records invocation intent, submission, session, events, outcomes, and recovery facts in durable local files.",
+      "text_sha256": "b614e23d95d4ebf7b1a48344c07d7ab7a936233040273eaf8fdbf9c0479834ea",
+      "section": "Current Understanding",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L13-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:13",
+      "text": "Its primary responsibility is to prevent duplicate effects across crashes without treating runtime evidence as provider authority.",
+      "text_sha256": "7b27cbb8a92c7b9ec90cf9071aab48906892b81e25844684376445dcf899adfe",
+      "section": "Current Understanding",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L15-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:15",
+      "text": "Design mode: **EXISTING_IMPLEMENTATION**.",
+      "text_sha256": "7ffe7e529abb5d3ae72572dda004073a11c6269fd228b67cc98cc33ed6b9bb7e",
+      "section": "Current Understanding",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L15-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:15",
+      "text": "The module distinguishes not submitted, requested and unresolved, returned, runtime failed, and submission rejected outcomes.",
+      "text_sha256": "f55b640ffe22a4cf36d9dbaba3a58a76f6286b82e02854a0ddee737ce33a62ff",
+      "section": "Current Understanding",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L15-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:15",
+      "text": "Recovery adopts proved observations or preserves uncertainty.",
+      "text_sha256": "06cabe7049768523f97acd3c5a2a721443dcf8500e59eb6ab22abc61758346ce",
+      "section": "Current Understanding",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Current Understanding.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L19-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:19",
+      "text": "Current behavior comes from [evidence.py](../../../src/backlog_harness/evidence.py), [application.py](../../../src/backlog_harness/application.py), [native_evidence.py](../../../src/backlog_harness/native_evidence.py), [provider.py](../../../src/backlog_harness/provider.py), and [delivery.py](../../../src/backlog_harness/delivery.py).",
+      "text_sha256": "029ca17809345ef43eacba08296bbad997209984ea6319e8d4645fece4aef262",
+      "section": "Authoritative Sources",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Authoritative Sources.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L19-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:19",
+      "text": "Focused evidence comes from [test_evidence.py](../../../tests/test_evidence.py) and [test_recovery.py](../../../tests/test_recovery.py).",
+      "text_sha256": "718a758f2489cbb537b95514fcf3d1555bf82632ff0eed9ad577eb385acae9b1",
+      "section": "Authoritative Sources",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Authoritative Sources.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L21-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:21",
+      "text": "[The implementation plan](../../../IMPLEMENTATION-PLAN.md), [ARC-002](../../architecture/ARC-002-codex-work-item-dispatch-harness.md), and [HLD-003](../high-level/HLD-003-codex-work-item-dispatch-service.md) define the no-duplicate-effect requirement.",
+      "text_sha256": "eb2e615c346e50785b99fe77835acd85c318fa11b903d598eab7567e411d40a6",
+      "section": "Authoritative Sources",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Authoritative Sources.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L21-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:21",
+      "text": "Source and retained evidence win for current behavior.",
+      "text_sha256": "9ddfde3a78efbbacaa2128d796f62f58b20354344edd2ffe752ac5b0915503de",
+      "section": "Authoritative Sources",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Authoritative Sources.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L25-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:25",
+      "text": "- [evidence.py](../../../src/backlog_harness/evidence.py) owns locks, atomic JSON, append-only JSONL, incremental reads, and invocation evidence paths.",
+      "text_sha256": "a1225b0a15179b5f94787eb65c337f43e246d43f461f66c5de7861825226315b",
+      "section": "Related Code",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Code.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L26-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:26",
+      "text": "- [application.py](../../../src/backlog_harness/application.py) owns stage recovery, process reconciliation, provider recovery entry points, and answer-operation recovery.",
+      "text_sha256": "0a88b75e765bdf05fc6e7be55762bc7cc78b79cd31321a069ead7d6f5ef519ea",
+      "section": "Related Code",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Code.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L27-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:27",
+      "text": "- [provider.py](../../../src/backlog_harness/provider.py) owns prepared and committed provider-effect recovery.",
+      "text_sha256": "faebe6f63988298dc2b0baa80dc9917d94ee6cb0b6320dd0358c93ee655fa554",
+      "section": "Related Code",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Code.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L28-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:28",
+      "text": "- [delivery.py](../../../src/backlog_harness/delivery.py) owns merge-effect recovery.",
+      "text_sha256": "0a721d2e54090893d372da709155ca2a8cc20ef91b5cb77d3ff851fe00ec1b23",
+      "section": "Related Code",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Code.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L29-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:29",
+      "text": "- [native_evidence.py](../../../src/backlog_harness/native_evidence.py) supplies exact native terminal evidence.",
+      "text_sha256": "1c96737422fb29f39a0b6f5e28bd9177b446e3ffd5ad45a8b040d59d1621a993",
+      "section": "Related Code",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Code.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L33-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:33",
+      "text": "- [test_evidence.py](../../../tests/test_evidence.py): `test_intent_requested_and_uncertain_are_not_replayed`; `test_partial_line_is_not_published_or_overwritten`.",
+      "text_sha256": "37dbafa84550d1e025c4d17bbad4cc33b76ceb4ebc341cd3b7adfead7e830591",
+      "section": "Related Tests",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Tests.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L34-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:34",
+      "text": "- [test_recovery.py](../../../tests/test_recovery.py): provider receipt recovery, unobserved submission fencing, stage reconstruction, delivery crash boundaries, exact answer recovery, prepared provider recovery, telemetry receipt binding, and frozen hold review.",
+      "text_sha256": "dd8e2e5b5a30a45686cf453f6235a2fd51734782ef2f4351ef0b45cd4ce8310e",
+      "section": "Related Tests",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Tests.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L35-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:35",
+      "text": "- [test_coordination.py](../../../tests/test_coordination.py): uncertain capacity occupancy and transient operation locks.",
+      "text_sha256": "f3796c1d0f09bc25d02c3d94b75a18754a63b73286f38b8ca806901e10f6733d",
+      "section": "Related Tests",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Tests.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L39-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:39",
+      "text": "No separate file-provider Work Item is identified.",
+      "text_sha256": "f1e00864cb6067937d564f2fdc276efe272459cbc57784311385effa4cfee5de",
+      "section": "Related Backlog Items",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Backlog Items.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L39-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:39",
+      "text": "Recovery work is part of [the implementation plan](../../../IMPLEMENTATION-PLAN.md).",
+      "text_sha256": "651914afcca3788b5b3cbe14388bd3c32048427295c4bc3a6200cb6a55d475d8",
+      "section": "Related Backlog Items",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Backlog Items.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L43-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:43",
+      "text": "The project has no wiki.",
+      "text_sha256": "208fefa9309bc77b2d7fcd7d0f8eb118ec1c0b9073148062169f6fcdf5d38df7",
+      "section": "Related Wiki Pages",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Wiki Pages.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L43-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:43",
+      "text": "See [ARC-002](../../architecture/ARC-002-codex-work-item-dispatch-harness.md), [HLD-003](../high-level/HLD-003-codex-work-item-dispatch-service.md), and the [requirements matrix](../../verification/requirements-matrix.md).",
+      "text_sha256": "43acde5aaf34280e744ab900661e2478c2327abb30149fc6a1a4ae9d5abe2d37",
+      "section": "Related Wiki Pages",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Related Wiki Pages.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L47-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:47",
+      "text": "No module-contract question is open.",
+      "text_sha256": "56a9e6b4819b8c5afaf83ae1099d15ac54f599ba76fd491cf5d53f5a66a16ccc",
+      "section": "Open Questions",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Open Questions.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L47-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:47",
+      "text": "A specific unresolved effect can still require operator repair or explicit provider recovery.",
+      "text_sha256": "1a028b2234f730f908fbb769153fc87601ac570e25ae8dfee8ad7c369703c075",
+      "section": "Open Questions",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Open Questions.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L47-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:47",
+      "text": "That operational uncertainty is preserved as evidence, not treated as a design gap.",
+      "text_sha256": "53907105df38128741a810da6d179b1797d2e82a498efb814111fb93da1f7b34",
+      "section": "Open Questions",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Open Questions.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L51-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:51",
+      "text": "Recheck this design when evidence versions, path identities, process observation, event normalization, provider transactions, delivery transactions, or recovery commands change.",
+      "text_sha256": "74065493d8baefaa2e4b4805dbb09a837fd091d235e560f186fc54332d7cf2ec",
+      "section": "Maintenance Notes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Maintenance Notes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L51-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:51",
+      "text": "The last source reconciliation was 2026-09-30.",
+      "text_sha256": "f2abac1f1c3f1d09b6c4e2e887bcdcaca38e33ab909708a8afe585e8d7543a84",
+      "section": "Maintenance Notes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Maintenance Notes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L55-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:55",
+      "text": "| Requirement source and ID | Claim mode | Required outcome | Satisfying contract | Status | Out-of-scope authority, rationale, and owning artifact | Verification |",
+      "text_sha256": "41004a2b3f5e54a61612643b2bde188bc54e41cd01830748c469bf16de720d9a",
+      "section": "Requirements Coverage",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L57-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:57",
+      "text": "| Plan: recovery without duplicate dispatch | CURRENT_BEHAVIOR | Never replace requested or unresolved CLI effects from absence alone. | `EvidenceStore.reconcile`, `Application._invoke`, `recover_invocation` | DEFINED | Manual repair may be required when proof is incomplete. | `test_submitted_unobserved_invocation_is_not_relaunched`; `test_returned_observations_rebuild_missing_stage` |",
+      "text_sha256": "d47552a8e58ded7cc2f82b2a5a72acfe96d43c2296d14676b81caf9677beef13",
+      "section": "Requirements Coverage",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L58-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:58",
+      "text": "| Plan: durable writes | CURRENT_BEHAVIOR | Fsync atomic JSON and complete JSONL lines; expose partial tails. | `atomic_json`, `JsonlWriter.append`, `read_jsonl` | DEFINED | Filesystem durability beyond successful fsync is platform-owned. | `test_partial_line_is_not_published_or_overwritten` |",
+      "text_sha256": "65b60daf639b791e64e540ffef4c6899016c2a1928898594b7c408071fd9f796",
+      "section": "Requirements Coverage",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L59-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:59",
+      "text": "| Plan: provider and delivery recovery | CURRENT_BEHAVIOR | Reconcile exact prepared or committed provider and merge effects once. | `FileProvider.recover_prepared`, `reconcile_operation`, `integrate` | DEFINED | Conflicting bytes require operator correction. | provider and delivery crash-boundary tests |",
+      "text_sha256": "0fffb985608d09113c50842b0c2616b0ca74937c60521e2348d22a27b4bae84b",
+      "section": "Requirements Coverage",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L60-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:60",
+      "text": "| Plan: exact answer recovery | CURRENT_BEHAVIOR | Persist answer identity before resume and recover the same operation after a crash. | `Application.answer` and `resume_answer` | DEFINED | Nonapproval retains User Action Required. | `test_crash_after_answer_commit_resumes_exact_operation` |",
+      "text_sha256": "624b48836ef97077248b38a31013dbb294eb1b67248257fb9fae014bb656aed6",
+      "section": "Requirements Coverage",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L61-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:61",
+      "text": "| Plan: unknown telemetry | CURRENT_BEHAVIOR | Reject a saved result when telemetry is missing, rejected, or differs from its content-bound receipt. | `validate_invocation_result` | DEFINED | Missing native spans are not reconstructed. | bad telemetry, missing file, and changed-content tests |",
+      "text_sha256": "a041aee664418bff8228b4b5d90fe42acc6bf00932e8739038fb866f8918f416",
+      "section": "Requirements Coverage",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L62-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:62",
+      "text": "| Plan: canonical reservation recovery | CURRENT_BEHAVIOR | Never launch a replacement for Starting or Running when retained assignment, admission, or acceptance evidence is absent. | `Application._run_item` retained-evidence gates | DEFINED | An operator must restore or reconcile original evidence. | `test_existing_reservation_without_retained_session_evidence_never_relaunches` |",
+      "text_sha256": "12588e9a555159f88cc02fac68da47537544b32655e9b3e7128df45e69d8e5d7",
+      "section": "Requirements Coverage",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Requirements Coverage.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L81-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:81",
+      "text": "Symbol and placement ledger:",
+      "text_sha256": "ccf5f9347dfcb8f4f8af1e5571f96834fbd596254e5882aa543d8653f71f9f2f",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L83-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:83",
+      "text": "| Leaf | Complete public symbol or signature | Responsibility |",
+      "text_sha256": "448433512f29f401e450a7f6ee3a9be8457e3ebedd99121647ba8970b2db36fc",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L85-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:85",
+      "text": "| `evidence.py` | `class EvidenceError(RuntimeError)` | Reports evidence and reconciliation failures. |",
+      "text_sha256": "0207c94d85187cd8abedf1b2c1c829ddc53bd46585fbdc774fb7b4083ff429f9",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L86-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:86",
+      "text": "| `evidence.py` | `operation_lock(path)`; `async_operation_lock(path)` | Serializes exact local operations across processes or coroutines. |",
+      "text_sha256": "a21f0c63b4ffc9bf46c447b8f057199032b01fa6925ad85cbcf9e54b489efe92",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L87-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:87",
+      "text": "| `evidence.py` | `component(identity: str) -> str` | Produces a lowercase SHA-256 path component. |",
+      "text_sha256": "5a015d82b7ce81f4a587907453e7780718c4f22e664529c8fe9d64afefd1bbe8",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L88-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:88",
+      "text": "| `evidence.py` | `fsync_directory(path: Path)`; `atomic_json(path: Path, value, *, exclusive=False)` | Persists atomic JSON and directory metadata. |",
+      "text_sha256": "4455c566e83534cc37d75816cddaf82b8c25be295b848c040785000661703e7d",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L89-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:89",
+      "text": "| `evidence.py` | `JsonlWriter(path: Path)`; `append(value)` | Appends one complete, fsynced JSONL record. |",
+      "text_sha256": "a67ee1447b4d9df9beadeba90e282125313e6eddcc5568ea158c2aebac437e97",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L90-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:90",
+      "text": "| `evidence.py` | `read_jsonl(path: Path, offset=0)` | Returns `(records, next_offset, partial_tail)` for incremental reads. |",
+      "text_sha256": "ce713a627163ceed64c59679e0c215ab70d782043f6bf1bb8ee95c002a23216e",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L91-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:91",
+      "text": "| `evidence.py` | `EvidenceStore(root: Path, run_id: str)` | Exposes `begin`, `requested`, `session`, `outcome`, and `reconcile`. |",
+      "text_sha256": "311dbf2153f11ab9bc626b87c3b38b230490e46f84fce1d875c861e740ad9090",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L92-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:92",
+      "text": "| `application.py` | `process_stopped(path)` | Classifies process quiescence from durable outcome and exact process start identity. |",
+      "text_sha256": "f1623740b09f3969b647d7f23c1097bfd96fc71d2c0984fc53662517d4d7e298",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L93-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:93",
+      "text": "| `application.py` | `recover_invocation(self, path)` | Reconstructs one returned stage without a replacement call. |",
+      "text_sha256": "d97e3f65b499ebcea1bb66fd50416e26e837e1baa6e0cd30f6ad8bd2ecebcd80",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L94-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:94",
+      "text": "| `application.py` | `reconcile(self)` | Reconciles all known invocation and provider operation records. |",
+      "text_sha256": "b90ca9a45681632d7930d9754590f573746f09eb020c8c75f7f4ca229abe416e",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L95-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:95",
+      "text": "| `application.py` | `async answer(self, item_id, question_id, expected_revision, text)`; `async resume_answer(self, item_id)` | Persists and resumes one exact answer operation. |",
+      "text_sha256": "0c380ccf183b10f3147050c9ff17b050b161cb7444092f49320a7f65c262a4d9",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L96-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:96",
+      "text": "| `application.py` | `recover_provider(self, operation_id)` | Explicitly completes one unique prepared provider operation. |",
+      "text_sha256": "8b3f8c5c33047589aca7aaefb3e5e3afc00cf277c2584d10b8d0509fb23e032f",
+      "section": "Runtime Path",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Runtime Path.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L100-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:100",
+      "text": "Runtime evidence proves what the harness observed.",
+      "text_sha256": "a491d9f955a574dc2a15e9707db25654789d555f58419ab5a2c462aa7164454f",
+      "section": "Parent Context",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Parent Context.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L100-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:100",
+      "text": "It never replaces provider lifecycle, agent authority, or Git source identity.",
+      "text_sha256": "3d0c41aec4271ee8d7500a0e39d95a313e2485db59f3141a0d7fc833a984baae",
+      "section": "Parent Context",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Parent Context.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L100-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:100",
+      "text": "Provider and delivery recovery use separate exact effect proofs.",
+      "text_sha256": "cb3d37a5d515d0ed762b46f369f028578755d71e1c704a7d42ffcf074f77614a",
+      "section": "Parent Context",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Parent Context.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L120-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:120",
+      "text": "- Create stable hashed paths while retaining original identities inside records.",
+      "text_sha256": "ad0a211cde01d2fe6488cb2c233a027798e454511edf2253a9d3731ff10e47cd",
+      "section": "Responsibilities",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L121-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:121",
+      "text": "- Persist intent before an effect and requested state at the submission boundary.",
+      "text_sha256": "25592161f1fe55f615b7563816cf9c6d8575d7b933d19f34f04415b065169b6d",
+      "section": "Responsibilities",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L122-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:122",
+      "text": "- Append normalized events and outcomes without overwriting prior uncertainty.",
+      "text_sha256": "1e5fc7037af5a921af2ab9a609e2309e7b8db36157e8b27c6feee8f01bdcbf7b",
+      "section": "Responsibilities",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L123-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:123",
+      "text": "- Reject incomplete final lines and evidence identity mismatches.",
+      "text_sha256": "5d618a65137b4633d7404ce51037ae7333d460332bc1bb11b6c84bf07d4f579b",
+      "section": "Responsibilities",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L124-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:124",
+      "text": "- Reconstruct proved returned stages after restart.",
+      "text_sha256": "03073b24e77bd06f6f1a7a9641e1a3fd6ec2958fbe79103cb61f6f2f5b15933b",
+      "section": "Responsibilities",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L125-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:125",
+      "text": "- Preserve uncertain process, provider, merge, answer, telemetry, and capacity state.",
+      "text_sha256": "dd32e9a65b42dc9ed064478b73dac4e83d4b8d9720c298bfe1c933474bd0720d",
+      "section": "Responsibilities",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Responsibilities.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L129-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:129",
+      "text": "- `Application`, `CodexAdapter`, `TelemetryReceiver`, `RunController`, `FileProvider`, and `integrate` write or reconcile evidence.",
+      "text_sha256": "10425f0410a78371c936a4f08c5154d91607df4d0ec8ffaadfa96cff09e721b1",
+      "section": "Callers",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Callers.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L130-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:130",
+      "text": "- Projection code reads intent, events, outcomes, and telemetry incrementally.",
+      "text_sha256": "35771651b874f68c13e2515b98b98b8c6e7aebcf375945cf486821d33463c7b9",
+      "section": "Callers",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Callers.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L131-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:131",
+      "text": "- Operator commands invoke application reconciliation and explicit prepared-provider recovery.",
+      "text_sha256": "887083b0e9131293fd284098c1ce35dc0e2aedac9229e231182f92c9e979a8a9",
+      "section": "Callers",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Callers.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L135-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:135",
+      "text": "- Local filesystem operations provide links, atomic rename, file locks, fsync, and append-only files.",
+      "text_sha256": "dea7b377a95ea757c61d68ca14788f8932e6a47d703c34ea91857942d5ff6681",
+      "section": "Dependencies",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Dependencies.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L136-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:136",
+      "text": "- SHA-256 binds identities and output bytes.",
+      "text_sha256": "3a6720addc5cabe2f73c10b800be96373dc903dd0a02dcf949106d5587634645",
+      "section": "Dependencies",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Dependencies.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L137-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:137",
+      "text": "- `ps` verifies whether an exact recorded PID start identity remains active.",
+      "text_sha256": "16e7a67d5cfec3a712d1cdb86fe3281837846b58ee6735edd068960745551a95",
+      "section": "Dependencies",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Dependencies.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L138-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:138",
+      "text": "- Native Codex session evidence can confirm terminal completion after an uncertain local outcome.",
+      "text_sha256": "694da99a1e4110803c15e5a92c1c2d81f52e54bf64de791cbe6c85173e1b0ca2",
+      "section": "Dependencies",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Dependencies.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L142-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:142",
+      "text": "`EvidenceStore.begin(operation_id, invocation_id, snapshot, binding, *, action, item_id=None, request_digest=None)` creates exclusive `config.json` and `intent.json` under hashed run, operation, and invocation path components.",
+      "text_sha256": "182e7755503afadad9dd45b007a6976cab46b2249f87a8bf9a6b5e04c3a1d6fc",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L144-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:144",
+      "text": "`EvidenceStore.requested(path)` creates exclusive `requested.json`.",
+      "text_sha256": "bca6a8c5a9d2fc3a56ff9cd5bb8a93d2f3e01337da41c63f0aedc4a5447fa408",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L144-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:144",
+      "text": "Intent without requested is `not_submitted`.",
+      "text_sha256": "e91de707014e85cdea571564116ce36f39fdc97b2381cc4556cb3dd7b64838e5",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L144-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:144",
+      "text": "Requested without a complete terminal outcome is `unresolved`.",
+      "text_sha256": "4bad46fb9c8233d2cc4616572326d1b460233f02cc33565b5e5d05d370d4031d",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L146-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:146",
+      "text": "`EvidenceStore.session(path, value)` creates exclusive `session.json`.",
+      "text_sha256": "84f7829807d88c9bf18da6d7751825b092fb21aef552a16bc26b02cb5a3f1407",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L146-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:146",
+      "text": "`EvidenceStore.outcome(path, classification, **facts)` appends to `outcomes.jsonl`.",
+      "text_sha256": "e754cf9693aa56b99740dae3c41b81bd494f777405ed52ce78f545e8638674f4",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L148-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:148",
+      "text": "`EvidenceStore.reconcile(path)` verifies invocation, operation, and run identity hashes.",
+      "text_sha256": "4942aafe994cb905799dbe4b64254920b556da142adab3431042d49040422138",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L148-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:148",
+      "text": "It returns intent fields plus `outcome` and `partial`.",
+      "text_sha256": "c64d76bdec7067b118b7a9115d8a362e7dfa33722d42f0b250ea5b7bdf1f6047",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L150-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:150",
+      "text": "`Application.recover_invocation(path)` returns a saved-stage result only when durable events, session, stopped process, native completion when needed, positive unrejected telemetry, and telemetry content are present.",
+      "text_sha256": "343cecf5ecb6934e2aa971819fa7aaec797f105ae2195ea8a6cddd3b85e0410f",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L150-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:150",
+      "text": "Otherwise it returns `None` or raises a gate error.",
+      "text_sha256": "019892473ee594825fd7f927217f2f573fddc9d169201c4ecfcbb495397d639d",
+      "section": "Public Contracts",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Public Contracts.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L154-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:154",
+      "text": "| Effect and phase | Trigger | State already committed | Initiator | Submission owner | Executor or delivery owner | Response visibility and failure outcome | Retry or compensation | Completion evidence | Source and claim mode |",
+      "text_sha256": "1002a0fa27cdf360c059687141f2efc91397c311fcd72dd320705ffd90444dd7",
+      "section": "External And Asynchronous Effect Phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L156-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:156",
+      "text": "| Prepare invocation | Application selects one stage. | Accepted workflow and request digest exist. | `Application` | `EvidenceStore` | Not applicable | Exclusive intent failure means no adapter call. | Reconcile the same identity. | `config.json`, `intent.json` | Source, CURRENT_BEHAVIOR |",
+      "text_sha256": "8595a86772407646f54d6813e0bc19f82f469fa3c8eab697d92ff95c7e39dafa",
+      "section": "External And Asynchronous Effect Phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L157-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:157",
+      "text": "| Mark requested | Adapter is about to create the process. | Intent is durable. | `CodexAdapter` | `EvidenceStore` | Codex process | Requested state means submission may have occurred. | Do not replace from this state. | `requested.json` | Source, CURRENT_BEHAVIOR |",
+      "text_sha256": "435f31be339ad936ec8d7bcc1b5b617219474cc1201a3224f896095b308677a6",
+      "section": "External And Asynchronous Effect Phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L158-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:158",
+      "text": "| Observe result | Process emits session, events, and exit. | Requested state exists. | `CodexAdapter` | `JsonlWriter` | Codex process | Complete evidence gives a classification; partial evidence stays uncertain. | Reconcile native terminal and stopped process when possible. | Session, events, outcomes, telemetry | Source, CURRENT_BEHAVIOR |",
+      "text_sha256": "156fa85a22e39d699e5e1a100f0ae094f48ebf8f989f73e505c9e451d120437c",
+      "section": "External And Asynchronous Effect Phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L159-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:159",
+      "text": "| Recover provider or delivery | Restart finds a durable requested effect without final receipt. | Exact intended bytes or merge identities exist. | Operator or application reconciliation | Provider or delivery module | Git | Unique proof yields receipt; ambiguity blocks without mutation repetition. | Explicit prepared-provider recovery only when pre-effect HEAD remains. | Provider or delivery receipt | Source, CURRENT_BEHAVIOR |",
+      "text_sha256": "f6a28d310db80e2584dd7992ca9b6023ac854e4f73ac0e72ebb7bf5faefbf8e9",
+      "section": "External And Asynchronous Effect Phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by External And Asynchronous Effect Phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L163-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:163",
+      "text": "| Operation or data flow | Actor and authentication source | Authorization, ownership, tenancy, and data filtering | Selector and mismatch behavior | Validation owner | Success response and disclosure | State owner and transition | Failure timing and side effects | Sensitive data and logging |",
+      "text_sha256": "6f34ff918956d9228039ebd4f8afe7f18cbb098ba42c929409f1091d33df0bf3",
+      "section": "Trust And Identity Boundaries",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Trust And Identity Boundaries.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L165-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:165",
+      "text": "| Invocation evidence | Harness-generated opaque IDs and immutable binding. | Evidence authorizes no provider transition by itself. | Original IDs must hash to their path components. | `EvidenceStore.reconcile` | Returns bounded intent and outcome facts. | Application owns operation evidence; provider owns Work Item state. | Identity, version, partial-line, or parse failure blocks adoption. | Config records contain references and digests, not arbitrary adapter options or tokens. |",
+      "text_sha256": "8e7d47cf0d881e2a00a427076a2c9ad71ad7ba8142c653d39997fd2eaea02fb5",
+      "section": "Trust And Identity Boundaries",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Trust And Identity Boundaries.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L166-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:166",
+      "text": "| Native review evidence | Producer native session and fresh child session. | Child must be distinct, fresh, candidate-bound, complete, and accepting. | Exact session ID or producer-scoped child task path. | `verify_native_review` | Returns bounded verdict and evidence hashes. | Canonical agent owns delegation; harness owns gate verification. | Missing or ambiguous evidence blocks completion. | Native files stay local; prompts are not copied into harness evidence. |",
+      "text_sha256": "a2f85b621c44f607fca099e3abb7a7474e085110ec56b3651e9309d83a798cfd",
+      "section": "Trust And Identity Boundaries",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Trust And Identity Boundaries.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L170-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:170",
+      "text": "Evidence paths are derived from `component(identity)`.",
+      "text_sha256": "0d5ac3fb8ae2601416bd8f84cc5d57f8badd1e93dfb896d02f7fc2e2a24776ba",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L170-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:170",
+      "text": "JSON records are atomic snapshots.",
+      "text_sha256": "034776c868af9684f903d7b5d7c61698ae683144b9e398594b65fd18164e490d",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L170-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:170",
+      "text": "JSONL records preserve observation order.",
+      "text_sha256": "d82b4490a7fdb751ac3093d09b54ce9f2603ce5d1e15c2d45ac952f3b88a23af",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L170-S4",
+      "location": "docs/design/components/MOD-004-evidence.md:170",
+      "text": "Incremental readers retain byte offsets and expose partial tails.",
+      "text_sha256": "070f4cd28104b3389374afc94bad6157ab28102a862b07d4e85ee6461a4aacf1",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L170-S5",
+      "location": "docs/design/components/MOD-004-evidence.md:170",
+      "text": "Stage files cache only results that still pass current telemetry and request-digest validation.",
+      "text_sha256": "64638edd7db6bdc2350247626abdcb69fe3e53467a45986f2614fc29d942dff7",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L172-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:172",
+      "text": "`assignment.json` retains `provider_revision`, `provider_path`, exact `content`, immutable `original_high`, accepted `workflow`, `candidate_root`, and `workspace`.",
+      "text_sha256": "5af1512df9b369130d2a9f80246bb8a432c7588dbd514c01ea76b4f47359a1fd",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L172-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:172",
+      "text": "Ready admission requires the frozen provider revision and content to remain current.",
+      "text_sha256": "4f4f14584a12c27a653528a138f2ee31e502d1f3f90a6d2b64052525d08245a4",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L172-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:172",
+      "text": "Starting recovery joins `admit.json` to that source revision, the provider operation authority, its reconciled commit, and the exact pre-transition blob.",
+      "text_sha256": "84888f0a831483aa18cb35a081a54b3b149a77f860ed73994fe453b0e79a2fd0",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L172-S4",
+      "location": "docs/design/components/MOD-004-evidence.md:172",
+      "text": "A changed Ready record, unbound admission, or altered frozen content cannot launch acceptance.",
+      "text_sha256": "d9a1a7241277cf7c420010ccfa6f94b8f0c704f1279f1b1cae301946b0fab9d1",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L172-S5",
+      "location": "docs/design/components/MOD-004-evidence.md:172",
+      "text": "Running continuation separately requires acceptance evidence matching the canonical owner.",
+      "text_sha256": "ec0fc2748bd15d05db651797232f88396403597fb4f0fd24296e999bfa2f29c2",
+      "section": "Internal Data And State",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Internal Data And State.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L176-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:176",
+      "text": "1.",
+      "text_sha256": "c977dbe785221d34114d345fdf8ff4e18bb4af66750751dbea29407f9738735f",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L176-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:176",
+      "text": "Create exclusive intent and sanitized configuration records.",
+      "text_sha256": "b8bba8808a393f43d73dbeacce9950b01934e96cedf543705aa55a664a075054",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L177-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:177",
+      "text": "2.",
+      "text_sha256": "6bc54f13bea593dc5e1c8e6b16249e669d1ce99cbeac65f2a10f36e1d86f1fd4",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L177-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:177",
+      "text": "Create exclusive requested evidence immediately before submission.",
+      "text_sha256": "4d15505e7845caa16b45fe0361a2a3c07274d0acd43785531f937368f116c1a3",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L178-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:178",
+      "text": "3.",
+      "text_sha256": "267c23695b6e8fc29bd88b9f5d1962d3d208fa9c2fafd974614e6ab3b84fa55c",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L178-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:178",
+      "text": "Record session identity and append normalized events and outcomes.",
+      "text_sha256": "b8cab8d3dafa5c7a24d4f7b9bb63d10a875e2a0df5d1ffd0aa3303575f1a2da5",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L179-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:179",
+      "text": "4.",
+      "text_sha256": "23f663630e2f28250c09d7a0c370f55eebf635772f9ce27e46797ab8ef297f4b",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L179-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:179",
+      "text": "Fsync file and parent directory at each durable boundary.",
+      "text_sha256": "4eef4c05c75383aab651394b9afe269551d8ab65dd746c7c5867bc772ec3d801",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L180-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:180",
+      "text": "5.",
+      "text_sha256": "540dd397b2d380dcc3f59796c4facc43379929f1a3b5e6cc9a218274391b635b",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L180-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:180",
+      "text": "On restart, validate path identities and classify current evidence.",
+      "text_sha256": "a84164c91bcee06804aab75f91c8d2d6a386c69794e749bd16765791289ae779",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L181-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:181",
+      "text": "6.",
+      "text_sha256": "d80edd7fb074b51d1fbf46a3dcf5cae5237ceb888dcdd8bd1b7df117d53afdc4",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L181-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:181",
+      "text": "Adopt only an exact proved result.",
+      "text_sha256": "e5dafcdb978d5f4a553cf28373c064d4cc92785df5c5611ea8e4312f512dad54",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L182-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:182",
+      "text": "7.",
+      "text_sha256": "a50aa8b9a9806899e1d67d0d09c1ce40221cb0dffc52483e8e6da18ff1753a38",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L182-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:182",
+      "text": "Preserve unresolved evidence and block replacement execution.",
+      "text_sha256": "24cd977fae2076ac52ed640ceba15ccf597812f73550a6b88363d25e0fdce2af",
+      "section": "Processing Rules",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Rules.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L199-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:199",
+      "text": "The following diagram shows the separate effect boundaries described above.",
+      "text_sha256": "91be591f03c0e4acd4fd1f04887232bf52343e29272c5f180c203e96352bb536",
+      "section": "Processing Diagram",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Diagram.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L199-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:199",
+      "text": "Failed or ambiguous proof retains evidence and prevents advancement.",
+      "text_sha256": "88bb1d52d943abc7df332eb4a1a376d1e444a36b584069a569137784d9436ef9",
+      "section": "Processing Diagram",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Processing Diagram.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L227-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:227",
+      "text": "- Intent without requested is known not submitted.",
+      "text_sha256": "144151f526915a303ba719ec30c7d2568d17209199fab72d5ca28030dd78177e",
+      "section": "Invariants",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L228-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:228",
+      "text": "- Requested evidence alone never proves acceptance or completion.",
+      "text_sha256": "ee81e400f7909ec618f9d50b6d60318a9fba48f7e53663afedc5d927010386f2",
+      "section": "Invariants",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L229-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:229",
+      "text": "- A requested or unresolved effect is never replaced implicitly.",
+      "text_sha256": "bee8ddcc7405fcec5f696c635d00895ebecb0d8c46bc911af411b2fe46c7f606",
+      "section": "Invariants",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L230-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:230",
+      "text": "- Partial JSONL tails are not published or overwritten.",
+      "text_sha256": "69f5459781522264ecbcd33c848c89376959014169dbca472a8264f683dc2c4f",
+      "section": "Invariants",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L231-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:231",
+      "text": "- Recovery keeps original operation, invocation, session, candidate, provider revision, and byte identities.",
+      "text_sha256": "2da587d6cfc9c04ba120128af54c45ecb3be1f68205cbe8a16b10cd2a4b4a037",
+      "section": "Invariants",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L232-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:232",
+      "text": "- Starting and Running cannot reconstruct a missing canonical assignment or acceptance by launching another agent.",
+      "text_sha256": "d25bbc58d98fd5581acf873b341c0a15b0ed787b0b30f49859c6ede5d367e5ad",
+      "section": "Invariants",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L233-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:233",
+      "text": "- Runtime evidence never becomes provider lifecycle authority.",
+      "text_sha256": "796f874251b8ee4f4e84444baf5deb51bd64805722ae20a17e1f259ddcbd5775",
+      "section": "Invariants",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L234-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:234",
+      "text": "- Cached telemetry must still exist and match its saved span count and content digest.",
+      "text_sha256": "f28b2ebbfb14f3be47dcb35fb448e07354b90a428a0e9f7e35b06e3c1070dcb4",
+      "section": "Invariants",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Invariants.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L238-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:238",
+      "text": "The operational root is absolute and disjoint from writable candidate storage.",
+      "text_sha256": "031f5f259e158901a12d077128bc9542c961caa26f9b60263954ed77366b0eaf",
+      "section": "Configuration",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Configuration.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L238-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:238",
+      "text": "Evidence versions are currently `1`.",
+      "text_sha256": "1f4cbf9ad43269fc6463653a848c39b6c1bfe035f537ea347f04ffd542abcb20",
+      "section": "Configuration",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Configuration.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L238-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:238",
+      "text": "The application stores invocation evidence under hashed runs and workflow-stage evidence under hashed item paths.",
+      "text_sha256": "5bb125c8a5c72d7ed31fdc9e4d993fe6c8d36268c344d4011687dae9b08ada18",
+      "section": "Configuration",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Configuration.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L242-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:242",
+      "text": "The module uses local files, OS locks, process observation, Git evidence, and native Codex session JSONL.",
+      "text_sha256": "8986b2fa6caa79358fba417f5cfc4090ce3ad09e1c04f5181f9d92254f671578",
+      "section": "External Interfaces",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by External Interfaces.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L242-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:242",
+      "text": "It exposes no daemon, control socket, or remote evidence API.",
+      "text_sha256": "50ce5626d4f2bc0633168f36f8ec3197e95ec5b4dc77f7ebac52b23506a84cbe",
+      "section": "External Interfaces",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by External Interfaces.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L246-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:246",
+      "text": "Reconciliation returns structured invocation or provider-operation facts.",
+      "text_sha256": "a58d9913dc6366eebd6bc646ecfe2806e716f4f8dc9684e5547b297f52905f4d",
+      "section": "UI And Notification Behavior",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by UI And Notification Behavior.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L246-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:246",
+      "text": "Errors name the unresolved boundary.",
+      "text_sha256": "6d830511c0a0cfd22047a6bab1c96fa874bbf269d1e0e642738fe53f9e6ea9b3",
+      "section": "UI And Notification Behavior",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by UI And Notification Behavior.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L246-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:246",
+      "text": "The terminal never reports successful stop, resume, or recovery from missing proof.",
+      "text_sha256": "1da3b268a3337e058b91b7cc8efe14e0ea0f1111a9f91de82fefb870871110c2",
+      "section": "UI And Notification Behavior",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by UI And Notification Behavior.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L250-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:250",
+      "text": "`EvidenceError` reports lock conflicts, incomplete lines, shrinking files, invalid complete records, and identity mismatch.",
+      "text_sha256": "b93a0315833c74722dd6f566bbe06250e13282dcae14452aeb44db327570343e",
+      "section": "Error Handling",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Error Handling.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L250-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:250",
+      "text": "`TransitionBlocked` reports unproved or conflicting provider, delivery, telemetry, answer, and native-review evidence.",
+      "text_sha256": "460673b42deba79fec2dcb6838e056724a3c710cf377b24060b88aa564c370ff",
+      "section": "Error Handling",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Error Handling.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L250-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:250",
+      "text": "Recovery preserves the original files for inspection.",
+      "text_sha256": "5033f3df67b35625f04ec5f5420a4086447029aec4f76d1cb1aa0d00a6763b36",
+      "section": "Error Handling",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Error Handling.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L254-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:254",
+      "text": "ACCEPTED for independent review.",
+      "text_sha256": "70245d4cc8220829d44abf02f8ec0458eb518360dc2f1266584cf7327d9c6469",
+      "section": "Documentation Acceptance",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Documentation Acceptance.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L254-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:254",
+      "text": "This artifact records current evidence and recovery behavior.",
+      "text_sha256": "bd70dc0d91debc27b19c3d6def232eaabe99a66e662369412db2b2ad8b303ba9",
+      "section": "Documentation Acceptance",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Documentation Acceptance.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L254-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:254",
+      "text": "It does not convert preserved uncertainty into release acceptance.",
+      "text_sha256": "2570c369dfe85c07393ccca466c0ee578af3a02ce4b057a275eae5f96130b12b",
+      "section": "Documentation Acceptance",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Documentation Acceptance.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L258-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:258",
+      "text": "READY for bounded maintenance of the implemented evidence module.",
+      "text_sha256": "e4006fff6e0557b677f6e1e1b71d2a7e3d0ffd19bc7e93d45976b63443a457d8",
+      "section": "Implementation Readiness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Implementation Readiness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L258-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:258",
+      "text": "Current source is independently accepted; the [release receipt](../../verification/release-acceptance.json) binds the rebuilt installation and zero-invocation recovery replays.",
+      "text_sha256": "f688e9c929b45bca2c0de0cb2c43592af02dba1afb9b05cf6959202a14eb75a8",
+      "section": "Implementation Readiness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Implementation Readiness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L258-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:258",
+      "text": "Independent documentation review is tracked separately.",
+      "text_sha256": "865b335f1b299734b3f3e3729bafdefe9ee429df68d4f1db48448c6093ead880",
+      "section": "Implementation Readiness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Implementation Readiness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L262-S1",
+      "location": "docs/design/components/MOD-004-evidence.md:262",
+      "text": "The durable [recovery-control receipt](../../verification/recovery-control-evidence.json) records 63 passing tests and successful no-new-invocation replays for SOLO and MULTITASK.",
+      "text_sha256": "ec1c2daacc4643c54b62faf0622fd333402f20d849344ab672db3407f2b5acdf",
+      "section": "Verification",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Verification.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L262-S2",
+      "location": "docs/design/components/MOD-004-evidence.md:262",
+      "text": "Current source and tests add later telemetry receipt and projection work, so the receipt is a baseline rather than final proof.",
+      "text_sha256": "2f2aa08742722e21125a690063a1693ace79bb54eb9aa514e5b5dcf598141309",
+      "section": "Verification",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Verification.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F07-L262-S3",
+      "location": "docs/design/components/MOD-004-evidence.md:262",
+      "text": "See the [requirements matrix](../../verification/requirements-matrix.md).",
+      "text_sha256": "949fc32a52d44637b0492acafa1dcb159d12b5ad8ea4dd4b61f119fe99165e33",
+      "section": "Verification",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Verification.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    }
+  ]
+}

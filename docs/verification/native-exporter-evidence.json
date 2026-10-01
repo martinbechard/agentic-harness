@@ -1,0 +1,53 @@
+{
+  "status": "retry_behavior_verified_gap_fenced",
+  "cli_version": "codex-cli 0.159.2",
+  "invocation_id": "6791ded7-38a9-426b-bad9-5f9193db8524",
+  "native_session_id": "01a0f42a-85c2-7640-86b5-0e6a5024f2b5",
+  "native_outcome": "returned",
+  "observation": "No retry observed in the tested first-export 503 scenario on 0.159.2. This does not establish a universal retry guarantee or limitation.",
+  "export_attempts": [
+    {
+      "at": "2026-09-30T21:13:42.803712+00:00",
+      "attempt": 1,
+      "payload_digest": "0f7951b83f759bf9bd39ab14e5df4883358e6f10978dbe39598f3a175b754a7a",
+      "response": 503,
+      "span_count": 512
+    },
+    {
+      "at": "2026-09-30T21:13:43.528923+00:00",
+      "attempt": 2,
+      "payload_digest": "e25b754b10148525f85e91e9adae3802f6f7b58aa0ae20fcf7862c163a60df1a",
+      "response": 200,
+      "span_count": 512
+    },
+    {
+      "at": "2026-09-30T21:13:45.314800+00:00",
+      "attempt": 3,
+      "payload_digest": "dc31e24113fc18966559596c1aa998d3eec4124af816398350719ffbe04462e5",
+      "response": 200,
+      "span_count": 512
+    },
+    {
+      "at": "2026-09-30T21:13:48.307812+00:00",
+      "attempt": 4,
+      "payload_digest": "0d1320b6cc4d11bf502df6a63f70a45b8012142c89d2e9dcf2c8fa164cde6e7a",
+      "response": 200,
+      "span_count": 176
+    }
+  ],
+  "failed_batch_span_count": 512,
+  "failed_batch_bytes_retained": false,
+  "durable_later_span_count": 1200,
+  "output_tokens": {
+    "native": 11,
+    "otlp": 11,
+    "does_not_restore_missing_batch": true
+  },
+  "shutdown": "Observed drain/process exit: 1200 spans at exit and unchanged two seconds later. Complete flush is not proven because one batch remains missing.",
+  "generation_fence_verified": true,
+  "fence_reason": "Telemetry is missing or rejected; next generation is fenced",
+  "recovery": "No original failed batch bytes were retained. Preserve the gap and hold the affected transition; explicit disposition uses the selected provider management workflow. Do not repeat a paid invocation or invent missing spans.",
+  "raw_report": "/Users/martinbechard/dev/agentic-harness/.agent-ops/native-exporter-0159/native-exporter-report.json",
+  "raw_telemetry": "/Users/martinbechard/dev/agentic-harness/.agent-ops/native-exporter-0159/telemetry/runs/564777bb83aad6511810bffe56599041da6d53b6094209d43e4d098f50f58298/40b67c74d4f430eae46258770a9868f2bb30992ac3b3fae821c3481cb9b3a930/spans.jsonl",
+  "design_authority_chat": "01a0ee5b-548f-7640-b021-5179a3b246c2"
+}

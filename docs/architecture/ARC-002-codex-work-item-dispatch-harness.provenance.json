@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "records": [
+    {
+      "Record-Type": "new",
+      "Artifact-ID": "796367dc-5b4e-4b09-b032-ac66681cdf65",
+      "Created-Local": "2026-09-29T14:12:02-04:00",
+      "Created-UTC": "2026-09-29T18:12:02Z",
+      "Creating-Agent": "Dev Documentation Writer",
+      "Runtime": "Codex",
+      "Dispatched-Model": "gpt-5.6-sol",
+      "Reasoning-Effort": "medium",
+      "Task-ID": "/root/harness_design_writer"
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "status": "source_accepted_installed_checks_passed_documentation_review_pending",
+  "at": "2026-09-30T22:02:02.493160+00:00",
+  "source_commit": "8f0e5dc5ed8fee097095178afe48ab152d0c61fd",
+  "source_tree": "1781fab046c4066e52a96d5966d18e726651547b",
+  "source_files": {
+    ".gitignore": "b44aeb1106b58542cded3bcba8f55a9583f344e2361d9d5d842bdaa19c1aa278",
+    "pyproject.toml": "b68f266ec72de338b23c4442ea83a323888a35ee6fd5456d8c661f0ef82802b6",
+    "scripts/acceptance_fixtures.py": "0ed0bf37b8429b74d4c3491e31e561a29e932b24c70d905907061614c4d0a82f",
+    "scripts/probe_codex.py": "d2e95074efb0bc063889fd6d5523376e14bb57308f2ac1c03733e2bcb2091432",
+    "src/backlog_harness/__init__.py": "7319cf50efca6c8fde68460c73bfc38f9f42ff3b91c5b53ecbf9c63384d6b6a4",
+    "src/backlog_harness/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+    "src/backlog_harness/adapters/__init__.py": "1378a6cb98d3dc5dc3eb00265a04a7d4c3205860532b00187473d33f9e571d17",
+    "src/backlog_harness/adapters/codex/__init__.py": "fe364cbe41f5044aa99c1ae734c838fdeb92736bcf74b79575b7830da0c133d1",
+    "src/backlog_harness/adapters/codex/adapter.py": "c4711f9361d92af4b975587c80a0c2a2eeb4747407c84922bc61f7e50b5c4f58",
+    "src/backlog_harness/adapters/registry.py": "ef8c76257d7cfaaa83fb20b50ef160c7aba1df533ff97e5321aacf55aa25e07e",
+    "src/backlog_harness/analytics.py": "e471e7959fb4f8420a9693daa01e7499b6f936e0a7dd3e6a81a22d40895e2100",
+    "src/backlog_harness/application.py": "8ca97332ebbaa624b4cb5a73c9549437cb158d9a62f50da4653d1938313f0097",
+    "src/backlog_harness/cli.py": "3c342baea551f59759561821f4ad0c0e7df6f8424aa017d2fa3464a8485663a1",
+    "src/backlog_harness/contracts.py": "ab5c4bc76230b8d462ee239a1ae552467c4a7e6b72fa2bfd07544f480646fcc1",
+    "src/backlog_harness/coordination.py": "95659895820b2d399913bb313e95ecdc27c5fe84b29859b3c9b5bef69b4a3707",
+    "src/backlog_harness/dashboard.py": "b35ca912ed9b4e6822a75bf2352691ce4e7bdee3901b26e73718cf72f9fca582",
+    "src/backlog_harness/delivery.py": "23813febd7ee262191298090e6c83fc4314a8182c1ff360930319540dcaecb9e",
+    "src/backlog_harness/evidence.py": "46221a62bf0bd70736bec4f6459bb75ba17643491beb2386576f7f9f2d334b6a",
+    "src/backlog_harness/native_evidence.py": "c2a6fdaa376bbae831651e7624528c8ebd586c8b969bacfa55875572dcb6c2d3",
+    "src/backlog_harness/projections.py": "d52dc748aa1bba4e1e80e7b16a53baf1d3ef21ca601ae2b7d90ccca92f24cd23",
+    "src/backlog_harness/provider.py": "c8c7fce9964af661416528c4709898bbb1472b5c5157113105b488ca0f6b7549",
+    "src/backlog_harness/runtime.py": "bc87ea8f7810bd65a53b213b327c1b79eed964a0ae02dc4b3b9eef042105a729",
+    "src/backlog_harness/static/dashboard.css": "dbb011f27c8e8efc68e82c4b7b8a8d397428c2871dc10ae7a9f59946ba6bb757",
+    "src/backlog_harness/static/dashboard.js": "9027652277caed11daade5f92e3640d6df99e507ff420ec1cb0d6ed0dbb782ff",
+    "src/backlog_harness/static/index.html": "efed16ecf90ea4b9a7c694381663ddbe87eed2e3639969a42be43c984a5a77f4",
+    "src/backlog_harness/telemetry.py": "daa372ba339599d3b3c3589f16ce271373b2eef88a90068f2a738ecad119f98a",
+    "src/backlog_harness/terminal.py": "596c7b25cf161cf9d20243eb7c34b5c9d79ee77032231768adb7471d2c4b8943",
+    "src/backlog_harness/workflow.py": "46d14b3d81c7b6e7b8a1daf6564fd902a61d1571e394facbd408f0c3cec957ef",
+    "tests/conftest.py": "42f661ba1413c200fa0ed26c9c7099743970aa390eb1322061d80ff791c8e7d3",
+    "tests/test_analytics.py": "a838ce7e926b3b2eed79fe213c0464af8cab8156a3dae3df0981c483a8584b75",
+    "tests/test_configuration.py": "09758237b0d06c33c2e405baa51ac3a9fa7beb92a874ae475ef2a03ba0574936",
+    "tests/test_coordination.py": "4ef1c53b955da481dcea0cd33caaaefa3d77343972a2aac9377d2626b3add5a5",
+    "tests/test_evidence.py": "74155d178dec81578d8e70f46ec854fd1aec319857cd13dfb10d73f90542e64a",
+    "tests/test_execution.py": "a577a243bee47497d5dcefb7393dbaccfefb3d236fb0fd5b09b2fd0964af6fd9",
+    "tests/test_native_evidence.py": "2183455176251e150c66c0edd4c013968232ee0cdb52f5f948531d113318235f",
+    "tests/test_provider_coordination.py": "b0fea4805ea5ccce752c085347584fa92faaea6688473ddda7b0f6d3e3e7a84b",
+    "tests/test_recovery.py": "b9c12f7f73d8b9c5c10769288d92f29c2a2e86f096c7ccb8eb9011bfa1eacc0b",
+    "tests/test_telemetry.py": "3f6e82e6161dae64f6224666df7b7989ff52f542d8cb15865e6cd71500e8b918",
+    "tests/test_views.py": "a568ebc5ec216c7ba95b5dfaf580502345dfaddab92675e2d0e190d79532f5ad",
+    "uv.lock": "d78105563a4f70c7f19be299c6e9f4caa415ceae3ce5e46ad84472ef19819723"
+  },
+  "deterministic_checks": {
+    "passed": 78,
+    "python": "3.12.7",
+    "ruff": "passed",
+    "diff_check": "passed"
+  },
+  "installed_package": {
+    "version": "0.1.0a1",
+    "python": "3.13.0",
+    "wheel_sha256": "54de2bec6c820b08756e2b5ec62e0dc7e11c3324cb4d07ffc31445e8421598c1",
+    "package_files_match_source": true,
+    "files_checked": 24,
+    "environment": "/Users/martinbechard/dev/agentic-harness/.agent-ops/release-check"
+  },
+  "retained_batches": {
+    "solo": {
+      "invocation_ids": [
+        "07fc0e72-f7f1-4eda-a147-4bf8a916a249",
+        "1b7f9658-4a70-4197-bc0d-092c00fab5de",
+        "2399d84e-263b-4686-b84e-14685ae17dca",
+        "2859ea78-f570-4806-bc26-e2ecddeeedaf",
+        "415903fd-f0f0-4450-8b30-4980aba07fd7",
+        "56c45fcb-26af-46b4-b3dd-3b0cf40814f8",
+        "75ba3e34-f3c4-47bf-b9ae-cec31cdeafd0",
+        "c7256b99-d6b9-4c74-9190-af3485ec5440",
+        "d3b52674-a07c-4279-a57b-9a5ca75e8b70"
+      ],
+      "new_invocations": 0,
+      "outcome": "successful",
+      "counts": {
+        "Completed": 3
+      },
+      "max_real_overlap": 1
+    },
+    "multitask": {
+      "invocation_ids": [
+        "0f12c57e-b34f-4c8e-8218-b24f7f8e2e75",
+        "125ea20f-5850-4ff3-add7-385f5d740d49",
+        "14497049-e2c7-4d97-b0de-9ed0c240f10e",
+        "3634bbe1-2fa2-4c08-b427-f68dc427b88e",
+        "4b9290e7-c757-4507-8108-694e4878e2fe",
+        "584fb1c0-ffae-487c-979d-c903ff915d71",
+        "9f28c77b-076c-42f0-b895-87e0e13fc12a",
+        "a5a70a28-51ff-4bd7-9390-fe6666df3f10",
+        "ad6c0943-87b4-4bf1-81f9-4df17eb33366",
+        "b05f7d73-05cd-4f9d-8294-a14a055739b8",
+        "ba648664-9a73-4e71-a8f1-7dd84148d254",
+        "df85176e-ca69-40c7-a453-24ad680085f4"
+      ],
+      "new_invocations": 0,
+      "outcome": "successful",
+      "counts": {
+        "Completed": 3
+      },
+      "max_real_overlap": 2
+    }
+  },
+  "controls": {
+    "at": "2026-09-30T21:58:30.548743+00:00",
+    "installed_package": "/Users/martinbechard/dev/agentic-harness/.agent-ops/release-check/lib/python3.13/site-packages/backlog_harness/__init__.py",
+    "fixture_type": "deterministic adapter and scheduling fixtures; zero model calls",
+    "configuration_reload": {
+      "passed": true,
+      "original_model": "gpt-6-astra",
+      "next_model": "fixture-next-model",
+      "in_flight_immutable": true,
+      "resume_change_fenced": true
+    },
+    "watch_discovery": {
+      "passed": true,
+      "idle_dispatches": 0,
+      "paused_dispatches": 0,
+      "later_item_dispatches": 1,
+      "resume_after_multiple_polls": true
+    },
+    "terminal_dashboard_parity": {
+      "passed": true,
+      "revision": "caee23da5d810c18a0c6213b99d6124305736bada991275ed41d5ba2ebfe79c0",
+      "fields": [
+        "as_of",
+        "capability_blockers",
+        "counts",
+        "generation_configuration_error",
+        "items",
+        "revision",
+        "run_observation",
+        "runtime_freshness",
+        "telemetry_receipt_binding",
+        "trace_span_count",
+        "uncertainty"
+      ],
+      "completed_items": 3,
+      "trace_span_count": 39220,
+      "unresolved": 0
+    }
+  },
+  "controls_script": "/Users/martinbechard/dev/agentic-harness/.agent-ops/release-controls/check.py",
+  "controls_script_sha256": "f53f034f83689d7db06f52945dd227e1af3e3d4e9a8a7a6476bd4a39375c9d83",
+  "installed_terminal": {
+    "help": "passed",
+    "status": "passed",
+    "watch_idle": "passed",
+    "pause_across_polls": "AdmissionPaused retained for at least 20 seconds",
+    "resume": "passed; Running then IdleWatch",
+    "stop": "Available; admission closed; quiescent",
+    "quit": "passed",
+    "new_invocations": 0
+  },
+  "installed_dashboard": {
+    "url": "http://127.0.0.1:59090",
+    "completed_items": 3,
+    "trace_span_count": 39220,
+    "unresolved_observations": 0,
+    "visually_verified": true,
+    "receipt_binding": "legacy_count_only"
+  },
+  "codex": {
+    "registry_latest": "0.159.2",
+    "installed": "codex-cli 0.159.2",
+    "authentication": "Logged in using ChatGPT"
+  },
+  "limitations": [
+    "Selected file/main-branch route with explicit coordination none; claim-helper projects are fenced.",
+    "Real six deliveries predate final source; corrections have current deterministic and installed replay coverage.",
+    "Native first-export 503 probe observed no retry; missing batch remains fenced, lossless flush unproved.",
+    "Legacy Completed receipts bind counts only; they cannot authorize new protected transitions."
+  ]
+}

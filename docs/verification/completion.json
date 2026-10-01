@@ -1,0 +1,163 @@
+{
+  "status": "acceptance_complete",
+  "at": "2026-10-01T02:18:40.188526+00:00",
+  "objective": "Complete the implementation plan and successfully process three dummy Work Items in SOLO and three in concurrent mode.",
+  "source_commit": "8f0e5dc5ed8fee097095178afe48ab152d0c61fd",
+  "source_tree": "1781fab046c4066e52a96d5966d18e726651547b",
+  "required_outcomes": [
+    "RO-01",
+    "RO-02",
+    "RO-03",
+    "RO-04",
+    "RO-05",
+    "RO-06",
+    "RO-07",
+    "RO-08",
+    "RO-09",
+    "RO-10"
+  ],
+  "end_to_end_scenarios": [
+    "E2E-01",
+    "E2E-02",
+    "E2E-03",
+    "E2E-04",
+    "E2E-05",
+    "E2E-06",
+    "E2E-07",
+    "E2E-08",
+    "E2E-09",
+    "E2E-10",
+    "E2E-11"
+  ],
+  "delivery_phases": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "requirement_evidence": "requirements-matrix.md traces every listed outcome, scenario and phase to designs, actual tests and retained native or installed evidence; independently accepted in document-acceptance.json.",
+  "evidence": {
+    "IMPLEMENTATION-PLAN.md": "0e604e926eaf5be83eff68bc2f4a7474e7c3b7515633470d2ec4fba4e1738e64",
+    "docs/verification/requirements-matrix.md": "854bdf5726b6d55295b8ea40bf2bee103a1c0c90dfa185d065478e8a806ac656",
+    "docs/verification/final-source-review.json": "844f28fed47bd6b2ff44cbbd583640393c5bc35021b446e0e75b96e723949c37",
+    "docs/verification/release-acceptance.json": "5ee9c86e9c9cc83e4612121f12f953b449e088ee4d06c46dbba43b8d27b988e1",
+    "docs/verification/six-item-acceptance.json": "ac37e54171799e130a72278de9e6f9b456273d3b3672240b95a3bd62426146f9",
+    "docs/verification/native-exporter-evidence.json": "1a5170e0157ab09a6af32b3a47d0eb1268ae7ca2d7dd96d7851764d927ad53db",
+    "docs/verification/document-acceptance.json": "65a7c90ed17285f570217dea6332acdc64fb6f863691546cc836271f019256f3",
+    "docs/verification/document-candidate.json": "2f5011a9ba37a162e2201f82203534e2bf7629839c17da525000f75a4b4deeca"
+  },
+  "current_state_audit": {
+    "at": "2026-10-01T02:09:50.225538+00:00",
+    "source_files_verified": 40,
+    "candidate_files_verified": 16,
+    "installed_files_verified": 24,
+    "modes": {
+      "solo": {
+        "completed": 3,
+        "native_reviews_reverified": 3,
+        "source_and_integrated_checks": 6,
+        "retained_invocations": 9,
+        "overlap": 1,
+        "provider_head": "386fa2e3feb8bd7a5458ac2ad9d0902cb2f0ef18"
+      },
+      "multitask": {
+        "completed": 3,
+        "native_reviews_reverified": 3,
+        "source_and_integrated_checks": 6,
+        "retained_invocations": 12,
+        "overlap": 2,
+        "provider_head": "0905ae5e2b472a5408a987479fa116c172c66021"
+      }
+    },
+    "candidate_sha256": "2f5011a9ba37a162e2201f82203534e2bf7629839c17da525000f75a4b4deeca",
+    "candidate_note": "Plan status sentence now references current progress; every current candidate hash verified after this non-material correction."
+  },
+  "independent_source_review": "ACCEPT",
+  "independent_document_review": {
+    "verdict": "GOOD",
+    "candidate_sha256": "2f5011a9ba37a162e2201f82203534e2bf7629839c17da525000f75a4b4deeca",
+    "unique_checklist_questions": 218,
+    "mechanical_receipts_verified": 16,
+    "evidence_files_verified": 59,
+    "all_receipt_inputs_match_current_bytes": true
+  },
+  "deterministic_checks": {
+    "passed": 78,
+    "python": "3.12.7",
+    "ruff": "passed",
+    "diff_check": "passed"
+  },
+  "installed_package": {
+    "version": "0.1.0a1",
+    "python": "3.13.0",
+    "wheel_sha256": "54de2bec6c820b08756e2b5ec62e0dc7e11c3324cb4d07ffc31445e8421598c1",
+    "package_files_match_source": true,
+    "files_checked": 24,
+    "environment": "/Users/martinbechard/dev/agentic-harness/.agent-ops/release-check"
+  },
+  "installed_controls": {
+    "at": "2026-09-30T21:58:30.548743+00:00",
+    "installed_package": "/Users/martinbechard/dev/agentic-harness/.agent-ops/release-check/lib/python3.13/site-packages/backlog_harness/__init__.py",
+    "fixture_type": "deterministic adapter and scheduling fixtures; zero model calls",
+    "configuration_reload": {
+      "passed": true,
+      "original_model": "gpt-6-astra",
+      "next_model": "fixture-next-model",
+      "in_flight_immutable": true,
+      "resume_change_fenced": true
+    },
+    "watch_discovery": {
+      "passed": true,
+      "idle_dispatches": 0,
+      "paused_dispatches": 0,
+      "later_item_dispatches": 1,
+      "resume_after_multiple_polls": true
+    },
+    "terminal_dashboard_parity": {
+      "passed": true,
+      "revision": "caee23da5d810c18a0c6213b99d6124305736bada991275ed41d5ba2ebfe79c0",
+      "fields": [
+        "as_of",
+        "capability_blockers",
+        "counts",
+        "generation_configuration_error",
+        "items",
+        "revision",
+        "run_observation",
+        "runtime_freshness",
+        "telemetry_receipt_binding",
+        "trace_span_count",
+        "uncertainty"
+      ],
+      "completed_items": 3,
+      "trace_span_count": 39220,
+      "unresolved": 0
+    }
+  },
+  "latest_live_dashboard": {
+    "revision": "91c8ba3dece3492ca20bd893b54be0c57491543407f020565660e3694a79d45e",
+    "counts": {
+      "Completed": 3
+    },
+    "trace_span_count": 39220,
+    "capability_blockers": [],
+    "generation_configuration_error": null,
+    "uncertainty": []
+  },
+  "remaining_required_work": [],
+  "nonblocking_findings": [
+    "18 sibling provenance path_outside_root link findings; exact historical links are not indispensable to current conclusions",
+    "Operator-guide admission paragraph can expose its existing ordered steps as a list in a later authorized edit"
+  ],
+  "limitations": [
+    "Selected file/main-branch route with explicit coordination none; claim-helper projects are fenced.",
+    "Real six deliveries predate final source; corrections have current deterministic and installed replay coverage.",
+    "Native first-export 503 probe observed no retry; missing batch remains fenced, lossless flush unproved.",
+    "Legacy Completed receipts bind counts only; they cannot authorize new protected transitions."
+  ],
+  "evidence_boundary": "Six real deliveries are historical and retain their original source manifests. Current corrections are proved by focused deterministic tests, independent source acceptance, exact installed-file matching and zero-new-invocation replay. No fresh native deliveries are claimed.",
+  "candidate_preservation": "document-candidate.json is an exact durable copy of the .agent-ops manifest referenced by the independent review; it preserves the original reviewed bytes and SHA-256.",
+  "packaging": "The accepted wheel is byte-identical to the current source build. Distribution files are local ignored outputs under dist; final distribution digests and release commit are retained in .agent-ops/final-distribution.json after the documentation commit."
+}

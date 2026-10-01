@@ -1,0 +1,3397 @@
+{
+  "candidate": {
+    "path": "docs/verification/release-acceptance.json",
+    "sha256": "5ee9c86e9c9cc83e4612121f12f953b449e088ee4d06c46dbba43b8d27b988e1"
+  },
+  "sentence_count": 154,
+  "sentences": [
+    {
+      "id": "F14-L2-S1",
+      "location": "docs/verification/release-acceptance.json:2",
+      "text": "  \"status\": \"source_accepted_installed_checks_passed_documentation_review_pending\",",
+      "text_sha256": "51e8b7d6d29722795cc58a06932d23d0aea5996b25ea075bfee3ec86b58ef74f",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L3-S1",
+      "location": "docs/verification/release-acceptance.json:3",
+      "text": "  \"at\": \"2026-09-30T22:02:02.493160+00:00\",",
+      "text_sha256": "41074cb25bd4d93d89763b07cbd8ea7b3ac09c6c76fcd9dbf2605ec921d631dc",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L4-S1",
+      "location": "docs/verification/release-acceptance.json:4",
+      "text": "  \"source_commit\": \"8f0e5dc5ed8fee097095178afe48ab152d0c61fd\",",
+      "text_sha256": "153d60aa74c3c4a6d25e910b78cea00dc146121e07e0a5b62cc0822049270e12",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L5-S1",
+      "location": "docs/verification/release-acceptance.json:5",
+      "text": "  \"source_tree\": \"1781fab046c4066e52a96d5966d18e726651547b\",",
+      "text_sha256": "7b985ade8af1f5d269959b51a2416af2167d99c54d32f64ea3df03c7081090ad",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L6-S1",
+      "location": "docs/verification/release-acceptance.json:6",
+      "text": "  \"source_files\": {",
+      "text_sha256": "1edd0f7013cca3c5d1411052d3fbfdcc7a00c2b5c3b76153288242efc6ecdf92",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L7-S1",
+      "location": "docs/verification/release-acceptance.json:7",
+      "text": "    \".gitignore\": \"b44aeb1106b58542cded3bcba8f55a9583f344e2361d9d5d842bdaa19c1aa278\",",
+      "text_sha256": "cd403df369c772d8aba88dbd28b450a4fa04415fab8a8e2d59d8d0d4e1ee38ee",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L8-S1",
+      "location": "docs/verification/release-acceptance.json:8",
+      "text": "    \"pyproject.toml\": \"b68f266ec72de338b23c4442ea83a323888a35ee6fd5456d8c661f0ef82802b6\",",
+      "text_sha256": "b73e4e4da21857b2c52777bf05cb9b63a874fb09ee6d85915523529b5cf34229",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L9-S1",
+      "location": "docs/verification/release-acceptance.json:9",
+      "text": "    \"scripts/acceptance_fixtures.py\": \"0ed0bf37b8429b74d4c3491e31e561a29e932b24c70d905907061614c4d0a82f\",",
+      "text_sha256": "c1d3a7c070c40784cff55fbd3a5dff1d4a4066312ac3abed272945b7783625bf",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L10-S1",
+      "location": "docs/verification/release-acceptance.json:10",
+      "text": "    \"scripts/probe_codex.py\": \"d2e95074efb0bc063889fd6d5523376e14bb57308f2ac1c03733e2bcb2091432\",",
+      "text_sha256": "79bff8a892d313dbee1114d11afff89de7af94a319881b23692b027c030bc5ca",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L11-S1",
+      "location": "docs/verification/release-acceptance.json:11",
+      "text": "    \"src/backlog_harness/__init__.py\": \"7319cf50efca6c8fde68460c73bfc38f9f42ff3b91c5b53ecbf9c63384d6b6a4\",",
+      "text_sha256": "f2944d3a8af429898848497d0886efb6cb0a6a78b06c91d61ab9122d68957064",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L12-S1",
+      "location": "docs/verification/release-acceptance.json:12",
+      "text": "    \"src/backlog_harness/__main__.py\": \"935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d\",",
+      "text_sha256": "4ebe1a5b6ba950c4fb36092ca369a74d3919dacc28440d887b952516347d2d03",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L13-S1",
+      "location": "docs/verification/release-acceptance.json:13",
+      "text": "    \"src/backlog_harness/adapters/__init__.py\": \"1378a6cb98d3dc5dc3eb00265a04a7d4c3205860532b00187473d33f9e571d17\",",
+      "text_sha256": "a8e613064071f3ec4eb8746245ca050693fae7058f466950a61904a820097272",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L14-S1",
+      "location": "docs/verification/release-acceptance.json:14",
+      "text": "    \"src/backlog_harness/adapters/codex/__init__.py\": \"fe364cbe41f5044aa99c1ae734c838fdeb92736bcf74b79575b7830da0c133d1\",",
+      "text_sha256": "bfdcbb3d2fb90cdf9d8af92109934eea02b18fa44c89379fa15b01e422f75e54",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L15-S1",
+      "location": "docs/verification/release-acceptance.json:15",
+      "text": "    \"src/backlog_harness/adapters/codex/adapter.py\": \"c4711f9361d92af4b975587c80a0c2a2eeb4747407c84922bc61f7e50b5c4f58\",",
+      "text_sha256": "bed7f336df07cf88afad01f2a384a5a2f0523d457a8a16d5455ffa036010d219",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L16-S1",
+      "location": "docs/verification/release-acceptance.json:16",
+      "text": "    \"src/backlog_harness/adapters/registry.py\": \"ef8c76257d7cfaaa83fb20b50ef160c7aba1df533ff97e5321aacf55aa25e07e\",",
+      "text_sha256": "168163733ee40ba9273b56d4b741448bf662a1900eb0429dc4334721d5f1c538",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L17-S1",
+      "location": "docs/verification/release-acceptance.json:17",
+      "text": "    \"src/backlog_harness/analytics.py\": \"e471e7959fb4f8420a9693daa01e7499b6f936e0a7dd3e6a81a22d40895e2100\",",
+      "text_sha256": "fce7f78415f9dbb9c7591d7f375194a799594747f9b582056c6272fa2be2bb51",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L18-S1",
+      "location": "docs/verification/release-acceptance.json:18",
+      "text": "    \"src/backlog_harness/application.py\": \"8ca97332ebbaa624b4cb5a73c9549437cb158d9a62f50da4653d1938313f0097\",",
+      "text_sha256": "d7e1e2b5a7a8987ee8be4d3da181702e5cbf65ec462f8dcc10337edc3c8dcd88",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L19-S1",
+      "location": "docs/verification/release-acceptance.json:19",
+      "text": "    \"src/backlog_harness/cli.py\": \"3c342baea551f59759561821f4ad0c0e7df6f8424aa017d2fa3464a8485663a1\",",
+      "text_sha256": "d682cd7ff8303549feb157b6d404c934e7e2d42931c4cca4e75575f52ef27030",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L20-S1",
+      "location": "docs/verification/release-acceptance.json:20",
+      "text": "    \"src/backlog_harness/contracts.py\": \"ab5c4bc76230b8d462ee239a1ae552467c4a7e6b72fa2bfd07544f480646fcc1\",",
+      "text_sha256": "7295b680770130a91bdec313c4e5180bb99b27d1fdf8287d65333dc51df27c7f",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L21-S1",
+      "location": "docs/verification/release-acceptance.json:21",
+      "text": "    \"src/backlog_harness/coordination.py\": \"95659895820b2d399913bb313e95ecdc27c5fe84b29859b3c9b5bef69b4a3707\",",
+      "text_sha256": "4cc4b1be6dd564ba60eb7c46c6c573097d529cc5f647544b6d155400d76658c2",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L22-S1",
+      "location": "docs/verification/release-acceptance.json:22",
+      "text": "    \"src/backlog_harness/dashboard.py\": \"b35ca912ed9b4e6822a75bf2352691ce4e7bdee3901b26e73718cf72f9fca582\",",
+      "text_sha256": "813bc41bc3f435c4ec6dccdce17b141fa2552ee8bb6b616205811ecdd602af0c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L23-S1",
+      "location": "docs/verification/release-acceptance.json:23",
+      "text": "    \"src/backlog_harness/delivery.py\": \"23813febd7ee262191298090e6c83fc4314a8182c1ff360930319540dcaecb9e\",",
+      "text_sha256": "f30644025bfffeed8ec83aab6d2277cf7f073213d7f4ae2d022dc82d0ec38753",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L24-S1",
+      "location": "docs/verification/release-acceptance.json:24",
+      "text": "    \"src/backlog_harness/evidence.py\": \"46221a62bf0bd70736bec4f6459bb75ba17643491beb2386576f7f9f2d334b6a\",",
+      "text_sha256": "52d9a313a0310eda585b915cc14578a18c3e8e7ef561b5652b370ee145136cc8",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L25-S1",
+      "location": "docs/verification/release-acceptance.json:25",
+      "text": "    \"src/backlog_harness/native_evidence.py\": \"c2a6fdaa376bbae831651e7624528c8ebd586c8b969bacfa55875572dcb6c2d3\",",
+      "text_sha256": "2863dcf9a685fef6f7bdde3145a1c8bbe6484dcb0b1b78197d2958885e6dcf01",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L26-S1",
+      "location": "docs/verification/release-acceptance.json:26",
+      "text": "    \"src/backlog_harness/projections.py\": \"d52dc748aa1bba4e1e80e7b16a53baf1d3ef21ca601ae2b7d90ccca92f24cd23\",",
+      "text_sha256": "e267acef110c8fd25e7edf7826865cfe471a2837cbd47a35cfdc24c8d5950e5d",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L27-S1",
+      "location": "docs/verification/release-acceptance.json:27",
+      "text": "    \"src/backlog_harness/provider.py\": \"c8c7fce9964af661416528c4709898bbb1472b5c5157113105b488ca0f6b7549\",",
+      "text_sha256": "143fb320f1bfaa9d828340a08e01a490ea379e752a08a2e9f8248ad27ef807c4",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L28-S1",
+      "location": "docs/verification/release-acceptance.json:28",
+      "text": "    \"src/backlog_harness/runtime.py\": \"bc87ea8f7810bd65a53b213b327c1b79eed964a0ae02dc4b3b9eef042105a729\",",
+      "text_sha256": "27a2155c167ae034d5472e3745c06be8a1ac6fb7b7446cdfff3af034bccbb0af",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L29-S1",
+      "location": "docs/verification/release-acceptance.json:29",
+      "text": "    \"src/backlog_harness/static/dashboard.css\": \"dbb011f27c8e8efc68e82c4b7b8a8d397428c2871dc10ae7a9f59946ba6bb757\",",
+      "text_sha256": "b10408c590d9005888ae8f5a8485d34c30bdcc1297bd407fcad6bf7e69b03d51",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L30-S1",
+      "location": "docs/verification/release-acceptance.json:30",
+      "text": "    \"src/backlog_harness/static/dashboard.js\": \"9027652277caed11daade5f92e3640d6df99e507ff420ec1cb0d6ed0dbb782ff\",",
+      "text_sha256": "331f4069e569a89f2fab01a2420feeb15f13485bdd33ba76ab45ba9659213dfc",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L31-S1",
+      "location": "docs/verification/release-acceptance.json:31",
+      "text": "    \"src/backlog_harness/static/index.html\": \"efed16ecf90ea4b9a7c694381663ddbe87eed2e3639969a42be43c984a5a77f4\",",
+      "text_sha256": "eb4ed328ff629941f65f49ba97dfafc558576bce55b0aff6af36e1af176ec251",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L32-S1",
+      "location": "docs/verification/release-acceptance.json:32",
+      "text": "    \"src/backlog_harness/telemetry.py\": \"daa372ba339599d3b3c3589f16ce271373b2eef88a90068f2a738ecad119f98a\",",
+      "text_sha256": "4f09983ade2d0456a5218824fecf5f36b46d06b6e8b9981cd3f8f9aab3eb361e",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L33-S1",
+      "location": "docs/verification/release-acceptance.json:33",
+      "text": "    \"src/backlog_harness/terminal.py\": \"596c7b25cf161cf9d20243eb7c34b5c9d79ee77032231768adb7471d2c4b8943\",",
+      "text_sha256": "4efef1eca1d8912fe99d7e97cf38419a6de4b583bb52edb947f7adc3664b3f9f",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L34-S1",
+      "location": "docs/verification/release-acceptance.json:34",
+      "text": "    \"src/backlog_harness/workflow.py\": \"46d14b3d81c7b6e7b8a1daf6564fd902a61d1571e394facbd408f0c3cec957ef\",",
+      "text_sha256": "3a0c801a166518fcade311cbb18f7a34282a5fca4cb4a172a88cdb349d8be470",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L35-S1",
+      "location": "docs/verification/release-acceptance.json:35",
+      "text": "    \"tests/conftest.py\": \"42f661ba1413c200fa0ed26c9c7099743970aa390eb1322061d80ff791c8e7d3\",",
+      "text_sha256": "b40d0b7faee5f504ec79b4d4a151a1d93659827ece1afb4acd8021d921f2efb0",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L36-S1",
+      "location": "docs/verification/release-acceptance.json:36",
+      "text": "    \"tests/test_analytics.py\": \"a838ce7e926b3b2eed79fe213c0464af8cab8156a3dae3df0981c483a8584b75\",",
+      "text_sha256": "b15e1d7f9083c9c76ef9c6c7951fd2887e333573f58514fa88eb369e8e6afe4f",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L37-S1",
+      "location": "docs/verification/release-acceptance.json:37",
+      "text": "    \"tests/test_configuration.py\": \"09758237b0d06c33c2e405baa51ac3a9fa7beb92a874ae475ef2a03ba0574936\",",
+      "text_sha256": "64fe0bb951ddf85a7100806cf32f8582397f98f5528a140e1afdef55c89c54c6",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L38-S1",
+      "location": "docs/verification/release-acceptance.json:38",
+      "text": "    \"tests/test_coordination.py\": \"4ef1c53b955da481dcea0cd33caaaefa3d77343972a2aac9377d2626b3add5a5\",",
+      "text_sha256": "27b1d10f6059af5a325f55391303a340737f267862e83804ec58dc9ac3ff820d",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L39-S1",
+      "location": "docs/verification/release-acceptance.json:39",
+      "text": "    \"tests/test_evidence.py\": \"74155d178dec81578d8e70f46ec854fd1aec319857cd13dfb10d73f90542e64a\",",
+      "text_sha256": "3bf7e2358d6b0b805b1314b8277b0d9ce99fd52d6d854e858ab51b99e57b3c99",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L40-S1",
+      "location": "docs/verification/release-acceptance.json:40",
+      "text": "    \"tests/test_execution.py\": \"a577a243bee47497d5dcefb7393dbaccfefb3d236fb0fd5b09b2fd0964af6fd9\",",
+      "text_sha256": "258a88ce0099943594301be0808f99ddd286aa5f95999e60b916186f16d2712f",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L41-S1",
+      "location": "docs/verification/release-acceptance.json:41",
+      "text": "    \"tests/test_native_evidence.py\": \"2183455176251e150c66c0edd4c013968232ee0cdb52f5f948531d113318235f\",",
+      "text_sha256": "03531625d10abbf64d1906260ebdfdfeadbf55f88756a14705ca4c79d417d7e3",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L42-S1",
+      "location": "docs/verification/release-acceptance.json:42",
+      "text": "    \"tests/test_provider_coordination.py\": \"b0fea4805ea5ccce752c085347584fa92faaea6688473ddda7b0f6d3e3e7a84b\",",
+      "text_sha256": "c0f73aff87196cb541c739b94fea1cac4e979979a5ab0ac6ea757d5ad193bae1",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L43-S1",
+      "location": "docs/verification/release-acceptance.json:43",
+      "text": "    \"tests/test_recovery.py\": \"b9c12f7f73d8b9c5c10769288d92f29c2a2e86f096c7ccb8eb9011bfa1eacc0b\",",
+      "text_sha256": "f214b19280e9f5fdcc83fece7d6955394ae7a5fa67b3f1bd76e5f6b823ff9e4e",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L44-S1",
+      "location": "docs/verification/release-acceptance.json:44",
+      "text": "    \"tests/test_telemetry.py\": \"3f6e82e6161dae64f6224666df7b7989ff52f542d8cb15865e6cd71500e8b918\",",
+      "text_sha256": "fd8fbf958567a94d763d7a538b47cec4dcba14ad956a6ed70aab58914d8d11ff",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L45-S1",
+      "location": "docs/verification/release-acceptance.json:45",
+      "text": "    \"tests/test_views.py\": \"a568ebc5ec216c7ba95b5dfaf580502345dfaddab92675e2d0e190d79532f5ad\",",
+      "text_sha256": "f23e96b9bc76a7bf64de8633f3601f0f490110239d56897ce03da4b768af15eb",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L46-S1",
+      "location": "docs/verification/release-acceptance.json:46",
+      "text": "    \"uv.lock\": \"d78105563a4f70c7f19be299c6e9f4caa415ceae3ce5e46ad84472ef19819723\"",
+      "text_sha256": "3baa21fb3e8a5ed9a00348707400fb5822035fbe1f6eb40ff7dea91e48102709",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L48-S1",
+      "location": "docs/verification/release-acceptance.json:48",
+      "text": "  \"deterministic_checks\": {",
+      "text_sha256": "28ab01e45c349734ccf8b950d84cdfc97a7700eeb3ac07d84eb3a75367cb84ba",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L49-S1",
+      "location": "docs/verification/release-acceptance.json:49",
+      "text": "    \"passed\": 78,",
+      "text_sha256": "f22a9baabb1794fb82f912f3fa4f7e64c4c0b92bd4bcbe4b9719afd293e2b084",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L50-S1",
+      "location": "docs/verification/release-acceptance.json:50",
+      "text": "    \"python\": \"3.12.7\",",
+      "text_sha256": "393591be4fab904d7e5c4a31f00591459bc79f2b1493b340f599f833fbcd2d59",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L51-S1",
+      "location": "docs/verification/release-acceptance.json:51",
+      "text": "    \"ruff\": \"passed\",",
+      "text_sha256": "cca3ae657b9c08b739a5f8412639b47bfb15c5cc040103dab5e55994b60bf767",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L52-S1",
+      "location": "docs/verification/release-acceptance.json:52",
+      "text": "    \"diff_check\": \"passed\"",
+      "text_sha256": "3b80fd5fd2eefcf2895805f5740062bfea62493502199fd3e3c07f597f63498b",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L54-S1",
+      "location": "docs/verification/release-acceptance.json:54",
+      "text": "  \"installed_package\": {",
+      "text_sha256": "1c5dd040169c00d547048b2d7eb18521aa5ca76311bc71c40cb6b74fb645b61b",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L55-S1",
+      "location": "docs/verification/release-acceptance.json:55",
+      "text": "    \"version\": \"0.1.0a1\",",
+      "text_sha256": "04aed210a4399f4a5c316d317b5df28d883e3f8fb1096f3ea78e6ee3a148ced3",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L56-S1",
+      "location": "docs/verification/release-acceptance.json:56",
+      "text": "    \"python\": \"3.13.0\",",
+      "text_sha256": "7d4c77bb17d603ced4b2200c098f4a8bda845d1ceb97fa0a6d91a5e7e6261e89",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L57-S1",
+      "location": "docs/verification/release-acceptance.json:57",
+      "text": "    \"wheel_sha256\": \"54de2bec6c820b08756e2b5ec62e0dc7e11c3324cb4d07ffc31445e8421598c1\",",
+      "text_sha256": "4e51d20a38238a3e4069d2c5cbc39e6aa3a557aecd4f44a5008c2cca309b28ef",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L58-S1",
+      "location": "docs/verification/release-acceptance.json:58",
+      "text": "    \"package_files_match_source\": true,",
+      "text_sha256": "3be6b5d21ecfc84f4926da1051e9f812fbfcb951ad85e5b294b1036866bc91f1",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L59-S1",
+      "location": "docs/verification/release-acceptance.json:59",
+      "text": "    \"files_checked\": 24,",
+      "text_sha256": "e8d2b95ef74fcfd661ed9c8e26f91eb9df18ef0e07f0a31956ead2f6934dd18e",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L60-S1",
+      "location": "docs/verification/release-acceptance.json:60",
+      "text": "    \"environment\": \"/Users/martinbechard/dev/agentic-harness/.agent-ops/release-check\"",
+      "text_sha256": "ec99c143a7e94491f19f04312916112e7477138f38604fdb40e6e2cab356ecdc",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L62-S1",
+      "location": "docs/verification/release-acceptance.json:62",
+      "text": "  \"retained_batches\": {",
+      "text_sha256": "b36fafa575dcc72f0ab3edf814759e03da9e8a30f4744d7e153c4f2af190de1f",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L63-S1",
+      "location": "docs/verification/release-acceptance.json:63",
+      "text": "    \"solo\": {",
+      "text_sha256": "a33d783a508c94abba4addbcc237dfce209312c3473b0357b8ef2f63560d66fa",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L64-S1",
+      "location": "docs/verification/release-acceptance.json:64",
+      "text": "      \"invocation_ids\": [",
+      "text_sha256": "e025e6288046035eb5ca0e74541ad26bc81b7a503b9abf82c5e59181d249b37d",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L65-S1",
+      "location": "docs/verification/release-acceptance.json:65",
+      "text": "        \"07fc0e72-f7f1-4eda-a147-4bf8a916a249\",",
+      "text_sha256": "d27a197cc9f128fcc90d83d573af24608b38609d0e9636e527db09553c245d1e",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L66-S1",
+      "location": "docs/verification/release-acceptance.json:66",
+      "text": "        \"1b7f9658-4a70-4197-bc0d-092c00fab5de\",",
+      "text_sha256": "d2f25e6da0153f2b65c805824c9341004b20377a1aafa3f42dd587dde0c6f821",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L67-S1",
+      "location": "docs/verification/release-acceptance.json:67",
+      "text": "        \"2399d84e-263b-4686-b84e-14685ae17dca\",",
+      "text_sha256": "af9d27aaa35951abefc1086fa48dba6f991978e2519c0278aaf5c8c1ca0cbc38",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L68-S1",
+      "location": "docs/verification/release-acceptance.json:68",
+      "text": "        \"2859ea78-f570-4806-bc26-e2ecddeeedaf\",",
+      "text_sha256": "38767e8b6d1097ee5c4efcbd36c64a0eb92ba9be1448550137e3db6dbc83999c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L69-S1",
+      "location": "docs/verification/release-acceptance.json:69",
+      "text": "        \"415903fd-f0f0-4450-8b30-4980aba07fd7\",",
+      "text_sha256": "91d719a8d59a472f268a2a65407aa9ca04947072d4e49017b6a1b2ed803b8dc6",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L70-S1",
+      "location": "docs/verification/release-acceptance.json:70",
+      "text": "        \"56c45fcb-26af-46b4-b3dd-3b0cf40814f8\",",
+      "text_sha256": "e2cd848da6599c25029d68cf8196ddc7f1a3cdd135bf177bde9a47f7fd88220a",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L71-S1",
+      "location": "docs/verification/release-acceptance.json:71",
+      "text": "        \"75ba3e34-f3c4-47bf-b9ae-cec31cdeafd0\",",
+      "text_sha256": "f762571634da0dcc6761820d8a1d3051bfb52a701204e988835142f4ba69b17a",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L72-S1",
+      "location": "docs/verification/release-acceptance.json:72",
+      "text": "        \"c7256b99-d6b9-4c74-9190-af3485ec5440\",",
+      "text_sha256": "ff05b74abf95eb475aad489bdd88dc9d1cc186dcde8c80753fa9628416730142",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L73-S1",
+      "location": "docs/verification/release-acceptance.json:73",
+      "text": "        \"d3b52674-a07c-4279-a57b-9a5ca75e8b70\"",
+      "text_sha256": "48db0f9ece75db6c2129efaf372daef9be733d9470688efd61032f59c7109c15",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L75-S1",
+      "location": "docs/verification/release-acceptance.json:75",
+      "text": "      \"new_invocations\": 0,",
+      "text_sha256": "fe1a37317142ba8dbf9f8c0622a3e3c03a074a620493be586ca72b9b457acd94",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L76-S1",
+      "location": "docs/verification/release-acceptance.json:76",
+      "text": "      \"outcome\": \"successful\",",
+      "text_sha256": "c5f4fb607561f245ef9ca2b1338204d1038d8a24047d26fa69be2f03eb7ac40d",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L77-S1",
+      "location": "docs/verification/release-acceptance.json:77",
+      "text": "      \"counts\": {",
+      "text_sha256": "689ac8d5db06dbd9ef088668869a6731f5c94201f7eefa0dae75e7a5c2f659af",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L78-S1",
+      "location": "docs/verification/release-acceptance.json:78",
+      "text": "        \"Completed\": 3",
+      "text_sha256": "2cfd763ebc3a19880867e8fff8929b5ed0132ab84b537504add60713f897cdc5",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L80-S1",
+      "location": "docs/verification/release-acceptance.json:80",
+      "text": "      \"max_real_overlap\": 1",
+      "text_sha256": "eb43a9779caf278808dda7f8f3965fb15a1f6534dc0f3eb193e70f3585cf995a",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L82-S1",
+      "location": "docs/verification/release-acceptance.json:82",
+      "text": "    \"multitask\": {",
+      "text_sha256": "7bb210ee97434e83e4aa618ebce8a4257a39e93f75bb8cb149f188116ffccf52",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L83-S1",
+      "location": "docs/verification/release-acceptance.json:83",
+      "text": "      \"invocation_ids\": [",
+      "text_sha256": "e025e6288046035eb5ca0e74541ad26bc81b7a503b9abf82c5e59181d249b37d",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L84-S1",
+      "location": "docs/verification/release-acceptance.json:84",
+      "text": "        \"0f12c57e-b34f-4c8e-8218-b24f7f8e2e75\",",
+      "text_sha256": "d377e722dd500b283fc9425b49221cbefc6ced90b82f413839e2de7786f6b418",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L85-S1",
+      "location": "docs/verification/release-acceptance.json:85",
+      "text": "        \"125ea20f-5850-4ff3-add7-385f5d740d49\",",
+      "text_sha256": "4476267ca01cd7a37cce8fd6af0b23710095556b1d55d9d3f8fb1c3b9d3ccbfc",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L86-S1",
+      "location": "docs/verification/release-acceptance.json:86",
+      "text": "        \"14497049-e2c7-4d97-b0de-9ed0c240f10e\",",
+      "text_sha256": "54ebee02bcbce2c1bb7eaa7e6f5809894e8fae511f3238c9ebed5506c2844b1f",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L87-S1",
+      "location": "docs/verification/release-acceptance.json:87",
+      "text": "        \"3634bbe1-2fa2-4c08-b427-f68dc427b88e\",",
+      "text_sha256": "fcd274bde5e546baf44175e052020cbfbb22c1606e860a42da921b60eb55b064",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L88-S1",
+      "location": "docs/verification/release-acceptance.json:88",
+      "text": "        \"4b9290e7-c757-4507-8108-694e4878e2fe\",",
+      "text_sha256": "ec4c0315cba596e51e0e21518cd7734aa77dc0e20d9f466e77b1707f528f9d46",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L89-S1",
+      "location": "docs/verification/release-acceptance.json:89",
+      "text": "        \"584fb1c0-ffae-487c-979d-c903ff915d71\",",
+      "text_sha256": "3d76e7eadaf4d109244c18bb9373bc150e6d97b6f3d29672cf2914f4fa189263",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L90-S1",
+      "location": "docs/verification/release-acceptance.json:90",
+      "text": "        \"9f28c77b-076c-42f0-b895-87e0e13fc12a\",",
+      "text_sha256": "a3083ac0d921e4fc81f8b0ab595d3763e08ef9a7c2d221294016014bae19eef7",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L91-S1",
+      "location": "docs/verification/release-acceptance.json:91",
+      "text": "        \"a5a70a28-51ff-4bd7-9390-fe6666df3f10\",",
+      "text_sha256": "fb966dc8d832b11daf67518f47c49b73759dc35d4e90a9b81d5e9b13dc458652",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L92-S1",
+      "location": "docs/verification/release-acceptance.json:92",
+      "text": "        \"ad6c0943-87b4-4bf1-81f9-4df17eb33366\",",
+      "text_sha256": "0a1da554daef02fff615d31e94e57799de18290c2d2e9b8cc6f225d211651821",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L93-S1",
+      "location": "docs/verification/release-acceptance.json:93",
+      "text": "        \"b05f7d73-05cd-4f9d-8294-a14a055739b8\",",
+      "text_sha256": "709ac69f35be87b7cd3db6a77dd24e33c2cd367bf280c6fc16713e38b669cc2c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L94-S1",
+      "location": "docs/verification/release-acceptance.json:94",
+      "text": "        \"ba648664-9a73-4e71-a8f1-7dd84148d254\",",
+      "text_sha256": "403f039f53ab4233c2686398da98cb17cfc2468bdab2fe25c492a8eca8008fc4",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L95-S1",
+      "location": "docs/verification/release-acceptance.json:95",
+      "text": "        \"df85176e-ca69-40c7-a453-24ad680085f4\"",
+      "text_sha256": "6e151e04aa8e37818477c8963ab65aa07f3b67d9644717b8554b9852943b3f71",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L97-S1",
+      "location": "docs/verification/release-acceptance.json:97",
+      "text": "      \"new_invocations\": 0,",
+      "text_sha256": "fe1a37317142ba8dbf9f8c0622a3e3c03a074a620493be586ca72b9b457acd94",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L98-S1",
+      "location": "docs/verification/release-acceptance.json:98",
+      "text": "      \"outcome\": \"successful\",",
+      "text_sha256": "c5f4fb607561f245ef9ca2b1338204d1038d8a24047d26fa69be2f03eb7ac40d",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L99-S1",
+      "location": "docs/verification/release-acceptance.json:99",
+      "text": "      \"counts\": {",
+      "text_sha256": "689ac8d5db06dbd9ef088668869a6731f5c94201f7eefa0dae75e7a5c2f659af",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L100-S1",
+      "location": "docs/verification/release-acceptance.json:100",
+      "text": "        \"Completed\": 3",
+      "text_sha256": "2cfd763ebc3a19880867e8fff8929b5ed0132ab84b537504add60713f897cdc5",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L102-S1",
+      "location": "docs/verification/release-acceptance.json:102",
+      "text": "      \"max_real_overlap\": 2",
+      "text_sha256": "2fe419da19f69728d5fda1198d8f60a614342458a44f7f6f777bc66ec323297c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L105-S1",
+      "location": "docs/verification/release-acceptance.json:105",
+      "text": "  \"controls\": {",
+      "text_sha256": "2835b654a612952729d8e918328b6589208e50a1b6c8f9f8cdc65a43fad4b806",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L106-S1",
+      "location": "docs/verification/release-acceptance.json:106",
+      "text": "    \"at\": \"2026-09-30T21:58:30.548743+00:00\",",
+      "text_sha256": "fd393245e6f77c61d37170a683b81aa41b8c63d7a3d4faf10eb2584ef1dfc474",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L107-S1",
+      "location": "docs/verification/release-acceptance.json:107",
+      "text": "    \"installed_package\": \"/Users/martinbechard/dev/agentic-harness/.agent-ops/release-check/lib/python3.13/site-packages/backlog_harness/__init__.py\",",
+      "text_sha256": "e18d2a68ca0a0c3488877c30eea41849bf7e8d420128c9c0715b80d698363dd7",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L108-S1",
+      "location": "docs/verification/release-acceptance.json:108",
+      "text": "    \"fixture_type\": \"deterministic adapter and scheduling fixtures; zero model calls\",",
+      "text_sha256": "f78c82c9516b0c89752c7e0e94fe338c64c491f5c81ba7bee5c85847f700f2a0",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L109-S1",
+      "location": "docs/verification/release-acceptance.json:109",
+      "text": "    \"configuration_reload\": {",
+      "text_sha256": "02e42207c48c190e54023a2ef3fb071abe48506278d1b6de20f4423541268f0b",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L110-S1",
+      "location": "docs/verification/release-acceptance.json:110",
+      "text": "      \"passed\": true,",
+      "text_sha256": "742bf41d2cdef776879e3f9e215ee63f1270f5f830e938e6368777de09a28b2c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L111-S1",
+      "location": "docs/verification/release-acceptance.json:111",
+      "text": "      \"original_model\": \"gpt-6-astra\",",
+      "text_sha256": "c1d745fabdc3c9ec19c14ed740590fdbf52a2cea30cbca79fdf183a59bb88de7",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L112-S1",
+      "location": "docs/verification/release-acceptance.json:112",
+      "text": "      \"next_model\": \"fixture-next-model\",",
+      "text_sha256": "69cf41c0fb4280fa57b96cc7091364ca85fa3d140db958fc4a46a47c8c328024",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L113-S1",
+      "location": "docs/verification/release-acceptance.json:113",
+      "text": "      \"in_flight_immutable\": true,",
+      "text_sha256": "66914ba6ef7618380fb85bd50e8914277225a678cd6586e2c0e4afbf54141ec4",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L114-S1",
+      "location": "docs/verification/release-acceptance.json:114",
+      "text": "      \"resume_change_fenced\": true",
+      "text_sha256": "31a1161b18cd404f40280d16c0d73d2f2f891c175866660f105bd85a6aa95902",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L116-S1",
+      "location": "docs/verification/release-acceptance.json:116",
+      "text": "    \"watch_discovery\": {",
+      "text_sha256": "d2cf6e160a9d429f9008772278a19cde8adc685d9bdf7e2ffb99359249fff9d9",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L117-S1",
+      "location": "docs/verification/release-acceptance.json:117",
+      "text": "      \"passed\": true,",
+      "text_sha256": "742bf41d2cdef776879e3f9e215ee63f1270f5f830e938e6368777de09a28b2c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L118-S1",
+      "location": "docs/verification/release-acceptance.json:118",
+      "text": "      \"idle_dispatches\": 0,",
+      "text_sha256": "9e926024fb745bfa9a091966a52432a50c524047bb6ad7331fd2ad32f09cb4c6",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L119-S1",
+      "location": "docs/verification/release-acceptance.json:119",
+      "text": "      \"paused_dispatches\": 0,",
+      "text_sha256": "2caee7a19253b8a7fb5f0c87c042f48ce066cef383c3e8b782076b78149570dd",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L120-S1",
+      "location": "docs/verification/release-acceptance.json:120",
+      "text": "      \"later_item_dispatches\": 1,",
+      "text_sha256": "9691e6a6a396f7e98cfdf6579b09498732e2eb517949ffd9db268e71af78a25f",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L121-S1",
+      "location": "docs/verification/release-acceptance.json:121",
+      "text": "      \"resume_after_multiple_polls\": true",
+      "text_sha256": "b9b1432eba6029fcc8c54dc95a06fbca602a01c45a2a1810e3d728f4521c9e24",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L123-S1",
+      "location": "docs/verification/release-acceptance.json:123",
+      "text": "    \"terminal_dashboard_parity\": {",
+      "text_sha256": "efef31ceae56c2012f02fe8c9c7f38c94af1e04a64b57e73eb2101b27c3cd0c1",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L124-S1",
+      "location": "docs/verification/release-acceptance.json:124",
+      "text": "      \"passed\": true,",
+      "text_sha256": "742bf41d2cdef776879e3f9e215ee63f1270f5f830e938e6368777de09a28b2c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L125-S1",
+      "location": "docs/verification/release-acceptance.json:125",
+      "text": "      \"revision\": \"caee23da5d810c18a0c6213b99d6124305736bada991275ed41d5ba2ebfe79c0\",",
+      "text_sha256": "53841e29b07e4a15e6fd4fde813f0345a9c24c60ddf8b3b215761831ada6a3e2",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L126-S1",
+      "location": "docs/verification/release-acceptance.json:126",
+      "text": "      \"fields\": [",
+      "text_sha256": "2e139cd1f1c0b14ce78bb9a4415e464de1d60e31e6cbfc3a166d600c92499bc6",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L127-S1",
+      "location": "docs/verification/release-acceptance.json:127",
+      "text": "        \"as_of\",",
+      "text_sha256": "8e125f86c14db68887dc71acc9a84ecec0a51bc87218523a7342afc1700c26df",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L128-S1",
+      "location": "docs/verification/release-acceptance.json:128",
+      "text": "        \"capability_blockers\",",
+      "text_sha256": "ebbaacae39b65b064e4cc4d1fb538e0a1f2a56a54d4e9d9531f7cf6211f85487",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L129-S1",
+      "location": "docs/verification/release-acceptance.json:129",
+      "text": "        \"counts\",",
+      "text_sha256": "dcaa190c95427492f0e5702d372e5034453fd3cd31403d3be86646633330ae70",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L130-S1",
+      "location": "docs/verification/release-acceptance.json:130",
+      "text": "        \"generation_configuration_error\",",
+      "text_sha256": "121ad921c61a6c5e11c95ed8456e3e7afa12110359897046e37e1f0b9b4770a8",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L131-S1",
+      "location": "docs/verification/release-acceptance.json:131",
+      "text": "        \"items\",",
+      "text_sha256": "eceb66bf0147a77d8a164a2ced0e8ee3450480387246238ea6b882e47c21efe7",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L132-S1",
+      "location": "docs/verification/release-acceptance.json:132",
+      "text": "        \"revision\",",
+      "text_sha256": "b8ee1a1af00790d43ed22344b121aac59d26eab3be85e23e170426732ab024ba",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L133-S1",
+      "location": "docs/verification/release-acceptance.json:133",
+      "text": "        \"run_observation\",",
+      "text_sha256": "405f8f99cf5e1e327bd9a54462abf2e12c483be5dc913062a142c10a02ea6210",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L134-S1",
+      "location": "docs/verification/release-acceptance.json:134",
+      "text": "        \"runtime_freshness\",",
+      "text_sha256": "a6cca773d4f2510215fab0081f471b9609fb5d01d98703ba322d69b64271cc13",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L135-S1",
+      "location": "docs/verification/release-acceptance.json:135",
+      "text": "        \"telemetry_receipt_binding\",",
+      "text_sha256": "e7f05ef8ca796bd5d15f2c5cca12481ddd7a38b48ba7f4951f3b39432a0bf543",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L136-S1",
+      "location": "docs/verification/release-acceptance.json:136",
+      "text": "        \"trace_span_count\",",
+      "text_sha256": "449dac81434cc7c602ed985110cdb29e459bcc5d0f18be52b7af5611b982d185",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L137-S1",
+      "location": "docs/verification/release-acceptance.json:137",
+      "text": "        \"uncertainty\"",
+      "text_sha256": "bb8aa0828cf8c004bc0125f674ca4c39d60f7fce1343852893a1259edac96c40",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L139-S1",
+      "location": "docs/verification/release-acceptance.json:139",
+      "text": "      \"completed_items\": 3,",
+      "text_sha256": "93b37bc2c885ab83fc8f863f36d1186c488bfbd2f4a4a44b98cfedf9a2d326a3",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L140-S1",
+      "location": "docs/verification/release-acceptance.json:140",
+      "text": "      \"trace_span_count\": 39220,",
+      "text_sha256": "179131d4ff7dce66ebd8998895709e99a3fb56670906a5107d249619a48f872d",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L141-S1",
+      "location": "docs/verification/release-acceptance.json:141",
+      "text": "      \"unresolved\": 0",
+      "text_sha256": "617f57211bcf48df13ad61f32120a213fafc8c7e17dc7a3a844f7fa7da9a8100",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L144-S1",
+      "location": "docs/verification/release-acceptance.json:144",
+      "text": "  \"controls_script\": \"/Users/martinbechard/dev/agentic-harness/.agent-ops/release-controls/check.py\",",
+      "text_sha256": "e1e60c79ae34cf3578d47a5e0cff705d386b947a0121620322fde83993489273",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L145-S1",
+      "location": "docs/verification/release-acceptance.json:145",
+      "text": "  \"controls_script_sha256\": \"f53f034f83689d7db06f52945dd227e1af3e3d4e9a8a7a6476bd4a39375c9d83\",",
+      "text_sha256": "05c089c4eed453a8e7b8987d7cf12fb3be73491973ad4b24349da6a9213433e3",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L146-S1",
+      "location": "docs/verification/release-acceptance.json:146",
+      "text": "  \"installed_terminal\": {",
+      "text_sha256": "c1525874d0529ecacb9d6a03d7e5c05d24e8dbc9d0e7a13f6e289e4d6c07ff4c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L147-S1",
+      "location": "docs/verification/release-acceptance.json:147",
+      "text": "    \"help\": \"passed\",",
+      "text_sha256": "d1a1abfc2d5e3fd8b658aed5282d0b6ce151a98c92ce07baa59ae5d39947a1b9",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L148-S1",
+      "location": "docs/verification/release-acceptance.json:148",
+      "text": "    \"status\": \"passed\",",
+      "text_sha256": "7019eceadff3c9e572a9dbdbddb824894342a7d69c221163a1eb57a5610d509b",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L149-S1",
+      "location": "docs/verification/release-acceptance.json:149",
+      "text": "    \"watch_idle\": \"passed\",",
+      "text_sha256": "ed60dbbd89517a14d9a4021f65a3ea3ce5453e2009d1a7b29f2f005c7efca7b4",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L150-S1",
+      "location": "docs/verification/release-acceptance.json:150",
+      "text": "    \"pause_across_polls\": \"AdmissionPaused retained for at least 20 seconds\",",
+      "text_sha256": "0d995f442f3ec0726fd51fdb25966581fb9f4005b7de7f6480ffa70e98ebc4f8",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L151-S1",
+      "location": "docs/verification/release-acceptance.json:151",
+      "text": "    \"resume\": \"passed; Running then IdleWatch\",",
+      "text_sha256": "152015456e4bfc5ddb1ee54e6146154c051bd68f5deba01cb27dd729d766a042",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L152-S1",
+      "location": "docs/verification/release-acceptance.json:152",
+      "text": "    \"stop\": \"Available; admission closed; quiescent\",",
+      "text_sha256": "7d8ce8bcd2c647c2f996ce0beeb337cf4ff65ae2ab9a04550b1bf2d310d43d0a",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L153-S1",
+      "location": "docs/verification/release-acceptance.json:153",
+      "text": "    \"quit\": \"passed\",",
+      "text_sha256": "3e50b5d417eb44e6c6512dc4ee09c5903c7f2bc089ffd81bdb8d4c9fb02afb87",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L154-S1",
+      "location": "docs/verification/release-acceptance.json:154",
+      "text": "    \"new_invocations\": 0",
+      "text_sha256": "41c17c75157c11a5e98b9ff6087c4d900161fc163bbfa9d6c48517cfa71fed5c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L156-S1",
+      "location": "docs/verification/release-acceptance.json:156",
+      "text": "  \"installed_dashboard\": {",
+      "text_sha256": "e17ae28468e3dd67f9770c1ab89a57950454ab03d67a43c961a3fa6aad734f3b",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L157-S1",
+      "location": "docs/verification/release-acceptance.json:157",
+      "text": "    \"url\": \"http://127.0.0.1:59090\",",
+      "text_sha256": "a9b150f60a83a4690e259f80fb0aefd3c3d0d5112655dec329683cb308b34948",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L158-S1",
+      "location": "docs/verification/release-acceptance.json:158",
+      "text": "    \"completed_items\": 3,",
+      "text_sha256": "a00e73eeac3470c223113f4443cdfe5f4f11cfcde56bbeea0f40c400d7d492d2",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L159-S1",
+      "location": "docs/verification/release-acceptance.json:159",
+      "text": "    \"trace_span_count\": 39220,",
+      "text_sha256": "b121fc125cec52dde9c0c81894f8692fda7ef6d8dc6a13aa6aee832bc86b8e2e",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L160-S1",
+      "location": "docs/verification/release-acceptance.json:160",
+      "text": "    \"unresolved_observations\": 0,",
+      "text_sha256": "d0e4a699d6e4d78298291dc7f035c7dda093e3f153e4b3ddf5ef14192415ce1e",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L161-S1",
+      "location": "docs/verification/release-acceptance.json:161",
+      "text": "    \"visually_verified\": true,",
+      "text_sha256": "80a0f18a8cfd533bd8045db3eb1eedfa441e04800d4d0eddfd8a79d92dd319f9",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L162-S1",
+      "location": "docs/verification/release-acceptance.json:162",
+      "text": "    \"receipt_binding\": \"legacy_count_only\"",
+      "text_sha256": "753739b15d81959b1ea2cd4932200a73d67c156ed16fb86c8d693da912b18d7d",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L164-S1",
+      "location": "docs/verification/release-acceptance.json:164",
+      "text": "  \"codex\": {",
+      "text_sha256": "0c23874c4167f634d5239ba07fa844acbcb808bc0f28a49525e06bb8c7e3233e",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L165-S1",
+      "location": "docs/verification/release-acceptance.json:165",
+      "text": "    \"registry_latest\": \"0.159.2\",",
+      "text_sha256": "3e07263a745715ada9278499e6b01aa5d6f2e90ff6a63302f03a453289129b9c",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L166-S1",
+      "location": "docs/verification/release-acceptance.json:166",
+      "text": "    \"installed\": \"codex-cli 0.159.2\",",
+      "text_sha256": "cd2fcd875b172e922f8bf4fb6051dea88ef6c9cf81980eb9aa68e8c189ef6f00",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L167-S1",
+      "location": "docs/verification/release-acceptance.json:167",
+      "text": "    \"authentication\": \"Logged in using ChatGPT\"",
+      "text_sha256": "9d7712cd07e03c11da86fdb7e49f6227041c33bdaf6a481618d13b1a97450e59",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L169-S1",
+      "location": "docs/verification/release-acceptance.json:169",
+      "text": "  \"limitations\": [",
+      "text_sha256": "acfb116f79967cf03152ad56c4759b70ce2d6876fcdc58229f4d92d8d4e9375d",
+      "section": "Document",
+      "needed": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "n/a",
+        "evidence": "Schema-owned key, numeric value, identity, path or digest; preserve exact data rather than apply prose style.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L170-S1",
+      "location": "docs/verification/release-acceptance.json:170",
+      "text": "    \"Selected file/main-branch route with explicit coordination none; claim-helper projects are fenced.\",",
+      "text_sha256": "c29efb6e3bafc2b22c77b8f9d4ef4b522a8308c3c5a08a064542a61a096d6e76",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L171-S1",
+      "location": "docs/verification/release-acceptance.json:171",
+      "text": "    \"Real six deliveries predate final source; corrections have current deterministic and installed replay coverage.\",",
+      "text_sha256": "e71cbe9e19d7987e63eeb0de2063a36952aeb181fa5c884da6a3f1eb1d431c75",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L172-S1",
+      "location": "docs/verification/release-acceptance.json:172",
+      "text": "    \"Native first-export 503 probe observed no retry; missing batch remains fenced, lossless flush unproved.\",",
+      "text_sha256": "b9251430791d48dac24f8a6c5e95a55cddf1cb8adb479e467260e07cc846f033",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F14-L173-S1",
+      "location": "docs/verification/release-acceptance.json:173",
+      "text": "    \"Legacy Completed receipts bind counts only; they cannot authorize new protected transitions.\"",
+      "text_sha256": "6b3bea8a5936269c55faad2b7d910f0e390ab7c7d01bb5145b99e3a7e49dcfd1",
+      "section": "Document",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Document.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    }
+  ]
+}

@@ -1,0 +1,251 @@
+{
+  "candidate": {
+    "path": "README.md",
+    "sha256": "ddad26970f0ecee800d91a1b9a17892a9172e5797d25465e11c2fb3ecbedf6c8"
+  },
+  "sentence_count": 11,
+  "sentences": [
+    {
+      "id": "F02-L3-S1",
+      "location": "README.md:3",
+      "text": "A foreground Python application that lets agents organize delivery with their CLI's native delegation while enforcing provider transitions, independent review, exact candidate identity, checks, delivery, and usage holds.",
+      "text_sha256": "a180a7070dc4e3e13585f88d486abfccb901989eb22fa42c7b2221a52ec1286a",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L5-S1",
+      "location": "README.md:5",
+      "text": "The first adapter supports Codex CLI 0.159.2.",
+      "text_sha256": "b53839c5af0ec509f44bfeb1ae6a50968a13047aeff99a9a590d00dfdd4e9a3b",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L5-S2",
+      "location": "README.md:5",
+      "text": "The selected workflow uses a file backlog, main-branch delivery, explicit resource coordination `none`, and either SOLO or MULTITASK.",
+      "text_sha256": "62e5d8305b27a455d64e4cce3cc687cd7319cffbd3e64e068f7445ddff5022df",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L5-S3",
+      "location": "README.md:5",
+      "text": "MULTITASK requires `project_setup.concurrent_tasking: true`, independent candidate clones, explicit item scopes, and serialized provider and integration transactions.",
+      "text_sha256": "37f6eb63c9c2e4dcfd36023abeadcc13613f60397619230041324c0368342d25",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L5-S4",
+      "location": "README.md:5",
+      "text": "Projects selecting a resource-claim helper need their existing helper boundary integrated before this route can execute them.",
+      "text_sha256": "34e6a288a65674d185d4c3725757e000b17bcee412f815d2604b9f6453eb0825",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L7-S1",
+      "location": "README.md:7",
+      "text": "Install Python 3.12 or newer and Codex CLI, then use:",
+      "text_sha256": "4e78665bf8edbf244cf4c2941c81d5fd36f08a594ac6c6b4a5c86de45f650cbd",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L15-S1",
+      "location": "README.md:15",
+      "text": "The asynchronous terminal supports `run --until-terminal`, `run --watch`, `pause`, `resume`, `stop`, `reconcile`, status, item and session inspection, exact question answers, and usage-hold review.",
+      "text_sha256": "e7bf57034d8a67ff5968ea41be656ee60f1920fe73a29b160dc95e4630c0318d",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L15-S2",
+      "location": "README.md:15",
+      "text": "The noninteractive `run` and `run-item` commands use the same application.",
+      "text_sha256": "508d3061dd3907c8f4b5d302807b4d5c1a4d444a8b164c3c995b01accb954d47",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L15-S3",
+      "location": "README.md:15",
+      "text": "A read-only dashboard starts with `dashboard --port 8767` (use port 0 to select a free port).",
+      "text_sha256": "873413ac32264e8b230292a05a8671445490437470db0a3798bcf7f49a732c2a",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L17-S1",
+      "location": "README.md:17",
+      "text": "See the [operator guide](docs/operator-guide.md), [implementation plan](IMPLEMENTATION-PLAN.md), and [verification progress](docs/verification/progress.md).",
+      "text_sha256": "e8757ae06c3c5d44ece8a7a5c5273ecee4fe0e56f5a4d8ebaeb619bc2c11c6c6",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F02-L17-S2",
+      "location": "README.md:17",
+      "text": "The progress record distinguishes tests and live evidence from outstanding acceptance work.",
+      "text_sha256": "140a7119bd90da06b103a45a2afde6151c6ec05746f7134b20200209d455aa16",
+      "section": "Agentic Harness",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Agentic Harness.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    }
+  ]
+}

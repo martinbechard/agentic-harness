@@ -1,0 +1,31 @@
+{
+  "verdict": "ACCEPT",
+  "reviewer": "/root/final_source_review",
+  "source_commit": "8f0e5dc5ed8fee097095178afe48ab152d0c61fd",
+  "source_tree": "1781fab046c4066e52a96d5966d18e726651547b",
+  "commit_object_sha256": "efec56b0a2ad9d9b1e7f7bb88b203ee77e94446d81366f32155d2d0f0762ae71",
+  "installed_wheel_sha256": "54de2bec6c820b08756e2b5ec62e0dc7e11c3324cb4d07ffc31445e8421598c1",
+  "material_findings": [],
+  "independent_checks": {
+    "focused_recovery_coordination_passed": 33,
+    "full_tests_passed": 78,
+    "ruff": "passed",
+    "installed_package_matches_source": true,
+    "solo_new_invocations": 0,
+    "multitask_new_invocations": 0
+  },
+  "reviewed_boundaries": [
+    "Frozen provider revision/content and retained admission operation",
+    "Running canonical acceptance recovery",
+    "Paused watch and later-item discovery",
+    "Content-bound telemetry before projection",
+    "Actors, independent review, exact candidate checks and completion"
+  ],
+  "residual_risks": [
+    "Selected file/main-branch route with explicit coordination none; claim-helper projects are fenced.",
+    "Real six deliveries predate final source; corrections have current deterministic and installed replay coverage.",
+    "Native first-export 503 probe observed no retry; missing batch remains fenced, lossless flush unproved.",
+    "Legacy Completed receipts bind counts only; they cannot authorize new protected transitions."
+  ],
+  "provenance": "Recorded by Northstar from final_source_review final response; this record is not a new review execution."
+}

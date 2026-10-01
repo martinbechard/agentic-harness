@@ -1,0 +1,49 @@
+{
+  "schema_version": 2,
+  "records": [
+    {
+      "Record-Type": "new",
+      "Artifact-ID": "a1b770dc-f911-4fef-bbc1-9db189bf19b7",
+      "Created-Local": "2026-09-29T18:50:58.955658-04:00",
+      "Created-UTC": "2026-09-29T22:50:58.955658Z",
+      "Creating-Agent": "Dev Documentation Writer",
+      "Runtime": "Codex",
+      "Dispatched-Model": "gpt-5.6-sol",
+      "Reasoning-Effort": "medium",
+      "Task-ID": "/root/harness_review_evidence"
+    },
+    {
+      "Record-Type": "new",
+      "Artifact-ID": "ff92ecdc-1681-4f5b-811e-72149ef99efc",
+      "Created-Local": "2026-09-29T18:50:58.955658-04:00",
+      "Created-UTC": "2026-09-29T22:50:58.955658Z",
+      "Creating-Agent": "Dev Documentation Writer",
+      "Runtime": "Codex",
+      "Dispatched-Model": "gpt-5.6-sol",
+      "Reasoning-Effort": "medium",
+      "Task-ID": "/root/harness_review_evidence"
+    },
+    {
+      "Record-Type": "new",
+      "Artifact-ID": "deeff9b6-45b1-4c81-9db0-adfb3076b93d",
+      "Created-Local": "2026-09-29T18:50:58.955658-04:00",
+      "Created-UTC": "2026-09-29T22:50:58.955658Z",
+      "Creating-Agent": "Dev Documentation Writer",
+      "Runtime": "Codex",
+      "Dispatched-Model": "gpt-5.6-sol",
+      "Reasoning-Effort": "medium",
+      "Task-ID": "/root/harness_review_evidence"
+    },
+    {
+      "Record-Type": "new",
+      "Artifact-ID": "5bb22cf9-eaa5-4ef7-b646-a78a9c4fa2c5",
+      "Created-Local": "2026-09-29T20:53:29-04:00",
+      "Created-UTC": "2026-09-30T00:53:29Z",
+      "Creating-Agent": "Dev Documentation Writer",
+      "Runtime": "Codex",
+      "Dispatched-Model": "gpt-5.6-sol",
+      "Reasoning-Effort": "medium",
+      "Task-ID": "/root/harness_design_writer"
+    }
+  ]
+}

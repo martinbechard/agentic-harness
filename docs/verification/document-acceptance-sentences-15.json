@@ -1,0 +1,1659 @@
+{
+  "candidate": {
+    "path": "docs/verification/requirements-matrix.md",
+    "sha256": "854bdf5726b6d55295b8ea40bf2bee103a1c0c90dfa185d065478e8a806ac656"
+  },
+  "sentence_count": 75,
+  "sentences": [
+    {
+      "id": "F15-L11-S1",
+      "location": "docs/verification/requirements-matrix.md:11",
+      "text": "This matrix covers all 10 required outcomes, 11 end-to-end scenarios, and six phases in the [implementation plan](../../IMPLEMENTATION-PLAN.md).",
+      "text_sha256": "b2d12fb2739f1e64ffcd00887882341976b89a9a0dc4331581311bff92ae38ca",
+      "section": "Requirements-to-verification matrix",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Requirements-to-verification matrix.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L11-S2",
+      "location": "docs/verification/requirements-matrix.md:11",
+      "text": "It distinguishes real native execution from deterministic fixture checks and installed recovery replay.",
+      "text_sha256": "bd0d4cbbe761b6a382a54f89ab97115e8c140109c3cbae61a638dac5b83383f0",
+      "section": "Requirements-to-verification matrix",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Requirements-to-verification matrix.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L15-S1",
+      "location": "docs/verification/requirements-matrix.md:15",
+      "text": "- **Current source:** commit `8f0e5dc5ed8fee097095178afe48ab152d0c61fd`, independently accepted in [final-source-review.json](final-source-review.json).",
+      "text_sha256": "f2a191d1f15c9749042c0d018b8915c8d206cd724e27c12774a3f2d0fa99ac99",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L15-S2",
+      "location": "docs/verification/requirements-matrix.md:15",
+      "text": "All **78 tests** and Ruff pass.",
+      "text_sha256": "ec4edc580673c0c184c33a980b5a756966bf11751d89d930da6329dcbd047306",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L15-S3",
+      "location": "docs/verification/requirements-matrix.md:15",
+      "text": "The [release receipt](release-acceptance.json) binds source files and the installed wheel.",
+      "text_sha256": "0355d1993f02a971dba34e4d8214a4d70a28e5251faf9c9bbf669947c686194b",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L16-S1",
+      "location": "docs/verification/requirements-matrix.md:16",
+      "text": "- **Real execution:** [six-item-acceptance.json](six-item-acceptance.json) records three Completed items in each mode, native independent reviews, source and integrated checks, question continuation, and a reviewed usage hold.",
+      "text_sha256": "ea2a6522803e9cda480a1a5edb59648e12b07d98878a76e59346fafc14540e32",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L16-S2",
+      "location": "docs/verification/requirements-matrix.md:16",
+      "text": "These executions predate the final corrections; their original manifests remain intact.",
+      "text_sha256": "599b8c291e504a1f93dbefc982738498011c48fda5a1a30a81c8885899f6ab14",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L17-S1",
+      "location": "docs/verification/requirements-matrix.md:17",
+      "text": "- **Installed current package:** all 24 packaged implementation files match reviewed source.",
+      "text_sha256": "24912143984b1dcdaf5a3bd1f5cc5c9fccb519d8e18a6d8b7edfd3fe0a825650",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L17-S2",
+      "location": "docs/verification/requirements-matrix.md:17",
+      "text": "Both retained batches replay successfully with exactly the original invocation IDs: SOLO 9 and MULTITASK 12, with zero new invocations.",
+      "text_sha256": "f5c0a7faca47677495c8a4f6f6ee0f6ada40e1ff82a7f3d4fb4e5e586490d4f8",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L17-S3",
+      "location": "docs/verification/requirements-matrix.md:17",
+      "text": "Configuration reload, later-item discovery, pause/resume, and exact-revision terminal/dashboard parity pass against the installed package using explicit deterministic fixtures.",
+      "text_sha256": "a1a1ae1c08b83fc46faac2851ccb24dad5b6badf11bc3c78e1d486baadd288b2",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L18-S1",
+      "location": "docs/verification/requirements-matrix.md:18",
+      "text": "- **Native exporter limitation:** [native-exporter-evidence.json](native-exporter-evidence.json) records the tested first-export 503 gap and the accepted fail-closed boundary.",
+      "text_sha256": "4ec46c79958f24e9932e9e494de43a83b971c2be3fd73f8bab6ee8bf877d7b60",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L18-S2",
+      "location": "docs/verification/requirements-matrix.md:18",
+      "text": "It does not establish lossless export or complete flush.",
+      "text_sha256": "b2755b0775f07bf3326b94d44738bb39322b7f8e5df6f5ab90b6b3503cf43bf7",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L19-S1",
+      "location": "docs/verification/requirements-matrix.md:19",
+      "text": "- **Documentation review:** current ARC/HLD and six module designs require their independent artifact verdict.",
+      "text_sha256": "c66cdd0738690412b4111c992e1125dbfb0a505edbb7d9a2ae4374f551bfb82d",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L19-S2",
+      "location": "docs/verification/requirements-matrix.md:19",
+      "text": "Source acceptance alone does not approve documentation.",
+      "text_sha256": "b6d29e8edc982ad1b0a83ce327d0ca99c410ec50d74e8d7e081785304ed86223",
+      "section": "Evidence status",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Evidence status.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L23-S1",
+      "location": "docs/verification/requirements-matrix.md:23",
+      "text": "| ID | Required outcome | Implementation and focused tests | Evidence and boundary |",
+      "text_sha256": "6dd0c357458dc8aa5b7bf40baac84f7ab1b3cddab09d6254fab696fce1788969",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L25-S1",
+      "location": "docs/verification/requirements-matrix.md:25",
+      "text": "| RO-01 | Terminal-first application with read-only overall dashboard. | [MOD-006](../design/components/MOD-006-views.md); `cli.main`, `terminal`, `snapshot`, `create_dashboard_server`; `test_dashboard_serves_exact_projection_and_rejects_mutation`. | Current installed terminal controls and populated dashboard pass.",
+      "text_sha256": "d8fcef46555fbe9f001132db97d1ddcc5f348d771f6ef62b8cc8ed14f0451039",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L25-S2",
+      "location": "docs/verification/requirements-matrix.md:25",
+      "text": "The dashboard labels persisted run state as recorded evidence, rather than claiming process liveness. |",
+      "text_sha256": "d20cb738599edd2d528ea94bd3b09c396f80714659cf7d0ec57dad9141610203",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L26-S1",
+      "location": "docs/verification/requirements-matrix.md:26",
+      "text": "| RO-02 | Until-terminal execution and optional watch for later items. | [MOD-003](../design/components/MOD-003-provider-coordination.md); `RunController.run`; `test_three_item_execution_obeys_selected_mode`; `test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work`. | Both installed batches settle with Completed=3.",
+      "text_sha256": "c72198c03a9e9a3273106554cb01fe928b44f7347b5b27d69cc7317b09de2b83",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L26-S2",
+      "location": "docs/verification/requirements-matrix.md:26",
+      "text": "Installed watch fixture sees no idle or paused dispatch, then admits one later Ready item once after resume.",
+      "text_sha256": "c8f7c0013404500e5eaf23538a7ec145103f2240b4c06d58fd89bcda08101012",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L26-S3",
+      "location": "docs/verification/requirements-matrix.md:26",
+      "text": "That discovery fixture substitutes delivery; real delivery is established separately by the six native items. |",
+      "text_sha256": "375d3b2f77db90c3c547e3e98877d643d8d8c0ee12bffec1829bebd11c04a691",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L27-S1",
+      "location": "docs/verification/requirements-matrix.md:27",
+      "text": "| RO-03 | Provider lifecycle, Coordinator scheduling, Orchestrator delivery. | MOD-003; `validate_transition`, `FileProvider.transition`, `Application._run_item`; `test_valid_admission_and_reject_missing_actor_stale_revision`; `test_candidate_bound_independent_review`; `test_stale_frozen_assignment_blocks_admission_before_invocation`; `test_starting_continuation_requires_content_bound_provider_admission`. | Six native items bind actor, candidate, reviewer, checks, merge, and provider completion.",
+      "text_sha256": "d431c16466242ea784b0293ac7c0a113d00bea797867afc198abbbbe58a269e2",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L27-S2",
+      "location": "docs/verification/requirements-matrix.md:27",
+      "text": "Current regressions prevent stale Ready assignments or unbound Starting continuations from launching acceptance. |",
+      "text_sha256": "4d447e30a0eff17670129b53bbb6cb74958621ae1792444bfc82ccdb67e89a11",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L28-S1",
+      "location": "docs/verification/requirements-matrix.md:28",
+      "text": "| RO-04 | Configurable role CLI bindings and common adapter interface; Codex first. | [MOD-001](../design/components/MOD-001-configuration.md), [MOD-002](../design/components/MOD-002-execution.md); `AgentBinding`, `AgentCliAdapter`, registry, `CodexAdapter`; `test_duplicate_keys_and_unsupported_adapter`; `test_effective_authentication_context_is_bound_to_session`. | Codex 0.159.2 matches the registry latest and remains authenticated.",
+      "text_sha256": "79f3cc4e92a9dde673850c1fe80a1c768a5fdf63a71dad37a0419a05c9f135de",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L28-S2",
+      "location": "docs/verification/requirements-matrix.md:28",
+      "text": "Other production adapters are outside version 1.",
+      "text_sha256": "18cec8ac4d2962c0caeda3e14f03b5e15209d4ceb825142b0dfdaa6d7ee15250",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L28-S3",
+      "location": "docs/verification/requirements-matrix.md:28",
+      "text": "Native children remain managed by their CLI. |",
+      "text_sha256": "2672e60bb67fe09de1b74ee848ed8ae24f89e05a906a779a2c7797c3b9bdcb0a",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L29-S1",
+      "location": "docs/verification/requirements-matrix.md:29",
+      "text": "| RO-05 | Per-call reload and immutable in-flight configuration. | MOD-001; `load_config`, `ConfigSnapshot`, `Application._invoke`; `test_reload_is_deeply_immutable`; `test_skill_change_invalidates_binding`; `test_accepted_workflow_remains_frozen_and_changed_scope_blocks_invocation`. | Installed fixture changes the model between two harness calls, preserves the first snapshot, applies the new model to the second, and rejects changed-profile resume.",
+      "text_sha256": "1c2403709619b46ec0fe59547859ffaf8b9edeb5fa90a09aeb0fc45e9943f3fb",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L29-S2",
+      "location": "docs/verification/requirements-matrix.md:29",
+      "text": "It makes zero model calls. |",
+      "text_sha256": "56da147b269f80e38860e8224889f5172afeb350ac7a84e4bc6b81650c779852",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L30-S1",
+      "location": "docs/verification/requirements-matrix.md:30",
+      "text": "| RO-06 | CLI-specific OpenTelemetry and attributable standard OTLP JSONL. | [MOD-005](../design/components/MOD-005-telemetry.md); `prepare_telemetry`, receiver, sink; `test_http_attribution_retry_and_gzip`; `test_invalid_conflict_oversize_and_durability_failure`. | Six real deliveries retain native root/child/run telemetry.",
+      "text_sha256": "0c4fff9aea33351f84a6704acc4a9f4e95b9c63dc5ecb6491122e7d864b3d6d1",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L30-S2",
+      "location": "docs/verification/requirements-matrix.md:30",
+      "text": "The 503 probe retains later spans while fencing its missing batch; no complete-flush claim. |",
+      "text_sha256": "78654d471a617b86a5d7348031088f634ad8d03a50968f13710f8e555e1fd961",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L31-S1",
+      "location": "docs/verification/requirements-matrix.md:31",
+      "text": "| RO-07 | Trace views joined to provider and invocation authority. | MOD-006; incremental `trace_snapshot`, `capture`; `test_trace_projection_reads_only_appended_complete_lines_and_orders_by_time`; `test_cold_projection_rejects_same_count_content_change`. | Installed dashboard shows 39,220 native spans and zero unresolved observations for the completed concurrent fixture.",
+      "text_sha256": "a1a2094e761d1ad7354f7f1f03c643d2f1374c5388766f68857ee82f99aa8476",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L31-S2",
+      "location": "docs/verification/requirements-matrix.md:31",
+      "text": "Historical receipts are labeled `legacy_count_only`; new receipts verify count and content. |",
+      "text_sha256": "0354927c3e7fe0b58d5df053c6193a2b27e71401bc818305ed2260762ca372c8",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L32-S1",
+      "location": "docs/verification/requirements-matrix.md:32",
+      "text": "| RO-08 | Warning and item-local hold at initially 2 times original high estimate. | MOD-005; analytics, `usage_view`, `guard`, `review_hold`; `test_unknown_dedup_cumulative_and_crossing`; `test_original_estimate_cannot_be_reset_by_provider_edit`; `test_hold_review_retries_frozen_request_after_allowance_write`. | Real concurrent slug held at 1,264 generated tokens over original ceiling 200, retained its owner, and completed after bounded review raised the ceiling to 5,000. |",
+      "text_sha256": "f393ba9fd40236a86df84bfa2fb6029cf1ea086d3fbb74b19283ae79b4b41eb8",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L33-S1",
+      "location": "docs/verification/requirements-matrix.md:33",
+      "text": "| RO-09 | Recovery without duplicate execution; unknown usage never zero. | [MOD-004](../design/components/MOD-004-evidence.md), MOD-005; invocation/provider/answer/delivery recovery; `test_submitted_unobserved_invocation_is_not_relaunched`; `test_existing_reservation_without_retained_session_evidence_never_relaunches`; `test_saved_bad_telemetry_never_advances_on_retry`. | Current installed replays preserve all original IDs.",
+      "text_sha256": "06607a53104ea01d87bc77551eb5d06d5e3d8ebd9141d94158737898bf7db6d3",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L33-S2",
+      "location": "docs/verification/requirements-matrix.md:33",
+      "text": "Deterministic crash tests cover unknown submission, missing owner evidence, exact provider recovery, merge/check boundaries, answer continuation, and frozen hold-review recovery. |",
+      "text_sha256": "b5a1e8d2fbb2ceca4269837b31903801092be9de15601da11d13b470443bc463",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L34-S1",
+      "location": "docs/verification/requirements-matrix.md:34",
+      "text": "| RO-10 | No model calls for unchanged polls, status, validation, or dashboard refresh. | MOD-003, MOD-006; `test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work`; `test_control_storage_remains_inspectable_when_generation_profile_is_missing`; `test_long_lived_view_observes_invalid_configuration_without_reusing_generation_settings`. | Installed status, terminal controls, dashboard refresh, both batch replays, and idle-watch fixture create no model calls. |",
+      "text_sha256": "700d0ceed798168a68f50b48bc781ce6d9a1be79b9e59639af4dba5e500e91d2",
+      "section": "Required outcomes",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Required outcomes.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L38-S1",
+      "location": "docs/verification/requirements-matrix.md:38",
+      "text": "| ID | Scenario | Focused test evidence | Installed or native evidence |",
+      "text_sha256": "81e56d1aa2bfadb1fce418a66425ba5630a8a7629d35a298620ec05b8b355ca5",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L40-S1",
+      "location": "docs/verification/requirements-matrix.md:40",
+      "text": "| E2E-01 | Valid workflow evidence advances; missing, wrong, stale, or unauthorized evidence blocks. | `test_valid_admission_and_reject_missing_actor_stale_revision`; `test_candidate_bound_independent_review`; `test_native_child_freshness_candidate_verdict`; stale-assignment and content-bound-admission cases. | Native fresh reviewers accept exact candidates for all six items.",
+      "text_sha256": "b6ef7744fe0946ca3bfd3c10db2a9e0489ee5f9152740144b6eaeef08c18f58f",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L40-S2",
+      "location": "docs/verification/requirements-matrix.md:40",
+      "text": "Current missing/invalid cases block before protected advancement. |",
+      "text_sha256": "65ac914f0c42782b73acbb725ed9fc1b749af8263facd648b260bb19f7c678c0",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L41-S1",
+      "location": "docs/verification/requirements-matrix.md:41",
+      "text": "| E2E-02 | Delivery and independent review produce provider-backed completion. | Candidate review and `test_delivery_crash_boundaries_reconcile_once`. | Every native item has producer, reviewer, candidate, main commit, both check boundaries, and archived Completed provider receipt. |",
+      "text_sha256": "9d3eb2a19f12c337405796ffd477c11466c1daf72e4a4e8696e03a2033a82e85",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L42-S1",
+      "location": "docs/verification/requirements-matrix.md:42",
+      "text": "| E2E-03 | Capacity and isolated concurrent attribution. | `test_three_item_execution_obeys_selected_mode`; `test_capacity_serializes_actual_async_requests`; HTTP attribution tests. | Real maximum overlap SOLO=1 and MULTITASK=2, with separate item telemetry. |",
+      "text_sha256": "cbdeb0cc93c0503509dde2a4780c7e69f3d9b9c5ed49bb88edb233bcb2142841",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L43-S1",
+      "location": "docs/verification/requirements-matrix.md:43",
+      "text": "| E2E-04 | Edit changes next call without mutating current settings or session identity. | Immutable reload, authentication binding, frozen-workflow tests. | Current installed deterministic adapter fixture checks two actual application invocation boundaries and changed-profile resume rejection. |",
+      "text_sha256": "c0fa50e3d9648589bf9254e44f0a31f180bfdc1aceb41a1729c018bb8b6898d4",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L44-S1",
+      "location": "docs/verification/requirements-matrix.md:44",
+      "text": "| E2E-05 | Answer resumes exact item and canonical session. | `test_question_gate_requires_canonical_owner_and_exact_approval`; `test_crash_after_answer_commit_resumes_exact_operation`. | Real concurrent greeting uses exact question `greeting-default`, answer digest, canonical owner, approve disposition, and provider commit. |",
+      "text_sha256": "a1a0d8bdb03e404a33351d43ac885a0615c9c9537f031084bbaf47de68ab4e53",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L45-S1",
+      "location": "docs/verification/requirements-matrix.md:45",
+      "text": "| E2E-06 | Restart reconciles without duplicate launch. | `test_submitted_unobserved_invocation_is_not_relaunched`; `test_returned_observations_rebuild_missing_stage`; reservation, provider, and delivery recovery tests. | Current installed SOLO and MULTITASK replay create zero invocation IDs. |",
+      "text_sha256": "d16fd36f9dde21ff335eae1e59faaeed4bf74ae1560f3c88e675ef5e2e36af9e",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L46-S1",
+      "location": "docs/verification/requirements-matrix.md:46",
+      "text": "| E2E-07 | Threshold holds one item while safe independent work continues. | Usage crossing, canonical hold, frozen review-retry, and MULTITASK tests. | Real concurrent slug hold and reviewed release retain its owner; all three concurrent items complete. |",
+      "text_sha256": "299a4c6566ff34a37c1872cc41cb2ba4b262ac5d92b4f0ea1f037730a42fdc44",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L47-S1",
+      "location": "docs/verification/requirements-matrix.md:47",
+      "text": "| E2E-08 | Missing/conflicting telemetry stays unknown and fences next generation. | Saved bad telemetry, missing receipt file, same-count changed content, exact retry-gap tests. | Real native probe rejects a 512-span first batch, observes no retry, retains later 1,200 spans, and fences advancement despite matching native/OTLP output of 11 tokens. |",
+      "text_sha256": "d0fa5657a22cd754a739a2dfbd7708b3f3091576e4f2c2daf4f051ad8827b49a",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L48-S1",
+      "location": "docs/verification/requirements-matrix.md:48",
+      "text": "| E2E-09 | Until-terminal settles and watch discovers later items without idle calls. | Three-item mode tests and watch/pause/resume/discovery regression. | Both installed retained batches settle; current installed deterministic watch admits one later item only after resume and does not repeat it. |",
+      "text_sha256": "bf6d6387cb1963de52716c5ae68bc806c9e6019f54f71fe073ef835af223569c",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L49-S1",
+      "location": "docs/verification/requirements-matrix.md:49",
+      "text": "| E2E-10 | Equal terminal/dashboard facts for the same projection revision. | Read-only projection, provider-revision coherence, current-config-view tests. | Installed actual terminal renderer and HTTP dashboard receive the same captured projection; all 11 terminal status fields match, including exact revision, items, counts, usage, freshness, blockers, and uncertainty. |",
+      "text_sha256": "d88e6b4c2980d7507b7e9a168f95347416811acee6540a206f719c493431d0f6",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L50-S1",
+      "location": "docs/verification/requirements-matrix.md:50",
+      "text": "| E2E-11 | Retry deduplication, resume/run spans, partial lines, exporter failure, incremental reads. | HTTP/gzip/durability tests; exact/partial retry tests; `test_partial_line_is_not_published_or_overwritten`; incremental trace tests. | Native resumed answer/root/child/run spans and tested exporter behavior are retained.",
+      "text_sha256": "bbd28c06d597e54bafe4de8c16a2c178ac3c90544683c4a37e199b66a8b7739d",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L50-S2",
+      "location": "docs/verification/requirements-matrix.md:50",
+      "text": "Lossless native shutdown remains an explicit limitation, accepted by design authority with fail-closed advancement. |",
+      "text_sha256": "de82be858db979c1781dc1c410739a29b4d29d1d8e2698936977d35b6e9d0055",
+      "section": "End-to-end scenarios",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by End-to-end scenarios.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L54-S1",
+      "location": "docs/verification/requirements-matrix.md:54",
+      "text": "| Phase | Completion evidence |",
+      "text_sha256": "9e3309bb2495b5603ddc98692ee626b176d16a382b5f933ccaac38174aa196c9",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L56-S1",
+      "location": "docs/verification/requirements-matrix.md:56",
+      "text": "| 1.",
+      "text_sha256": "dddf90e89a4324e29a79bf897dffb9bde4d9013dab692e0af9ad96238cfb6d46",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L56-S2",
+      "location": "docs/verification/requirements-matrix.md:56",
+      "text": "Project boundary | Installed package, CLI, independent repository, source/test roots, transferred provenance, reconciled ARC/HLD paths, operator guide. |",
+      "text_sha256": "09d53e24b6e391c49064a600ea0979b02c2fc24ea16d22c46366a96eafb3d0da",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L57-S1",
+      "location": "docs/verification/requirements-matrix.md:57",
+      "text": "| 2.",
+      "text_sha256": "f881f73d3e19ffa311d678abfe075ffffed75ff578aaa20f2bfe845bd9e8222e",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L57-S2",
+      "location": "docs/verification/requirements-matrix.md:57",
+      "text": "Contracts and designs | Six source-backed module designs with mandatory section order, actual interfaces, gates, effects, and test plans; this matrix.",
+      "text_sha256": "8a710aa3818ad68bacacef57a98ef68ea0f7f99db755808f0f23bf936204e1b6",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L57-S3",
+      "location": "docs/verification/requirements-matrix.md:57",
+      "text": "Independent documentation verdict is tracked separately. |",
+      "text_sha256": "af334eceddf958960e9150b1be5d3c2ab314e10b5a0aa6902e68418b03c07b6c",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L58-S1",
+      "location": "docs/verification/requirements-matrix.md:58",
+      "text": "| 3.",
+      "text_sha256": "379095a3a0e6eb06b2379e954c40ea436e6bddb31f356a55e31c782b9b382dce",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L58-S2",
+      "location": "docs/verification/requirements-matrix.md:58",
+      "text": "First complete execution path | Six retained native deliveries establish provider, Codex, telemetry, review, checks, integration, terminal outcome. |",
+      "text_sha256": "704ca2732a0165337bfb275ed331e67d1f94e9422cd0751efc59691109a91b3d",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L59-S1",
+      "location": "docs/verification/requirements-matrix.md:59",
+      "text": "| 4.",
+      "text_sha256": "1b121c476b0c0c4b9910734d22f44b062dfe7d05c3a118df9b466db88e0dd540",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L59-S2",
+      "location": "docs/verification/requirements-matrix.md:59",
+      "text": "Sustained coordination | Three items per mode; actual overlap, exact answer, reviewed hold, current installed terminal controls, watch discovery, no-call replay. |",
+      "text_sha256": "94b09b54c663d88454380f42d69346d0d3758d2a9ac6bb719156457423f5906b",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L60-S1",
+      "location": "docs/verification/requirements-matrix.md:60",
+      "text": "| 5.",
+      "text_sha256": "5901cc1cffe9f11a14d57365d2e11c8c69d577d1280f1d193b504d2f1b10c0ef",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L60-S2",
+      "location": "docs/verification/requirements-matrix.md:60",
+      "text": "Recovery and usage | Current 78-test source manifest, independent source ACCEPT, installed recovery replay, unknown/gap fences, immutable estimate and identity. |",
+      "text_sha256": "3c3d4ac83e5b8313b728e697cae8b2f3f5d501339edc430e56bc00a11e1bca44",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L61-S1",
+      "location": "docs/verification/requirements-matrix.md:61",
+      "text": "| 6.",
+      "text_sha256": "fcbedba6fe64c71844a9fb550c8dee8cbe702b40dbbd59e30fae49322176f48a",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L61-S2",
+      "location": "docs/verification/requirements-matrix.md:61",
+      "text": "Acceptance and delivery | Current built/installed wheel matches reviewed source, populated dashboard, terminal controls, exact-revision parity, package/operator instructions, release receipt.",
+      "text_sha256": "11ffd6232f9db1ec9832b12794069649fb96db95e322d0d465e58e4c62d6d9e7",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L61-S3",
+      "location": "docs/verification/requirements-matrix.md:61",
+      "text": "Documentation review remains its final gate. |",
+      "text_sha256": "5bcaf20788ac542815ce11def03de5db1ae6819c76c1f02f6ebf8832507981bd",
+      "section": "Delivery phases",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Delivery phases.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L65-S1",
+      "location": "docs/verification/requirements-matrix.md:65",
+      "text": "The tested Codex 0.159.2 first-export 503 scenario showed no retry.",
+      "text_sha256": "342296978b995dec35c54c12f027ba9080605f2287999bec0fcfa2310e876f40",
+      "section": "Native exporter decision",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L65-S2",
+      "location": "docs/verification/requirements-matrix.md:65",
+      "text": "Later exports persisted 1,200 spans and native/OTLP both reported 11 output tokens.",
+      "text_sha256": "b9a672f80bbdcbedcc1a834f30e1bd1edffc83d9e54cc2725d01e0b48373ccce",
+      "section": "Native exporter decision",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L65-S3",
+      "location": "docs/verification/requirements-matrix.md:65",
+      "text": "Process exit and an unchanged two-second follow-up were observed.",
+      "text_sha256": "3ccf5c4ca8da4ccfdf48411d788d93161cea0627af6dfef4ee7eb167fa9b1762",
+      "section": "Native exporter decision",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L65-S4",
+      "location": "docs/verification/requirements-matrix.md:65",
+      "text": "Complete flush is unproved because 512 rejected spans remain missing and original batch bytes were not retained.",
+      "text_sha256": "7275b1562b511fa7b485269439f52cc062641ed40154bc8ff37144dda860cf78",
+      "section": "Native exporter decision",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L67-S1",
+      "location": "docs/verification/requirements-matrix.md:67",
+      "text": "Design authority accepts truthful gap preservation and fail-closed advancement.",
+      "text_sha256": "bcda65b0d9b4831b90b1a73d2807dfdf6bea4fa4da4d1fcec7876615383a63a5",
+      "section": "Native exporter decision",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L67-S2",
+      "location": "docs/verification/requirements-matrix.md:67",
+      "text": "This evidence neither requires another paid probe nor authorizes a replacement invocation or invented spans.",
+      "text_sha256": "88a34445720f0a3d38fe4a8e330902d6c143220c04c89218651fa211c99d2334",
+      "section": "Native exporter decision",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L67-S3",
+      "location": "docs/verification/requirements-matrix.md:67",
+      "text": "If original batch bytes are available in another incident, reingest through the existing correlation/dedup boundary and clear the gap only after durability is verified.",
+      "text_sha256": "56c4f74981a84b1f548c498796111ebb99456cb354098b692b61d1f9c4e89aec",
+      "section": "Native exporter decision",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Native exporter decision.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L71-S1",
+      "location": "docs/verification/requirements-matrix.md:71",
+      "text": "The executable route is file-provider/main-branch delivery with explicit coordination `none`, SOLO or authorized MULTITASK, independent candidate clones, and Codex 0.159.2.",
+      "text_sha256": "18c63a3064bc18e5fe627398ce8853d6b44f398eec68466df88730e3acd70348",
+      "section": "Release boundary",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Release boundary.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L71-S2",
+      "location": "docs/verification/requirements-matrix.md:71",
+      "text": "Claim-helper projects and other production CLI adapters remain unsupported and fenced.",
+      "text_sha256": "5707bdb414b17e13ae4126015f732bc9918df6a578fdf7aea3313729dfa3d279",
+      "section": "Release boundary",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Release boundary.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L71-S3",
+      "location": "docs/verification/requirements-matrix.md:71",
+      "text": "Real delivery evidence remains bound to its historical source; current corrections are established by deterministic regressions, independent review, installed content matching, and zero-invocation recovery replay.",
+      "text_sha256": "861075de9a1c634e464d35a11b7aaa90326e1b91c7b2ac02c36ebf61196b10f9",
+      "section": "Release boundary",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Release boundary.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    },
+    {
+      "id": "F15-L71-S4",
+      "location": "docs/verification/requirements-matrix.md:71",
+      "text": "See [release-acceptance.json](release-acceptance.json) for current release status and [progress.md](progress.md) for the final documentation verdict.",
+      "text_sha256": "5b2475d246ee72e1fec5bfb1ff4cf5cc7be436f14c323d1644d7b1adc8ed9b90",
+      "section": "Release boundary",
+      "needed": {
+        "status": "pass",
+        "evidence": "Adds a scope, contract, evidence, limitation or operator fact required by Release boundary.",
+        "correction": "None required."
+      },
+      "clear": {
+        "status": "pass",
+        "evidence": "The actor, condition and result are explicit or supplied by the named section/table column; exact identifiers are retained.",
+        "correction": "None required."
+      },
+      "definite_reference": {
+        "status": "pass",
+        "evidence": "Specific referents are introduced by the document, section, operation name, table column or preceding claim; no material ambiguous antecedent.",
+        "correction": "None required."
+      }
+    }
+  ]
+}
