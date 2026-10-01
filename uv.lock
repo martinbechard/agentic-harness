@@ -3,7 +3,7 @@ requires-python = ">=3.12"
 
 [[package]]
 name = "agentic-harness"
-version = "0.1.0a15"
+version = "0.1.0a16"
 source = { editable = "." }
 dependencies = [
     { name = "prompt-toolkit" },

@@ -36,7 +36,7 @@ def validate_transition(item, target, authority):
         require(
             actor == "coordinator"
             and item.original_high is None
-            and item.owner == "Unowned"
+            and item.owner in {None, "Unowned"}
             and type(authority.get("prospective_high")) is int
             and authority["prospective_high"] > 0
             and authority.get("estimate", {}).get("kind") == "prospective_pre_execution"

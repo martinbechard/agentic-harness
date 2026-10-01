@@ -25,6 +25,7 @@ def test_prospective_estimate_requires_coordinator_and_unknown_baseline(provider
         "estimate": {"kind": "prospective_pre_execution", "dated_at": "2026-10-01"},
     }
     validate_transition(item, "Ready", authority)
+    validate_transition(replace(item, owner=None), "Ready", authority)
     for changes in (
         {"role": "orchestrator"},
         {"prospective_high": None},
