@@ -11,7 +11,7 @@ from dataclasses import asdict
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from ...contracts import digest, utcnow, validate_workspace
+from ...contracts import digest, resume_binding_compatible, utcnow, validate_workspace
 from ...evidence import EvidenceStore, JsonlWriter, atomic_json, component
 from ...runtime import AgentRequest, InvocationHandle, SessionHandle
 
@@ -131,15 +131,7 @@ class CodexAdapter:
         return await self._invoke(request, None)
 
     async def resume_session(self, session, request):
-        if session.binding.origin != request.binding.origin:
-            raise ValueError("Resume binding differs from the originating session")
-        if (
-            session.binding.permission_digest
-            and session.binding.permission_digest != request.binding.permission_digest
-        ) or (
-            not session.binding.permission_digest
-            and session.binding.profile_digest != request.binding.profile_digest
-        ):
+        if not resume_binding_compatible(session.binding, request.binding):
             raise ValueError("Resume permission changes require explicit authorization evidence")
         audit = {
             "session_id": session.session_id,
@@ -334,6 +326,9 @@ class CodexAdapter:
                 "tool permissions are managed by the CLI; this prompt does not enforce child isolation. "
                 "Artifact presence does not establish independent review or workflow completion."
             )
+        from .completion_evidence import prepare_native_request
+
+        effective_prompt = prepare_native_request(request.evidence_path, effective_prompt)
         EvidenceStore.requested(request.evidence_path)
         try:
             env = dict(os.environ)

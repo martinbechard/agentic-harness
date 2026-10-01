@@ -89,7 +89,16 @@ def test_returned_observations_rebuild_missing_stage(config_file, tmp_path):
         }
     )
     atomic_json(path / "telemetry.json", {"path": str(telemetry)})
-    atomic_json(path / "telemetry-report.json", {"span_count": 1, "rejected_exports": 0})
+    from backlog_harness.telemetry import Sink
+
+    atomic_json(
+        path / "telemetry-report.json",
+        {
+            "span_count": 1,
+            "rejected_exports": 0,
+            "evidence_sha256": Sink(telemetry, {}).evidence_digest(),
+        },
+    )
     EvidenceStore.outcome(path, "returned")
     recovered = app.recover_invocation(path)
     assert recovered["session"]["session_id"] == "portable"

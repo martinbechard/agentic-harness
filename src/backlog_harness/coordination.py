@@ -110,6 +110,8 @@ class RunController:
         by_id = {item.item_id: item for item in items}
         selected = []
         for item in items:
+            if item.item_id in self.app.config.data.get("excluded_items", {}):
+                continue
             if item.state not in {"Ready", "Starting", "Running"} or item.item_id in self.tasks:
                 continue
             if isinstance(self.app.provider, AgentProvider):
@@ -265,6 +267,57 @@ class RunController:
                                 return result
                             if self.admission_open:
                                 self.state = "IdleWatch"
+                        elif mode == "until-terminal":
+                            self.state, self.admission_open = "Available", False
+                            self.record()
+                            return {
+                                "outcome": "blocked",
+                                "counts": dict(Counter(item.state for item in items)),
+                                "reason": "Unresolved execution evidence requires reconciliation; no replacement launched",
+                                "invocations": [
+                                    value for value in evidence if value["outcome"] == "unresolved"
+                                ],
+                            }
+                    elif not self.tasks and self.admission_open and mode == "until-terminal":
+                        # No local work can advance. Return actionable state instead of
+                        # polling forever on missing dependencies, holds, or rejected work.
+                        waiting = {}
+                        for item in items:
+                            if item.state in TERMINAL:
+                                continue
+                            blocked = self.blocked.get(item.item_id)
+                            exclusion = self.app.config.data.get("excluded_items", {}).get(
+                                item.item_id
+                            )
+                            if exclusion:
+                                reason = "Excluded from this run: " + exclusion
+                            elif blocked:
+                                reason = blocked["reason"]
+                            else:
+                                required = (
+                                    self.app.provider.observation()
+                                    .get("dependencies", {})
+                                    .get(item.item_id, [])
+                                    if isinstance(self.app.provider, AgentProvider)
+                                    else dependencies(item)
+                                )
+                                states = {entry.item_id: entry.state for entry in items}
+                                unmet = [
+                                    name for name in required if states.get(name) != "Completed"
+                                ]
+                                reason = (
+                                    "Unmet dependencies: " + ", ".join(unmet)
+                                    if unmet
+                                    else "Item requires attention in state " + item.state
+                                )
+                            waiting[item.item_id] = {"state": item.state, "reason": reason}
+                        self.state, self.admission_open = "Available", False
+                        self.record()
+                        return {
+                            "outcome": "blocked",
+                            "counts": dict(Counter(i.state for i in items)),
+                            "items": waiting,
+                        }
                     elif self.admission_open:
                         self.state = "Running"
                     self.record()

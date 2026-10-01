@@ -30,8 +30,18 @@ def main(argv=None):
     review.add_argument("item_id")
     review.add_argument("--ceiling", type=float)
     review.add_argument("--reference")
+    submit_answer = commands.add_parser("answer")
+    submit_answer.add_argument("item_id")
+    submit_answer.add_argument("--question-id", required=True)
+    submit_answer.add_argument("--revision", required=True)
+    submit_answer.add_argument("--text", required=True)
     answer = commands.add_parser("resume-answer")
     answer.add_argument("item_id")
+    graph_answer = commands.add_parser("graph-answer")
+    graph_answer.add_argument("item_id")
+    graph_answer.add_argument("--question-id", required=True)
+    graph_answer.add_argument("--revision", required=True)
+    graph_answer.add_argument("--text", required=True)
     recover = commands.add_parser("recover-provider")
     recover.add_argument("operation_id")
     effect = commands.add_parser("reconcile-provider-effect")
@@ -43,6 +53,10 @@ def main(argv=None):
     proof_followup = commands.add_parser("continue-proof")
     proof_followup.add_argument("item_id")
     proof_followup.add_argument("--instruction", type=Path, required=True)
+    integration = commands.add_parser("reconcile-integration")
+    integration.add_argument("item_id")
+    integration.add_argument("--instruction", type=Path, required=True)
+    integration.add_argument("--amendment", type=Path)
     deliver = commands.add_parser("authorize-delivery")
     deliver.add_argument("item_id")
     deliver.add_argument("--authorization", type=Path, required=True)
@@ -106,6 +120,17 @@ def main(argv=None):
             from .application import Application
 
             app = Application(args.config, control_only=control_only)
+            if args.command in {
+                "resume-answer",
+                "continue-work",
+                "continue-proof",
+                "run-proof",
+                "recover-item",
+                "authorize-delivery",
+                "reconcile-integration",
+                "reconcile-stopped-owner",
+            }:
+                app.require_legacy_execution(args.item_id)
             if args.command == "reconcile":
                 result = app.reconcile()
             elif args.command == "reassess-policy":
@@ -123,14 +148,43 @@ def main(argv=None):
                     "item_count": len(observed["items"]),
                     "policy": observed["policy"],
                 }
+            elif args.command == "reconcile-integration":
+                result = asyncio.run(app.reconcile_integration(args.item_id, args.instruction, args.amendment))
             elif args.command == "authorize-delivery":
                 from .recovery_flow import authorize_retained_delivery
 
                 result = asyncio.run(
                     authorize_retained_delivery(app, args.item_id, args.authorization)
                 )
+            elif args.command == "answer":
+                if app.execution_engine(args.item_id) == "langgraph":
+                    result = asyncio.run(
+                        app.run_item(
+                            args.item_id,
+                            graph_answer={
+                                "question_id": args.question_id,
+                                "revision": args.revision,
+                                "text": args.text,
+                            },
+                        )
+                    )
+                else:
+                    result = asyncio.run(
+                        app.answer(args.item_id, args.question_id, args.revision, args.text)
+                    )
             elif args.command == "resume-answer":
                 result = asyncio.run(app.resume_answer(args.item_id))
+            elif args.command == "graph-answer":
+                result = asyncio.run(
+                    app.run_item(
+                        args.item_id,
+                        graph_answer={
+                            "question_id": args.question_id,
+                            "revision": args.revision,
+                            "text": args.text,
+                        },
+                    )
+                )
             elif args.command == "recover-provider":
                 result = app.recover_provider(args.operation_id)
             elif args.command == "reconcile-provider-effect":
@@ -192,6 +246,8 @@ def main(argv=None):
                     )
                 )
         print(json.dumps(result, indent=2))
+        if args.command == "run" and result.get("outcome") not in {"successful", "stopped"}:
+            return 2
         return 0
     except (ValueError, OSError, RuntimeError) as exc:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)

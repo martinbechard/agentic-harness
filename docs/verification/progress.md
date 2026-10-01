@@ -1,6 +1,8 @@
 # Implementation Progress And Evidence
 
-Status: implementation and acceptance complete for the documented version 1 route. Three dummy Work Items completed in SOLO and three in concurrent mode. Source review is ACCEPT and documentation review is GOOD. See [completion.json](completion.json) for the final evidence record.
+Current continuation: the updated agent-owned workflow implementation has an accepted 562-test a37 baseline plus focused, independently accepted a38/a39 corrections; see [pre-backlog acceptance](pre-backlog-acceptance.md). The fixture-first hold is satisfied for the tested native-CLI workflow; live delivery remains to be verified.
+
+Historical version 1 status: implementation and acceptance complete for the documented version 1 route. Three dummy Work Items completed in SOLO and three in concurrent mode. Source review is ACCEPT and documentation review is GOOD. See [completion.json](completion.json) for the final evidence record.
 
 Earlier entries preserve the staged verification history. The final completion section supersedes earlier pending-work and tooling-blocker statements. Historical review and acceptance receipts remain unchanged.
 

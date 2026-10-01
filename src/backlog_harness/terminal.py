@@ -15,7 +15,7 @@ HELP = """run --until-terminal | run --watch
 pause | resume | stop | reconcile | status
 item show ITEM_ID | item answer ITEM_ID QUESTION_ID | session show SESSION_ID
 resume-answer ITEM_ID | recover-provider OPERATION_ID
-review-hold ITEM_ID CEILING APPROVAL_REFERENCE
+review-hold ITEM_ID [CEILING APPROVAL_REFERENCE]
 help | quit"""
 
 
@@ -124,6 +124,8 @@ async def terminal(app):
                     if not found:
                         raise TransitionBlocked("Portable session is absent")
                     publish({"session_evidence": found})
+                elif len(parts) == 2 and parts[0] == "review-hold":
+                    publish(await app.review_hold(parts[1]))
                 elif len(parts) == 4 and parts[0] == "review-hold":
                     publish(
                         await app.review_hold(

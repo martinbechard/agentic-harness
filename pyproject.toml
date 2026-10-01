@@ -4,10 +4,16 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agentic-harness"
-version = "0.1.0a36"
+version = "0.1.0a39"
 description = "Terminal-first provider-backed agent CLI harness"
 requires-python = ">=3.12"
-dependencies = ["PyYAML>=6.0.2,<7", "prompt-toolkit>=3.0.48,<4"]
+dependencies = [
+    "PyYAML>=6.0.2,<7",
+    "prompt-toolkit>=3.0.48,<4",
+    "agent-client-protocol==0.12.1",
+    "langgraph==1.2.12",
+    "langgraph-checkpoint-sqlite==3.1.1",
+]
 
 [project.scripts]
 agentic-harness = "backlog_harness.cli:main"

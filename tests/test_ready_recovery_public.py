@@ -97,6 +97,9 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
             "source_revision": app.provider.source_revision(),
             "source_manifest": app.provider.source_manifest(),
             "observer_digest": app.provider_observer_digest(app.config),
+            "capability_digest": app.provider_capability_digest(
+                app.config, app.provider_observer_digest(app.config)
+            ),
             "policy": {
                 "eligible": True,
                 "mode": "SOLO",
@@ -560,6 +563,23 @@ def test_normal_queue_reconciles_interrupted_committed_reservation(
         value = json.loads(result["text"])
         if value.get("after", {}).get("state") == "Starting":
             result["outcome"] = "unresolved"
+            operation_record = json.loads(
+                (
+                    app.root
+                    / "provider-agent-operations"
+                    / component(kwargs["provider_operation"])
+                    / "requested.json"
+                ).read_text()
+            )
+            result["request_digest"] = digest(
+                [
+                    "provider",
+                    operation_record["repository"],
+                    False,
+                    digest(operation_record),
+                    operation_record["prompt"],
+                ]
+            )
             store = EvidenceStore(app.root, "item:" + item.item_id)
             path = store.begin(
                 item.item_id + ":" + args[1],

@@ -14,4 +14,8 @@ uv run agentic-harness --config /absolute/path/config.yaml app
 
 The asynchronous terminal supports `run --until-terminal`, `run --watch`, `pause`, `resume`, `stop`, `reconcile`, status, item and session inspection, exact question answers, and usage-hold review. The noninteractive `run` and `run-item` commands use the same application. A read-only dashboard starts with `dashboard --port 8767` (use port 0 to select a free port).
 
+Use `answer ITEM --question-id ID --revision REV --text TEXT` to answer an exact outstanding question; the harness selects the item's bound engine. `run --until-terminal` reports `successful`, `settled_with_nondelivery`, or `blocked`; the latter two exit with code 2. Blocked reports preserve unresolved evidence and identify required attention without relaunching uncertain work.
+
+The [pre-backlog acceptance matrix](docs/verification/pre-backlog-acceptance.md) tracks installed fixture scenarios, known gaps, and the current hold on real-backlog execution.
+
 See the [operator guide](docs/operator-guide.md), [implementation plan](IMPLEMENTATION-PLAN.md), and [verification progress](docs/verification/progress.md). The progress record distinguishes tests and live evidence from outstanding acceptance work.

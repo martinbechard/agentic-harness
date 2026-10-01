@@ -141,6 +141,15 @@ class AgentBinding:
         )
 
 
+def resume_binding_compatible(previous, current):
+    """Allow launch tuning to change while retaining session origin and permissions."""
+    return previous.origin == current.origin and (
+        previous.permission_digest == current.permission_digest
+        if previous.permission_digest
+        else previous.profile_digest == current.profile_digest
+    )
+
+
 @dataclass(frozen=True)
 class ConfigSnapshot:
     path: Path
@@ -280,6 +289,12 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
             raise ConfigError(
                 "Workflow must explicitly select a supported execution mode and main-branch route"
             )
+        excluded = data.get("excluded_items", {})
+        if not isinstance(excluded, dict):
+            raise ConfigError("excluded_items must be a mapping")
+        for item_id, reason in excluded.items():
+            _text(item_id, "excluded item identity")
+            _text(reason, "excluded item reason")
         allowed = workflow.get("allowed_paths")
         if not isinstance(allowed, list) or not allowed or len(set(allowed)) != len(allowed):
             raise ConfigError("workflow.allowed_paths must be a nonempty unique list")
@@ -331,8 +346,12 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
         for item_id, selected in items.items():
             _text(item_id, "item id")
             _object(selected, "item workflow")
-            if set(selected) - {"allowed_paths", "checks"}:
-                raise ConfigError("Item workflow may only override allowed_paths and checks")
+            if set(selected) - {"allowed_paths", "checks", "engine"}:
+                raise ConfigError(
+                    "Item workflow may only override allowed_paths, checks and engine"
+                )
+            if selected.get("engine", "legacy") not in {"legacy", "langgraph"}:
+                raise ConfigError("Item workflow engine must be legacy or langgraph")
             if not isinstance(selected.get("allowed_paths"), list) or not selected["allowed_paths"]:
                 raise ConfigError("Item scope needs allowed_paths")
             for value in selected["allowed_paths"]:

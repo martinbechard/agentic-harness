@@ -527,8 +527,17 @@ class AgentProvider:
         if not self.cache_path.exists():
             raise TransitionBlocked("Provider agent observation is required")
         value = json.loads(self.cache_path.read_text())
-        if value["source_revision"] != self.source_revision():
-            raise TransitionBlocked("Provider observation is stale; refresh through the agent")
+        revision = self.source_revision()
+        if value["source_revision"] != revision:
+            # Source-only commits do not change provider facts. Revalidate every
+            # observed input before returning a current read-only projection.
+            if value.get("source_manifest") != self.source_manifest():
+                raise TransitionBlocked("Provider observation is stale; refresh through the agent")
+            self.validate_inventory(value)
+            self.validate_policy(value["policy"])
+            if self.source_revision() != revision:
+                raise TransitionBlocked("Provider changed during observation validation")
+            value = {**value, "source_revision": revision}
         return value
 
     def snapshot(self):

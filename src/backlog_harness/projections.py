@@ -134,8 +134,10 @@ def capture(app):
                 else:
                     receipts.append((path, json.loads(report.read_text()), value["invocation_id"]))
     count, traces, trace_uncertainty = trace_snapshot(app)
+    # Relocation aliases preserve historical receipts; require the same inventoried file.
+    inventory = {path.resolve(): entry for path, entry in app.trace_cache.items()}
     for path, report, invocation_id in receipts:
-        entry = app.trace_cache.get(path)
+        entry = inventory.get(path.resolve())
         if entry is None:
             raise EvidenceError("Telemetry receipt points outside the projection inventory")
         fingerprint = digest(sorted((key, value[0]) for key, value in entry["rows"].items()))

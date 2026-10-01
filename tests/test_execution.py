@@ -8,7 +8,7 @@ import pytest
 import yaml
 
 from backlog_harness.adapters.codex.adapter import CodexAdapter
-from backlog_harness.contracts import load_config
+from backlog_harness.contracts import digest, load_config
 from backlog_harness.evidence import EvidenceStore
 from backlog_harness.provider import TransitionBlocked
 from backlog_harness.runtime import AgentRequest
@@ -53,7 +53,9 @@ print(json.dumps({'type':'turn.completed','usage':{'output_tokens':1}}),flush=Tr
     async def check():
         with TelemetryReceiver(tmp_path / "ops") as receiver:
             inv = str(uuid4())
-            path = store.begin("op", inv, snapshot, binding, action="test")
+            path = store.begin(
+                "op", inv, snapshot, binding, action="test", request_digest=digest("test")
+            )
             dest = receiver.register(
                 run_id="run", invocation_id=inv, role="orchestrator", adapter="codex"
             )
@@ -87,7 +89,14 @@ print(json.dumps({'type':'turn.completed','usage':{'output_tokens':1}}),flush=Tr
                 updated_binding = updated.binding("orchestrator")
                 assert updated_binding.profile_digest != binding.profile_digest
                 next_id = str(uuid4())
-                next_path = store.begin("resume", next_id, snapshot, binding, action="resume")
+                next_path = store.begin(
+                    "resume",
+                    next_id,
+                    updated,
+                    updated_binding,
+                    action="resume",
+                    request_digest=digest("test"),
+                )
                 next_dest = receiver.register(
                     run_id="run", invocation_id=next_id, role="orchestrator", adapter="codex"
                 )
@@ -387,7 +396,14 @@ def test_invocation_artifact_permissions(
     async def run():
         with TelemetryReceiver(snapshot.operational_root) as receiver:
             inv = str(uuid4())
-            path = store.begin("one:proof", inv, snapshot, binding, action="proof")
+            path = store.begin(
+                "one:proof",
+                inv,
+                snapshot,
+                binding,
+                action="proof",
+                request_digest=digest("do proof"),
+            )
             dest = receiver.register(
                 run_id="item:one", invocation_id=inv, role="orchestrator", adapter="codex"
             )

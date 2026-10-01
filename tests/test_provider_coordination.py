@@ -372,7 +372,7 @@ def test_agent_observation_refresh_is_cached_and_never_parses_headers(
     data["profiles"]["control"]["model"] = "updated-observer"
     config.write_text(yaml.safe_dump(data))
     asyncio.run(app.refresh_provider())
-    assert len(calls) == 2
+    assert len(calls) == 1
     with pytest.raises(TransitionBlocked, match="responsible agent"):
         app.provider.transition(item.item_id, item.revision, "Starting", {})
     (provider.repository / item.path).write_text(item.content + "\nchanged\n")
@@ -504,14 +504,34 @@ def test_agent_transition_recovers_committed_operation_without_second_mutation(
         historical = json.loads((request_path.parent / "receipt.json").read_text())
         historical["advancement_verified"] = True
         native_json(request_path.parent / "receipt.json", historical)
-        with pytest.raises(TransitionBlocked, match="Structured policy evidence"):
-            asyncio.run(
-                app.transition(
-                    before.item_id, before.revision, "Starting", actor, validate=validate_transition
-                )
+        receipt = asyncio.run(
+            app.transition(
+                before.item_id, before.revision, "Starting", actor, validate=validate_transition
             )
-        receipt = json.loads((request_path.parent / "receipt.json").read_text())
-        assert receipt["advancement_verified"] is False
+        )
+        original_path = request_path.parent / "receipt-original-policy.json"
+        original_bytes = original_path.read_bytes()
+        original = json.loads(original_bytes)
+        assert original["policy"]["evidence"] == []
+        assert original["advancement_verified"] is False
+        reconciliation_path = request_path.parent / "policy-reconciliation.json"
+        reconciliation_bytes = reconciliation_path.read_bytes()
+        reconciliation = json.loads(reconciliation_bytes)
+        assert reconciliation["policy"] == {
+            "eligible": True,
+            "mode": "SOLO",
+            "primary_branch": "main",
+            "evidence": policy_evidence(provider.repository),
+        }
+        app.provider.validate_policy(reconciliation["policy"])
+        assert receipt["advancement_verified"] is True
+        asyncio.run(
+            app.transition(
+                before.item_id, before.revision, "Starting", actor, validate=validate_transition
+            )
+        )
+        assert original_path.read_bytes() == original_bytes
+        assert reconciliation_path.read_bytes() == reconciliation_bytes
         assert len(mutations) == 1
         return
     receipt = asyncio.run(
@@ -917,8 +937,10 @@ def test_helper_discovery_uses_provider_fingerprint_after_workflow_change(
         skill.write_text("Fixture skill")
     config.write_text(yaml.safe_dump(data))
     app = Application(config)
+    observer = app.provider_observer_digest(app.config)
     observed = {
-        "observer_digest": app.provider_observer_digest(app.config),
+        "observer_digest": observer,
+        "capability_digest": app.provider_capability_digest(app.config, observer),
         "helper": {
             "discovery": "native_tool_catalog",
             "available": True,
@@ -1002,6 +1024,8 @@ def test_helper_discovery_uses_provider_fingerprint_after_workflow_change(
     assert provider.item(item.item_id).state == "Ready"
     data["profiles"]["control"]["model"] = "different-model"
     config.write_text(yaml.safe_dump(data))
+    app.validate_management_readiness("coordinator")
+    (home / "config.toml").write_text("[mcp_servers.changed]\ncommand = 'changed'\n")
     with pytest.raises(TransitionBlocked, match="discovery configuration is stale"):
         app.validate_management_readiness("coordinator")
 
@@ -1197,3 +1221,64 @@ def test_repeated_policy_citation_reuses_only_current_matching_authority(
         altered["policy"]["evidence"][0]["excerpt"] = "Different invalid receipt"
         with pytest.raises(TransitionBlocked, match="Original policy receipt changed"):
             app.validate_receipt_policy(evidence, altered)
+
+
+@pytest.mark.parametrize("changed", ["source", "provider", "policy"])
+def test_head_drift_reuses_only_unchanged_provider_and_policy(provider, changed):
+    import json
+    from dataclasses import asdict
+    from hashlib import sha256
+
+    from backlog_harness.evidence import atomic_json
+    from backlog_harness.provider import AgentProvider
+
+    repo = provider.repository
+    extra = repo / "policy.md"
+    extra.write_text("Current policy authority\n")
+    git(repo, "add", "policy.md")
+    git(repo, "commit", "-m", "Policy source")
+    view = AgentProvider(repo, provider.evidence_root)
+    policy = {
+        "eligible": True,
+        "mode": "SOLO",
+        "primary_branch": "main",
+        "evidence": policy_evidence(repo)
+        + [
+            {
+                "path": "policy.md",
+                "sha256": sha256(extra.read_bytes()).hexdigest(),
+                "excerpt": "Current policy authority",
+                "supports": ["admission"],
+            }
+        ],
+    }
+    cached = {
+        "source_revision": view.source_revision(),
+        "source_manifest": view.source_manifest(),
+        "items": [asdict(provider.item("item-one"))],
+        "dependencies": {"item-one": []},
+        "policy": policy,
+        "observer_digest": "retained-observer",
+    }
+    atomic_json(view.cache_path, cached)
+    original = view.cache_path.read_bytes()
+    path = (
+        repo / "answer.txt"
+        if changed == "source"
+        else extra
+        if changed == "policy"
+        else repo / "backlog/feature-backlog/item-one.md"
+    )
+    path.write_text(path.read_text() + "Changed\n" if path.exists() else "Source change\n")
+    git(repo, "add", "--", str(path.relative_to(repo)))
+    git(repo, "commit", "-m", "Concurrent change")
+    if changed == "source":
+        observation = view.observation()
+        assert observation["source_revision"] == view.source_revision()
+        assert observation["items"] == cached["items"]
+        assert observation["observer_digest"] == "retained-observer"
+    else:
+        with pytest.raises(TransitionBlocked):
+            view.observation()
+    assert view.cache_path.read_bytes() == original
+    assert json.loads(original) == cached

@@ -5,6 +5,7 @@ import os
 import stat
 import subprocess
 from hashlib import file_digest, sha256
+from pathlib import Path
 
 from .evidence import atomic_json
 from .provider import AgentProvider, TransitionBlocked, git
@@ -67,7 +68,18 @@ def compatible_primary_paths(primary, candidate_repo, candidate, base, head, cha
     )
 
 
-def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
+def integrate(
+    app,
+    item_id,
+    candidate_repo,
+    candidate,
+    base,
+    review,
+    checks,
+    *,
+    expected_owner=None,
+    expected_revision=None,
+):
     path = app._stage_path(item_id, "delivery")
     primary = app.config.repository
     policy_check = lambda: app.execution_policy(item_id)
@@ -78,6 +90,30 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
     )
     with transaction:
         policy_check() if isinstance(app.provider, AgentProvider) else app.provider.policy()
+        if not path.exists() and expected_owner is not None:
+            current = app.provider.item(item_id)
+            require(
+                current.state == "Running"
+                and current.owner == expected_owner
+                and current.revision == expected_revision,
+                "Canonical delivery ownership or revision changed",
+            )
+        superseding = app._stage_path(item_id, "superseding-delivery-authorization")
+        if superseding.exists():
+            from .integration_flow import load_integration
+
+            integrated_authority = load_integration(app, item_id, candidate)
+            record = integrated_authority["candidate_record"]
+            require(
+                path.exists() or git(primary, "rev-parse", "HEAD") == record["primary"],
+                "Primary advanced after integration review",
+            )
+            candidate_repo, candidate, base = (
+                Path(record["workspace"]),
+                record["candidate"],
+                record["primary"],
+            )
+            review, checks = integrated_authority["review"], integrated_authority["checks"]
         untracked = preserved_untracked(primary)
         changed = validate_candidate(
             candidate_repo,
@@ -142,6 +178,14 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
         before = prior["main_before"]
         head = git(primary, "rev-parse", "HEAD")
         if head == before:
+            if expected_owner is not None:
+                current = app.provider.item(item_id)
+                require(
+                    current.state == "Running"
+                    and current.owner == expected_owner
+                    and current.revision == expected_revision,
+                    "Canonical delivery ownership or revision changed",
+                )
             # The first-parent history proves the merge has not occurred. Recheck all
             # original gates before executing this deterministic Git effect once.
             require(

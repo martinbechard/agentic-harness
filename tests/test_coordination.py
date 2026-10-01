@@ -12,6 +12,14 @@ from backlog_harness.evidence import EvidenceStore, atomic_json
 from backlog_harness.provider import Item, TransitionBlocked
 
 
+def controller_application(**overrides):
+    """Keep real Application evidence paths while isolating item execution."""
+    app = Application(overrides["config_path"])
+    for name, value in overrides.items():
+        setattr(app, name, value)
+    return app
+
+
 @pytest.mark.parametrize("mode,expected", [("SOLO", 1), ("MULTITASK", 2)])
 def test_three_item_execution_obeys_selected_mode(config_file, tmp_path, mode, expected):
     config, data = config_file
@@ -43,7 +51,7 @@ def test_three_item_execution_obeys_selected_mode(config_file, tmp_path, mode, e
         active -= 1
         return {"state": "Completed"}
 
-    app = SimpleNamespace(
+    app = controller_application(
         root=tmp_path / "ops",
         config_path=config,
         config=load_config(config),
@@ -51,7 +59,7 @@ def test_three_item_execution_obeys_selected_mode(config_file, tmp_path, mode, e
         run_item=run_item,
         reconcile=list,
     )
-    result = asyncio.run(RunController(app).run("until-terminal"))
+    result = asyncio.run(asyncio.wait_for(RunController(app).run("until-terminal"), 5))
     assert result == {"outcome": "successful", "counts": {"Completed": 3}}
     assert maximum == expected
     assert sorted(calls) == ["one", "three", "two"]
@@ -69,7 +77,7 @@ def test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work(config_file
         current[0] = replace(current[0], state="Completed")
         return {"state": "Completed"}
 
-    app = SimpleNamespace(
+    app = controller_application(
         root=tmp_path / "ops",
         config_path=config,
         config=load_config(config),
@@ -101,7 +109,7 @@ def test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work(config_file
         await controller.stop()
         await task
 
-    asyncio.run(exercise())
+    asyncio.run(asyncio.wait_for(exercise(), 5))
     assert calls == ["later"]
 
 
@@ -139,7 +147,7 @@ def test_capacity_serializes_actual_async_requests(config_file):
     async def exercise():
         await asyncio.gather(worker(), worker(), worker())
 
-    asyncio.run(exercise())
+    asyncio.run(asyncio.wait_for(exercise(), 5))
     assert maximum == 1
 
 
@@ -180,7 +188,7 @@ def test_transient_item_lock_does_not_become_sticky_scheduling_block(config_file
         current[0] = replace(item, state="Completed")
         return {"state": "Completed"}
 
-    app = SimpleNamespace(
+    app = controller_application(
         root=tmp_path / "ops",
         config_path=config,
         config=load_config(config),
@@ -189,7 +197,7 @@ def test_transient_item_lock_does_not_become_sticky_scheduling_block(config_file
         reconcile=list,
     )
     controller = RunController(app)
-    result = asyncio.run(controller.run("until-terminal"))
+    result = asyncio.run(asyncio.wait_for(controller.run("until-terminal"), 5))
     assert result["outcome"] == "successful"
     assert calls == 2
     assert not controller.blocked
@@ -215,7 +223,7 @@ def test_invalid_generation_config_pauses_admission_without_cancelling_flight(
         current[0] = replace(item, state="Completed")
         return {"state": "Completed"}
 
-    app = SimpleNamespace(
+    app = controller_application(
         root=tmp_path / "ops",
         config_path=config,
         config=load_config(config),
@@ -227,7 +235,7 @@ def test_invalid_generation_config_pauses_admission_without_cancelling_flight(
     async def exercise():
         controller = RunController(app)
         task = asyncio.create_task(controller.run("watch"))
-        await started.wait()
+        await asyncio.wait_for(started.wait(), 2)
         invalid = dict(data)
         invalid["profiles"] = {}
         config.write_text(yaml.safe_dump(invalid))
@@ -240,4 +248,66 @@ def test_invalid_generation_config_pauses_admission_without_cancelling_flight(
         await controller.stop()
         await task
 
-    asyncio.run(exercise())
+    asyncio.run(asyncio.wait_for(exercise(), 5))
+
+
+@pytest.mark.parametrize("dependency", ["missing", "blocked"])
+def test_unrunnable_dependencies_do_not_starve_independent_item(config_file, tmp_path, dependency):
+    config, data = config_file
+    data["poll_seconds"] = 0.01
+    data["operational_root"] = str(tmp_path / "ops")
+    config.write_text(yaml.safe_dump(data))
+    items = {
+        "blocked": Item(
+            "blocked",
+            "blocked.md",
+            "r1",
+            "Ready",
+            "Unowned",
+            100,
+            "Dependencies: " + dependency + "\n",
+        ),
+        "independent": Item("independent", "independent.md", "r2", "Ready", "Unowned", 100, ""),
+    }
+    calls = []
+
+    async def complete(name):
+        calls.append(name)
+        items[name] = replace(items[name], state="Completed")
+        return {"state": "Completed"}
+
+    app = controller_application(
+        root=tmp_path / "ops",
+        config_path=config,
+        config=load_config(config),
+        provider=SimpleNamespace(snapshot=lambda: list(items.values())),
+        run_item=complete,
+        reconcile=list,
+    )
+    result = asyncio.run(asyncio.wait_for(RunController(app).run("until-terminal"), 5))
+    assert calls == ["independent"]
+    assert result["outcome"] == "blocked"
+    assert result["counts"] == {"Ready": 1, "Completed": 1}
+    assert result["items"]["blocked"]["reason"] == "Unmet dependencies: " + dependency
+
+
+def test_terminal_provider_with_uncertain_execution_reports_incomplete(config_file, tmp_path):
+    config, _ = config_file
+    item = Item("one", "one.md", "r", "Completed", "owner", 100, "")
+    uncertain = {"outcome": "unresolved", "invocation_id": "retained", "quiescent": False}
+
+    async def forbidden(_):
+        pytest.fail("Uncertain execution must not be replaced")
+
+    app = controller_application(
+        root=load_config(config).operational_root,
+        config_path=config,
+        config=load_config(config),
+        provider=SimpleNamespace(snapshot=lambda: [item]),
+        run_item=forbidden,
+        reconcile=lambda: [uncertain],
+    )
+    result = asyncio.run(asyncio.wait_for(RunController(app).run("until-terminal"), 5))
+    assert result["outcome"] == "blocked"
+    assert result["invocations"] == [uncertain]
+    assert result["counts"] == {"Completed": 1}

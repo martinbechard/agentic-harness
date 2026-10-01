@@ -3,6 +3,8 @@ import threading
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+import pytest
+
 from backlog_harness.dashboard import create_dashboard_server
 
 
@@ -145,7 +147,10 @@ def test_long_lived_view_observes_invalid_configuration_without_reusing_generati
     assert "profiles" in app.config.data
 
 
-def test_cold_projection_rejects_same_count_content_change(config_file, provider):
+@pytest.mark.parametrize("receipt_location", ["direct", "relocated_alias", "outside_inventory"])
+def test_cold_projection_rejects_same_count_content_change(
+    config_file, provider, tmp_path, receipt_location
+):
     import pytest
     import yaml
 
@@ -182,6 +187,20 @@ def test_cold_projection_rejects_same_count_content_change(config_file, provider
         receiver.sinks[dest.token].write(value)
         atomic_json(path / "telemetry.json", {"path": str(dest.path)})
         atomic_json(path / "telemetry-report.json", receiver.report(dest))
+    if receipt_location != "direct":
+        alias = tmp_path / "old-evidence-root"
+        alias.symlink_to(app.root, target_is_directory=True)
+        receipt_path = alias / dest.path.relative_to(app.root)
+        if receipt_location == "outside_inventory":
+            other = app.root / "non-inventory-spans.jsonl"
+            other.write_bytes(dest.path.read_bytes())
+            receipt_path = alias / other.relative_to(app.root)
+        atomic_json(path / "telemetry.json", {"path": str(receipt_path)})
+    if receipt_location == "outside_inventory":
+        with pytest.raises(EvidenceError, match="outside the projection inventory"):
+            snapshot(app)
+        return
+    assert snapshot(app)["trace_span_count"] == 1
     assert snapshot(app)["trace_span_count"] == 1
     dest.path.write_text(dest.path.read_text().replace("original", "changed"))
     cold = Application(config)

@@ -259,3 +259,216 @@ def reconcile_native_completion(invocation_path):
         "quiescence": quiescence,
         "usage_coverage": "not established by completion reconciliation",
     }
+
+
+def reconcile_native_accounting(path, events, telemetry_path, provider_id=None):
+    """Derive accounting after supervisor loss; receiver diagnostic history stays unknown."""
+    from ...evidence import read_jsonl
+    from ...native_evidence import child_usage
+    from ...telemetry import Sink, normalize, spans
+
+    path, telemetry_path = Path(path), Path(telemetry_path)
+    intent = EvidenceStore.reconcile(path)
+    proof = reconcile_native_completion(path)
+    require(events and events[-1].get("type") == "turn.completed", "Terminal stdout is missing")
+    require(
+        all(event.get("invocation_id") == intent["invocation_id"] for event in events),
+        "Event invocation differs",
+    )
+    require(
+        not any(event.get("type") in {"error", "turn.failed"} for event in events),
+        "Failed native output",
+    )
+    messages = [event.get("text") for event in events if event.get("item_type") == "agent_message"]
+    require(messages and messages[-1] == proof["text"], "Native and stdout final results differ")
+    root = Path(intent["binding"]["auth_context"]) / "sessions"
+    records, fingerprint = native_records(proof["native_session_id"], root)
+    require(fingerprint == proof["native_evidence_sha256"], "Native evidence changed")
+    previous, counter, active = 0, None, False
+    last_counter, last_output = -1, -1
+    selected = []
+    for index, row in enumerate(records):
+        value = row["payload"]
+        if row.get("type") == "event_msg" and value.get("type") == "task_started":
+            active = value.get("turn_id") == proof["native_turn_id"]
+        if active:
+            selected.append(row)
+            if (row.get("type") == "response_item" and value.get("role") != "user") or (
+                row.get("type") == "event_msg"
+                and value.get("type") in {"agent_message", "agent_reasoning"}
+            ):
+                last_output = index
+        if (
+            row.get("type") == "event_msg"
+            and value.get("type") == "token_count"
+            and value.get("info") is not None
+        ):
+            amount = (value.get("info") or {}).get("total_token_usage", {}).get("output_tokens")
+            require(type(amount) is int and amount >= 0, "Native usage counter is missing")
+            if active:
+                counter = amount
+                last_counter = index
+            elif counter is None:
+                previous = amount
+        if row.get("type") == "event_msg" and value.get("type") == "task_complete":
+            active = False
+    require(type(counter) is int and counter >= previous, "Native cumulative usage is unproven")
+    require(last_counter > last_output, "Native usage has uncovered model output")
+    parent_records = [
+        r
+        for r in selected
+        if r.get("type") == "token_usage_record"
+        and r["payload"].get("session_id") == proof["native_session_id"]
+    ]
+    model_items = [
+        r["payload"]
+        for r in selected
+        if r.get("type") == "event_msg"
+        and r["payload"].get("type") in {"item_started", "item_completed"}
+        and r["payload"].get("item", {}).get("type") in {"Reasoning", "AgentMessage"}
+    ]
+    if model_items:
+        from datetime import datetime
+
+        require(parent_records, "Parent usage coverage is missing")
+        end = datetime.fromisoformat(parent_records[-1]["timestamp"]).timestamp() * 1000
+        require(
+            all(
+                type(v.get("started_at_ms")) is int and v["started_at_ms"] <= end
+                for v in model_items
+            ),
+            "Native usage has uncovered model output",
+        )
+    require(
+        events[-1].get("usage", {}).get("output_tokens") == counter,
+        "Native and stdout usage differ",
+    )
+    children, child_ids = child_usage(
+        proof["native_session_id"], events[0]["at"], events[-1]["at"], root
+    )
+    require(type(children) is int, "Native child accounting is incomplete")
+    rows, _, partial = read_jsonl(telemetry_path)
+    require(not partial and rows, "Telemetry is missing or partial")
+    correlation = {
+        "harness.run.id": intent["run_id"],
+        "harness.invocation.id": intent["invocation_id"],
+        "harness.agent.role": intent["binding"]["role"],
+        "harness.agent.adapter": intent["binding"]["adapter"],
+    }
+    if intent.get("item_id") is not None:
+        require(provider_id, "Provider attribution is missing")
+        correlation.update(
+            {"harness.work_item.id": intent["item_id"], "harness.provider.id": provider_id}
+        )
+    for payload in rows:
+        require(normalize(payload, correlation) == payload, "Telemetry attribution is incomplete")
+    sink = Sink(telemetry_path, {})
+    seen, observed, found = set(), 0, False
+    for payload in rows:
+        for _, _, span in spans(payload):
+            attrs = {entry["key"]: entry["value"] for entry in span.get("attributes", [])}
+            require(
+                attrs.get("harness.invocation.id") == {"stringValue": intent["invocation_id"]},
+                "Telemetry invocation differs",
+            )
+            identity = span["traceId"].lower(), span["spanId"].lower()
+            if identity in seen:
+                continue
+            seen.add(identity)
+            if "gen_ai.usage.output_tokens" in attrs:
+                amount = attrs["gen_ai.usage.output_tokens"].get("intValue")
+                require(
+                    type(amount) in {int, str} and str(amount).isdigit(),
+                    "Telemetry usage is malformed",
+                )
+                observed += int(amount)
+                found = True
+    require(
+        found and observed == counter - previous + children,
+        "Native and telemetry usage do not reconcile",
+    )
+    prefixes = []
+    for session_id in [proof["native_session_id"], *child_ids]:
+        paths = list(root.glob(f"*/*/*/*{session_id}.jsonl"))
+        require(len(paths) == 1 and not paths[0].is_symlink(), "Native session evidence differs")
+        data = paths[0].read_bytes()
+        if session_id == proof["native_session_id"]:
+            require(
+                sha256(data).hexdigest() == fingerprint, "Native evidence changed during recovery"
+            )
+        prefixes.append(
+            {"session_id": session_id, "bytes": len(data), "sha256": sha256(data).hexdigest()}
+        )
+    # Prefixes permit later legitimate turns while detecting changes to reviewed history.
+    return {
+        "version": 1,
+        "invocation_id": intent["invocation_id"],
+        "intent_digest": digest(
+            {key: value for key, value in intent.items() if key not in {"outcome", "partial"}}
+        ),
+        "request_digest": digest(_read(path / "native-request.json")),
+        "session_digest": digest(_read(path / "session.json")),
+        "native_turn_id": proof["native_turn_id"],
+        "native_prefixes": prefixes,
+        "events_digest": digest(events),
+        "telemetry_sha256": sink.evidence_digest(),
+        "span_count": len(sink.seen),
+        "parent_previous": previous,
+        "parent_cumulative": counter,
+        "child_output": children,
+        "observed_output": observed,
+    }
+
+
+def validate_recovered_accounting(result):
+    """Validate the saved native accounting proof without assuming receiver counters."""
+    from ...telemetry import Sink
+
+    path = Path(result["evidence_path"])
+    report = result["telemetry"]
+    proof = _read(path / "native-accounting.json")
+    require(
+        report.get("rejected_exports") is None
+        and report.get("coverage") == "native_usage_reconciled",
+        "Not a native accounting recovery receipt",
+    )
+    require(
+        digest(proof) == report.get("native_accounting_sha256"), "Native accounting receipt changed"
+    )
+    intent = EvidenceStore.reconcile(path)
+    require(
+        proof["invocation_id"] == result["invocation_id"] == intent["invocation_id"],
+        "Recovered invocation differs",
+    )
+    require(
+        proof["intent_digest"]
+        == digest(
+            {key: value for key, value in intent.items() if key not in {"outcome", "partial"}}
+        ),
+        "Recovered intent differs",
+    )
+    require(proof["events_digest"] == digest(result["events"]), "Recovered events differ")
+    require(
+        proof["request_digest"] == digest(_read(path / "native-request.json"))
+        and proof["session_digest"] == digest(_read(path / "session.json")),
+        "Recovered request or session differs",
+    )
+    sink = Sink(Path(result["telemetry_path"]), {})
+    require(
+        sink.evidence_digest() == proof["telemetry_sha256"] == report["evidence_sha256"]
+        and len(sink.seen) == proof["span_count"] == report["span_count"],
+        "Recovered telemetry differs",
+    )
+    root = Path(intent["binding"]["auth_context"]) / "sessions"
+    for prefix in proof["native_prefixes"]:
+        paths = list(root.glob(f"*/*/*/*{prefix['session_id']}.jsonl"))
+        require(
+            len(paths) == 1 and not paths[0].is_symlink(), "Recovered native session is missing"
+        )
+        with paths[0].open("rb") as stream:
+            data = stream.read(prefix["bytes"])
+        require(
+            len(data) == prefix["bytes"] and sha256(data).hexdigest() == prefix["sha256"],
+            "Recovered native history changed",
+        )
+    return proof

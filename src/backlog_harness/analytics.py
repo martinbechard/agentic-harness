@@ -74,6 +74,22 @@ class UsageLedger:
         }
 
 
+def _acceptable_telemetry(result):
+    rejected = result["telemetry"].get("rejected_exports")
+    if rejected == 0:
+        return True
+    if rejected is not None:
+        return False
+    from .adapters.codex.completion_evidence import validate_recovered_accounting
+    from .provider import TransitionBlocked
+
+    try:
+        validate_recovered_accounting(result)
+        return True
+    except (TransitionBlocked, OSError, ValueError, KeyError, TypeError):
+        return False
+
+
 def invocation_usage(result, previous_session_output=0, *, child_outputs=0):
     """Reconcile request-level native span deltas against session accounting.
 
@@ -85,7 +101,7 @@ def invocation_usage(result, previous_session_output=0, *, child_outputs=0):
     if (
         not counters
         or type(counters[-1]) is not int
-        or result["telemetry"]["rejected_exports"]
+        or not _acceptable_telemetry(result)
         or counters[-1] < previous_session_output
     ):
         return None
@@ -102,7 +118,7 @@ def observed_invocation_usage(result):
     from .telemetry import spans
 
     rows, _, partial = read_jsonl(Path(result["telemetry_path"]))
-    if partial or result["telemetry"]["rejected_exports"]:
+    if partial or not _acceptable_telemetry(result):
         return None
     seen, total, found = {}, 0, False
     for payload in rows:
