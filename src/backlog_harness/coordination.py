@@ -138,6 +138,26 @@ class RunController:
                         atomic_json(self.block_path, self.blocked)
                         continue
                     premise = digest([premise, request])
+            if (
+                self.app._stage_path(item.item_id, "proof-continuation").exists()
+                and not self.app._stage_path(item.item_id, "continuation").exists()
+            ):
+                from .recovery_flow import proof_continuation
+
+                try:
+                    acceptance = json.loads(
+                        self.app._stage_path(item.item_id, "accept").read_text()
+                    )
+                    proof = proof_continuation(self.app, item.item_id, acceptance)
+                except (ValueError, OSError, RuntimeError) as exc:
+                    self.blocked[item.item_id] = {
+                        "premise": premise,
+                        "reason": str(exc),
+                        "at": utcnow(),
+                    }
+                    atomic_json(self.block_path, self.blocked)
+                    continue
+                premise = digest([premise, proof["request"]])
             if self.blocked.get(item.item_id, {}).get("premise") == premise:
                 continue
             selected.append((item, premise))

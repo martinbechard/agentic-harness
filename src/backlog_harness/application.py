@@ -2829,10 +2829,37 @@ class Application:
                     "or bypass of required proof, usage limits, review, approval, or delivery gates. "
                     "Bounded continuation request: " + json.dumps(followup, sort_keys=True)
                 )
+        if not continuation_path.exists():
+            from .recovery_flow import proof_continuation
+
+            proof_followup = proof_continuation(self, item_id, acceptance)
+            if proof_followup:
+                stage = "continue-proof-" + digest(proof_followup["request"])
+                prompt += (
+                    "\nConsume this validated auxiliary proof in your original canonical session. "
+                    "Reuse valid source review, checks and proof. Do not rerun production or proof. "
+                    "The prior proof review is supporting evidence only. Arrange one fresh native child "
+                    "with fork_turns=none (or fork_context=false) to review the retained proof package: "
+                    "candidate binding, supporting hashes, Judge attribution, and captured versus "
+                    "persisted contents. Do not repeat Judges, semantic proof or source review. "
+                    "The reviewer must return JSON {candidate,verdict:ACCEPT|REJECT,unresolved_findings:[],"
+                    "proof_result_digest:<exact digest from this handoff>}. Return its identity in "
+                    "proof_reviewer_session alongside the retained source reviewer_session. "
+                    "Finish only remaining required integration verification, then request exact-candidate "
+                    "approval if absent. This handoff grants no new permissions or delivery authority. "
+                    + json.dumps(proof_followup)
+                )
         if continuation_path.exists():
             continuation = json.loads(continuation_path.read_text())
             stage = continuation["stage"]
             prompt += "\nPersisted canonical approval: " + json.dumps(continuation["approval"])
+            proof_review_path = self._stage_path(item_id, "proof-review")
+            if proof_review_path.exists():
+                prompt += (
+                    "\nReuse this retained fresh proof review; include its reviewer_task (or reviewer_session if absent) as "
+                    "proof_reviewer_session in your response. Do not repeat proof or review: "
+                    + proof_review_path.read_text()
+                )
         await self.enforce_guard(item_id)
         produced = await self.invoke(
             item_id,
@@ -2880,6 +2907,24 @@ class Application:
             ),
         )
         candidate = value.get("candidate")
+        if self._stage_path(item_id, "proof-continuation").exists():
+            from .recovery_flow import validated_auxiliary_proof
+
+            proof_request, proof_result, _ = validated_auxiliary_proof(self, item_id, acceptance)
+            require(proof_request["candidate"] == candidate, "Completion proof candidate differs")
+            from .native_evidence import verify_native_review
+
+            proof_review = verify_native_review(
+                produced["session"]["native_session_id"],
+                value.get("proof_reviewer_session"),
+                candidate,
+                self.native_sessions_root(produced["binding"]),
+            )
+            require(
+                proof_review.get("proof_result_digest") == digest(proof_result),
+                "Independent proof review is not bound to the retained proof result",
+            )
+            atomic_json(self._stage_path(item_id, "proof-review"), proof_review)
         if recovery and recovery["packet"].get("preserved_execution"):
             require(
                 candidate == recovery["packet"]["candidate"]["head"],

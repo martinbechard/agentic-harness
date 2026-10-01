@@ -956,3 +956,112 @@ def validate_artifact_proof(app, item_id, stage, request, result, acceptance):
             "Proof artifact escaped output directory or hash differs",
         )
     return value
+
+
+def validated_auxiliary_proof(app, item_id, acceptance):
+    """Verify retained proof files before handing them to the original agent for fresh review."""
+    request = json.loads(app._stage_path(item_id, "artifact-proof-request").read_text())
+    stage = "artifact-proof-" + digest(request)
+    result = json.loads(app._stage_path(item_id, stage).read_text())
+    app.validate_invocation_result(result)
+    value = validate_artifact_proof(app, item_id, stage, request, result, acceptance)
+    require(value["status"] == "evidence-ready", "Auxiliary proof remains blocked")
+    manifests = []
+    for artifact in value["artifacts"]:
+        payload = json.loads(Path(artifact["path"]).read_text())
+        if isinstance(payload, dict) and isinstance(payload.get("artifacts"), list):
+            manifests.append(payload)
+    require(len(manifests) == 1, "Auxiliary proof needs one bound supporting-file manifest")
+    manifest = manifests[0]
+    validate_artifact_proof(
+        app, item_id, stage, request, {**result, "text": json.dumps(manifest)}, acceptance
+    )
+    review = manifest.get("independent_result_review", {})
+    require(
+        {"path": review.get("path"), "sha256": review.get("sha256")} in value["artifacts"],
+        "Independent proof verdict is not bound to the returned artifacts",
+    )
+    return request, result, value
+
+
+def register_proof_continuation(app, item_id, instruction_path):
+    """Hand one validated auxiliary proof back to its unchanged canonical execution."""
+    instruction = Path(instruction_path).read_text().strip()
+    require(instruction, "Proof continuation instruction is empty")
+    with operation_lock(app.root / "item-locks" / (component(item_id) + ".lock")):
+        acceptance = json.loads(app._stage_path(item_id, "accept").read_text())
+        previous = work_continuation(app, item_id, acceptance)
+        require(previous is not None, "Proof continuation requires retained canonical work")
+        request, result, _value = validated_auxiliary_proof(app, item_id, acceptance)
+        item = app.provider.item(item_id)
+        require(
+            request["item_id"] == item_id
+            and request["revision"] == item.revision
+            and request["owner"] == item.owner
+            and request["candidate"] == previous["candidate"],
+            "Proof handoff canonical binding differs",
+        )
+        packet = {
+            "item_id": item_id,
+            "revision": item.revision,
+            "owner": item.owner,
+            "candidate": request["candidate"],
+            "proof_result_digest": digest(result),
+            "proof_request_digest": digest(request),
+            "instruction": instruction,
+        }
+        for stage in ("proof-continuation-registration", "proof-continuation"):
+            path = app._stage_path(item_id, stage)
+            if path.exists():
+                require(
+                    json.loads(path.read_text()) == packet,
+                    "Proof continuation registration changed",
+                )
+            else:
+                atomic_json(path, packet, exclusive=True)
+        return {
+            "item_id": item_id,
+            "continuation_prepared": True,
+            "stage": "continue-proof-" + digest(packet),
+        }
+
+
+def proof_continuation(app, item_id, acceptance):
+    path = app._stage_path(item_id, "proof-continuation")
+    if not path.exists():
+        return None
+    packet = json.loads(path.read_text())
+    registration = app._stage_path(item_id, "proof-continuation-registration")
+    require(
+        isinstance(packet, dict)
+        and set(packet)
+        == {
+            "item_id",
+            "revision",
+            "owner",
+            "candidate",
+            "proof_result_digest",
+            "proof_request_digest",
+            "instruction",
+        }
+        and registration.exists()
+        and json.loads(registration.read_text()) == packet,
+        "Proof continuation registration changed",
+    )
+    previous = work_continuation(app, item_id, acceptance)
+    request, result, value = validated_auxiliary_proof(app, item_id, acceptance)
+    item = app.provider.item(item_id)
+    require(
+        previous
+        and packet["item_id"] == item_id
+        and packet["revision"] == item.revision
+        and packet["owner"] == item.owner
+        and packet["candidate"] == previous["candidate"]
+        and request["revision"] == item.revision
+        and request["owner"] == item.owner
+        and request["candidate"] == packet["candidate"]
+        and digest(request) == packet["proof_request_digest"]
+        and digest(result) == packet["proof_result_digest"],
+        "Proof continuation identity or evidence changed",
+    )
+    return {"request": packet, "proof": value}

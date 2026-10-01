@@ -40,6 +40,9 @@ def main(argv=None):
     followup = commands.add_parser("continue-work")
     followup.add_argument("item_id")
     followup.add_argument("--instruction", type=Path, required=True)
+    proof_followup = commands.add_parser("continue-proof")
+    proof_followup.add_argument("item_id")
+    proof_followup.add_argument("--instruction", type=Path, required=True)
     proof = commands.add_parser("run-proof")
     proof.add_argument("item_id")
     proof.add_argument("--instruction", type=Path, required=True)
@@ -129,6 +132,10 @@ def main(argv=None):
                 from .recovery_flow import register_work_continuation
 
                 result = register_work_continuation(app, args.item_id, args.instruction)
+            elif args.command == "continue-proof":
+                from .recovery_flow import register_proof_continuation
+
+                result = register_proof_continuation(app, args.item_id, args.instruction)
             elif args.command == "run-proof":
                 from .recovery_flow import run_artifact_proof
 

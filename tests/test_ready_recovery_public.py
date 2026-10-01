@@ -216,7 +216,7 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
             }
         elif stage == "accept":
             value = {"item_id": item_id, "accepted": True}
-        elif stage == "produce-review" or stage.startswith("continue-work-"):
+        elif stage == "produce-review" or stage.startswith(("continue-work-", "continue-proof-")):
             assert app.provider.item(item_id).state == "Running"
             producer = kwargs["session"].native_session_id
             reviewer = str(uuid5(NAMESPACE_URL, "unused-before-approval"))
@@ -266,6 +266,11 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                     },
                 },
             ]
+            if stage.startswith("continue-proof-"):
+                handoff = json.loads(app._stage_path(item_id, "proof-continuation").read_text())
+                verdict = json.loads(child[-1]["payload"]["last_agent_message"])
+                verdict["proof_result_digest"] = handoff["proof_result_digest"]
+                child[-1]["payload"]["last_agent_message"] = json.dumps(verdict)
             for identity, records in ((producer, parent), (reviewer, child)):
                 (logs / f"rollout-{identity}.jsonl").write_text(
                     "".join(json.dumps(row) + "\n" for row in records)
@@ -285,6 +290,8 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                     "reviewer_session": reviewer,
                 }
             )
+            if stage.startswith("continue-proof-"):
+                value["proof_reviewer_session"] = reviewer
         else:
             assert stage.startswith("provider-") and kwargs["provider_operation"]
             request = json.loads(prompt.split("\n", 1)[1])
@@ -763,9 +770,19 @@ def test_normal_queue_continues_same_blocked_preserved_execution(
         register_work_continuation(app, item.item_id, instruction)
 
 
-@pytest.mark.parametrize("relocate", [False, True])
+@pytest.mark.parametrize(
+    "relocate,review_fault",
+    [
+        (False, None),
+        (True, None),
+        (False, "missing"),
+        (False, "inherited"),
+        (False, "wrong-proof"),
+        (False, "reject"),
+    ],
+)
 def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
-    config_file, provider, tmp_path, monkeypatch, relocate
+    config_file, provider, tmp_path, monkeypatch, relocate, review_fault
 ):
     from dataclasses import replace
 
@@ -781,6 +798,7 @@ def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
     )
     asyncio.run(recover_item(app, item.item_id, supplied))
     external = app.invoke
+    native_app = app
     proof_calls = []
 
     async def blocked_then_proof(item_id, stage, role, prompt, **kwargs):
@@ -842,19 +860,116 @@ def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
                     "usage": {"output_tokens": 1},
                 }
             ]
+
+            def artifact(path):
+                return {"path": str(path), "sha256": sha256(path.read_bytes()).hexdigest()}
+
+            verdict = {
+                "candidate": packet["candidate"]["head"],
+                "verdict": "ACCEPT",
+                "blockers": [],
+                "writes_performed": False,
+            }
+            review_path = output.parent / "review.json"
+            atomic_json(review_path, verdict)
+            reviewer = str(uuid5(NAMESPACE_URL, "proof-review"))
+            native_parent = result["session"]["native_session_id"]
+            logs = tmp_path / "native-home/sessions/2026/10/01"
+            records = {
+                native_parent: [
+                    {
+                        "type": "response_item",
+                        "payload": {
+                            "type": "function_call",
+                            "name": "spawn_agent",
+                            "call_id": "proof-review",
+                            "arguments": json.dumps({"fork_turns": "none"}),
+                        },
+                    },
+                    {
+                        "type": "response_item",
+                        "payload": {
+                            "type": "function_call_output",
+                            "call_id": "proof-review",
+                            "output": reviewer,
+                        },
+                    },
+                ],
+                reviewer: [
+                    {
+                        "type": "session_meta",
+                        "payload": {
+                            "id": reviewer,
+                            "source": {
+                                "subagent": {"thread_spawn": {"parent_thread_id": native_parent}}
+                            },
+                            "git": {"commit_hash": packet["candidate"]["head"]},
+                        },
+                    },
+                    {
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "task_complete",
+                            "last_agent_message": json.dumps(verdict),
+                        },
+                    },
+                ],
+            }
+            for identity, rows in records.items():
+                (logs / f"rollout-{identity}.jsonl").write_text(
+                    "".join(json.dumps(row) + "\n" for row in rows)
+                )
+            manifest = output.parent / "manifest.json"
+            atomic_json(
+                manifest,
+                {
+                    "item_id": item_id,
+                    "candidate": packet["candidate"]["head"],
+                    "status": "evidence-ready",
+                    "artifacts": [artifact(output)],
+                    "independent_result_review": {
+                        **artifact(review_path),
+                        "identity": reviewer,
+                        "verdict": "ACCEPT",
+                    },
+                },
+            )
             result["text"] = json.dumps(
                 {
                     "item_id": item_id,
                     "candidate": packet["candidate"]["head"],
                     "status": "evidence-ready",
-                    "artifacts": [
-                        {"path": str(output), "sha256": sha256(output.read_bytes()).hexdigest()}
-                    ],
+                    "artifacts": [artifact(manifest), artifact(review_path)],
                 }
             )
             atomic_json(saved, result)
             return result
         result = await external(item_id, stage, role, prompt, **kwargs)
+        if stage.startswith("continue-proof-"):
+            result["events"][-1]["usage"]["output_tokens"] = 4
+            atomic_json(app._stage_path(item_id, stage), result)
+        if stage.startswith("continue-proof-") and review_fault:
+            value = json.loads(result["text"])
+            if review_fault == "missing":
+                value.pop("proof_reviewer_session")
+                result["text"] = json.dumps(value)
+            else:
+                identity = (
+                    result["session"]["native_session_id"]
+                    if review_fault == "inherited"
+                    else value["proof_reviewer_session"]
+                )
+                log = tmp_path / "native-home/sessions/2026/10/01" / f"rollout-{identity}.jsonl"
+                rows = [json.loads(line) for line in log.read_text().splitlines()]
+                if review_fault == "inherited":
+                    rows[0]["payload"]["arguments"] = json.dumps({"fork_turns": "all"})
+                else:
+                    verdict = json.loads(rows[-1]["payload"]["last_agent_message"])
+                    verdict[
+                        "proof_result_digest" if review_fault == "wrong-proof" else "verdict"
+                    ] = "wrong"
+                    rows[-1]["payload"]["last_agent_message"] = json.dumps(verdict)
+                log.write_text("".join(json.dumps(row) + "\n" for row in rows))
         if stage == "produce-review" or stage.startswith("continue-work-"):
             value = json.loads(result["text"])
             value.pop("question", None)
@@ -1003,3 +1118,129 @@ def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
     with pytest.raises(TransitionBlocked, match="proof request changed"):
         asyncio.run(run_artifact_proof(app, item.item_id, instruction))
     assert len(proof_calls) == 1
+
+    # Feed the verified auxiliary proof through the normal queue, retaining earlier results.
+    from backlog_harness.coordination import RunController
+    from backlog_harness.recovery_flow import register_proof_continuation
+
+    data["profiles"]["worker"].pop("artifact_output")
+    data["poll_seconds"] = 0.01
+    config.write_text(yaml.safe_dump(data))
+    app.config = load_config(config)
+    native_app.config = app.config
+    instruction.write_text(
+        "Consume existing proof; finish integration checks and request exact candidate approval."
+    )
+    handoff = register_proof_continuation(app, item.item_id, instruction)
+    assert register_proof_continuation(app, item.item_id, instruction) == handoff
+    monkeypatch.setattr(app, "enforce_guard", held)
+    with pytest.raises(TransitionBlocked, match="Usage hold"):
+        asyncio.run(app.run_item(item.item_id))
+    assert handoff["stage"] not in calls
+    monkeypatch.setattr(app, "enforce_guard", guard)
+    frozen_path = app._stage_path(item.item_id, "proof-continuation")
+    frozen = json.loads(frozen_path.read_text())
+    controller = RunController(app, lambda _: None)
+    for field in ("candidate", "owner", "revision", "proof_result_digest", "instruction"):
+        atomic_json(frozen_path, {**frozen, field: "changed"})
+        assert controller.eligible(app.provider.snapshot()) == []
+    atomic_json(frozen_path, frozen)
+    supporting = output_dir / "proof.json"
+    valid_bytes = supporting.read_bytes()
+    supporting.write_text("changed")
+    assert controller.eligible(app.provider.snapshot()) == []
+    supporting.write_bytes(valid_bytes)
+    assert [i.item_id for i, _ in controller.eligible(app.provider.snapshot())] == [item.item_id]
+
+    async def finish():
+        settled = asyncio.Event()
+        controller.publish = lambda v: (
+            settled.set()
+            if v.get("result", {}).get("state") == "User Action Required" or "blocked" in v
+            else None
+        )
+        task = asyncio.create_task(controller.run("until-terminal"))
+        try:
+            await asyncio.wait_for(settled.wait(), 10)
+        finally:
+            await controller.stop()
+            await task
+
+    asyncio.run(finish())
+    assert calls.count(handoff["stage"]) == 1
+    assert calls.count("admit") == calls.count("accept") == calls.count("produce-review") == 1
+    assert len(proof_calls) == 1
+    if review_fault:
+        assert mutations == ["Starting", "Running"]
+        assert app.provider.item(item.item_id).state == "Running"
+        assert not app._stage_path(item.item_id, "delivery").exists()
+        return
+    assert mutations == ["Starting", "Running", "User Action Required"]
+    final = json.loads(app._stage_path(item.item_id, handoff["stage"]).read_text())
+    assert final["session"] == acceptance["session"]
+    assert app.provider.item(item.item_id).owner == owner
+    assert app._stage_path(item.item_id, registered["stage"]).read_bytes() == original
+    assert not app._stage_path(item.item_id, "delivery").exists()
+
+    # An operator-answer continuation takes precedence over the old proof request revision.
+    # Native CLIs may record the child task path without its resolved UUID in spawn output.
+    from backlog_harness.native_evidence import verify_native_review
+
+    native = final["session"]["native_session_id"]
+    child_id = json.loads(final["text"])["proof_reviewer_session"]
+    alias = "/root/proof_review"
+    logs = tmp_path / "native-home/sessions/2026/10/01"
+    parent_path = logs / f"rollout-{native}.jsonl"
+    parent = [json.loads(line) for line in parent_path.read_text().splitlines()]
+    parent[1]["payload"]["output"] = json.dumps({"task_name": alias})
+    parent_path.write_text("".join(json.dumps(row) + "\n" for row in parent))
+    child_path = logs / f"rollout-{child_id}.jsonl"
+    child = [json.loads(line) for line in child_path.read_text().splitlines()]
+    child[0]["payload"].update(parent_thread_id=native, agent_path=alias)
+    child.insert(
+        1,
+        {
+            "type": "event_msg",
+            "payload": {"type": "token_count", "info": {"total_token_usage": {"output_tokens": 0}}},
+        },
+    )
+    child_path.write_text("".join(json.dumps(row) + "\n" for row in child))
+    review = verify_native_review(
+        native, alias, packet["candidate"]["head"], tmp_path / "native-home/sessions"
+    )
+    atomic_json(app._stage_path(item.item_id, "proof-review"), review)
+    current = replace(
+        app.provider.item(item.item_id), state="Running", revision="after-approved-answer"
+    )
+    monkeypatch.setattr(app.provider, "item", lambda _: current)
+    atomic_json(
+        app._stage_path(item.item_id, "continuation"),
+        {
+            "stage": "approved-proof",
+            "approval": {
+                "item_id": item.item_id,
+                "disposition": "approve",
+                "question": {"candidate": packet["candidate"]["head"]},
+                "answer": {"text": "yes", "digest": digest("yes")},
+            },
+        },
+    )
+    assert controller.eligible([current])
+
+    async def approved(item_id, stage, role, prompt, **kwargs):
+        assert stage == "approved-proof" and "include its reviewer_task" in prompt
+        assert kwargs["session"].native_session_id == native
+        result = dict(final)
+        value = json.loads(result["text"])
+        value.pop("question")
+        value.update(request_completion=True, reviewer_session=alias, proof_reviewer_session=alias)
+        result["text"] = json.dumps(value)
+        return result
+
+    def delivery_boundary(*args, **kwargs):
+        raise RuntimeError("verified approval reached delivery boundary")
+
+    monkeypatch.setattr(app, "invoke", approved)
+    monkeypatch.setattr("backlog_harness.delivery.integrate", delivery_boundary)
+    with pytest.raises(RuntimeError, match="verified approval reached delivery boundary"):
+        asyncio.run(app.run_item(item.item_id))
