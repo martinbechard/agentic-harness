@@ -243,8 +243,9 @@ def test_record_estimate_retains_decision_and_replays_same_operation(
     assert json.loads(app._stage_path(item.item_id, "estimate-decision").read_text()) == decision
 
 
+@pytest.mark.parametrize("normalized_owner", [None, "Unowned"])
 def test_real_document_without_owner_estimate_to_public_admission(
-    config_file, provider, monkeypatch, tmp_path
+    config_file, provider, monkeypatch, tmp_path, normalized_owner
 ):
     """Canonical dev-methodology bytes caught the absent-Owner integration mismatch."""
     import asyncio
@@ -374,10 +375,12 @@ def test_real_document_without_owner_estimate_to_public_admission(
         source.write_text(
             source.read_text() + "\nProspective Execution High: 180000\nHistorical usage: unknown\n"
         )
+        if normalized_owner is not None:
+            source.write_text(source.read_text() + "\nOwner: Unowned\n")
         git(provider.repository, "add", "--", str(source.relative_to(provider.repository)))
         git(provider.repository, "commit", "-m", "Record prospective estimate")
         mutations.append(operation)
-        current = replace(provider.item(item_id), owner=None)
+        current = replace(provider.item(item_id), owner=normalized_owner)
         result = response(
             stage,
             {
@@ -400,9 +403,8 @@ def test_real_document_without_owner_estimate_to_public_admission(
         asyncio.run(app.run_item(item_id))
     frozen = json.loads(app._stage_path(item_id, "assignment").read_text())
     assert frozen["original_high"] == 180000 and frozen["historical_original_high"] is None
-    assert app.provider.item(item_id).owner is None
-
-    assert "\nOwner:" not in source.read_text()
+    assert app.provider.item(item_id).owner == normalized_owner
+    assert ("\nOwner: Unowned" in source.read_text()) == (normalized_owner == "Unowned")
     usage = app.usage_view(item_id, observed_item=app.provider.item(item_id))
     assert usage["accounting_scope"] == "prospective_execution"
     assert usage["historical_usage"] == "unknown"

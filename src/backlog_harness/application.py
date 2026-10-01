@@ -891,7 +891,15 @@ class Application:
             )
             if not preserved_owner:
                 expected_owner = "Unowned"
-        require(after.owner == expected_owner, "Provider operation changed canonical owner")
+        unowned_estimate = (
+            record["authority"].get("operation") == "record-estimate"
+            and expected_owner in {None, "Unowned"}
+            and after.owner in {None, "Unowned"}
+        )
+        require(
+            after.owner == expected_owner or unowned_estimate,
+            "Provider operation changed canonical owner",
+        )
         expected_path = record.get("expected_path", record["item"]["path"])
         require(after.path == expected_path, "Provider result path differs from destination")
         commit = value.get("commit")

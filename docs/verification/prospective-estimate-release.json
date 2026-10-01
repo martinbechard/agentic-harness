@@ -1,16 +1,16 @@
 {
-  "version": "0.1.0a16",
+  "version": "0.1.0a17",
   "source_files": {
     "src/backlog_harness/delivery.py": "8b624db5c74fb5bf4914573ec414b118ed375cb1cf5bc3d77848a1c94460d1a2",
     "src/backlog_harness/recovery.py": "46aa4d9ae796eef6823de7837d834ddcaf6c2d75c5ccd241e50557b94d0c57d8",
     "src/backlog_harness/provider.py": "e53a14f4fe0eeefbdc03af1e32efeeff86139bd55565eb6dbc2527e1a62cadad",
     "src/backlog_harness/terminal.py": "596c7b25cf161cf9d20243eb7c34b5c9d79ee77032231768adb7471d2c4b8943",
     "src/backlog_harness/estimation.py": "a159c237a311845f7c87ce515f0e2d2fb12111bf5933cacf7289e199d69c8f8e",
-    "src/backlog_harness/__init__.py": "5c02f4cd5a33dff2344c6c51a755831e730ac21ca92211cd160b5d4fb7519122",
+    "src/backlog_harness/__init__.py": "a9a16ef4d8744e7be2a641efcdde62e6234f6d6a10a78328a128a0fc7e083fd4",
     "src/backlog_harness/telemetry.py": "daa372ba339599d3b3c3589f16ce271373b2eef88a90068f2a738ecad119f98a",
     "src/backlog_harness/runtime.py": "db2cdaab13a6c4868d30cf87463ae2ed7b7c115379295134ac75a9ab0e09e5d0",
     "src/backlog_harness/native_evidence.py": "c2a6fdaa376bbae831651e7624528c8ebd586c8b969bacfa55875572dcb6c2d3",
-    "src/backlog_harness/application.py": "bea5a0de7ea04239de9de110f48f8905996868a4c8cd9fa6cbf745b6a3e5c7f5",
+    "src/backlog_harness/application.py": "5f411f5ddda74b7b15bf4f95d13822a14e41ed88206818c3764b56367a932f92",
     "src/backlog_harness/dashboard.py": "b35ca912ed9b4e6822a75bf2352691ce4e7bdee3901b26e73718cf72f9fca582",
     "src/backlog_harness/cli.py": "f113321ce3d2b9b779d2004f04fc27eca05a577200aeb8b1c20ff04406c2a377",
     "src/backlog_harness/recovery_flow.py": "1b86da711919f4266d9ffddcfdc4c06caa04b5e6c78cbb2b0ffc84e483673a93",
@@ -26,14 +26,16 @@
     "src/backlog_harness/adapters/codex/adapter.py": "9f36eee3d3813e0b881a13d107577c6ba49725f17becc88be115fadaa3a2c7f9",
     "src/backlog_harness/adapters/codex/__init__.py": "fe364cbe41f5044aa99c1ae734c838fdeb92736bcf74b79575b7830da0c133d1"
   },
-  "wheel_sha256": "080a13d08dcfe2bcbd0bbe4f7ebebf42bfe934ea49a4b159ee8735bee125d80b",
+  "wheel_sha256": "95ec29c45686f672c405bc36a89d6eb60d6bd94161f7019915da7ec2a2b152c8",
   "installed_modules_verified": 24,
   "focused_estimation_recovery_tests": 49,
   "configuration_execution_tests": 43,
   "independent_reviews": [
     "question_handoff_review resume ACCEPT",
     "question_handoff_review prospective estimate ACCEPT",
-    "question_handoff_review absent owner correction ACCEPT"
+    "question_handoff_review absent owner correction ACCEPT",
+    "question_handoff_review unowned receipt normalization ACCEPT"
   ],
-  "live_estimate_recording": "pending"
+  "live_estimate_recording": "pending",
+  "final_estimation_tests": 11
 }
