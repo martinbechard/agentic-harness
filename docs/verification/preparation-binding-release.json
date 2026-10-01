@@ -13,5 +13,16 @@
   "retained_native_preparations": [
     "01a0f7c0-e5b3-7c31-a07d-2a62826fa7da",
     "01a0f7c4-87ca-7281-acc2-92de87c0b08b"
-  ]
+  ],
+  "live_recovery": {
+    "original_results_reused": true,
+    "first_item_disposition": "Preserved candidate requires Coordinator recovery reservation; no new coding",
+    "dashboard_disposition": "Verification catalog corrected; retained browser denial blocks visual acceptance",
+    "queue_progressed_to": "orchestrate-template-first-artifact-review-checklists",
+    "queue_shell": 17635,
+    "admission_open": true,
+    "workflow_mode": "SOLO",
+    "native_session_id": "01a0f7d1-e906-7c12-a08e-d3acf8f6f1d2",
+    "completion_verified": false
+  }
 }
