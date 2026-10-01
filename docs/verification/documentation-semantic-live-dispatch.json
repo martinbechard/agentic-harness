@@ -1,0 +1,14 @@
+{
+  "installed_version": "0.1.0a17",
+  "item_id": "reconcile-documentation-semantic-checks-with-authorized-source-revisions",
+  "state": "Running",
+  "revision": "a8c71e0d9669a2aa76bd768f901a91034c396ae529b9d5c924213c1808bdca78",
+  "canonical_owner": "fac6fa57-49e6-435a-84f0-ba9345b474df",
+  "native_session_id": "01a0f79a-dea5-7662-9de8-d062770d6625",
+  "implementation_invocation": "d91b75d5-dd5a-4239-acda-87a955a32bb7",
+  "prospective_high": 180000,
+  "historical_original_high": null,
+  "historical_usage": "unknown",
+  "completion_verified": false,
+  "claim_operations_permitted": false
+}
