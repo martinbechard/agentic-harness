@@ -241,3 +241,170 @@ def test_record_estimate_retains_decision_and_replays_same_operation(
     assert asyncio.run(record_estimate(app, item.item_id, source)) == first
     assert len(set(operations)) == 1
     assert json.loads(app._stage_path(item.item_id, "estimate-decision").read_text()) == decision
+
+
+def test_real_document_without_owner_estimate_to_public_admission(
+    config_file, provider, monkeypatch, tmp_path
+):
+    """Canonical dev-methodology bytes caught the absent-Owner integration mismatch."""
+    import asyncio
+    from pathlib import Path
+
+    from test_provider_coordination import policy_evidence
+    from test_telemetry import payload
+
+    from backlog_harness.estimation import record_estimate
+    from backlog_harness.telemetry import Sink
+
+    item_id = "reconcile-documentation-semantic-checks-with-authorized-source-revisions"
+    old = provider.repository / provider.item("item-one").path
+    old.unlink()
+    source = provider.repository / "backlog/defect-backlog" / (item_id + ".md")
+    source.parent.mkdir()
+    source.write_bytes(
+        (Path(__file__).parent / "fixtures/unestimated-documentation-defect.md").read_bytes()
+    )
+    git(provider.repository, "add", "--", "backlog")
+    git(provider.repository, "commit", "-m", "Exact unestimated canonical fixture")
+    # Snapshot of dev-methodology/backlog/defect-backlog/<item_id>.md, 2026-10-01.
+    from hashlib import sha256
+
+    assert (
+        sha256(source.read_bytes()).hexdigest()
+        == "2cf653fb93436cfd06b5363f98844c79208f213d2864dba5a2ce2c34d39aa174"
+    )
+    assert "\nOwner:" not in source.read_text()
+    item = replace(
+        provider.item(item_id), owner=None
+    )  # Captured live AgentProvider representation.
+    assert item.owner is None and item.original_high is None
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    data["profiles"]["control"]["permissions"] = ["workspace-write"]
+    for name in ("manage-work-items", "manage-work-items-file"):
+        skill = Path(data["methodology_root"]) / "skills" / name / "SKILL.md"
+        skill.parent.mkdir()
+        skill.write_text("Fixture management contract")
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    policy = {
+        "eligible": True,
+        "mode": "SOLO",
+        "primary_branch": "main",
+        "evidence": policy_evidence(provider.repository),
+    }
+    atomic_json(
+        app.provider.cache_path,
+        {
+            "observer_digest": app.provider_observer_digest(app.config),
+            "source_revision": app.provider.source_revision(),
+            "source_manifest": app.provider.source_manifest(),
+            "policy": policy,
+            "items": [asdict(item)],
+            "dependencies": {item_id: []},
+        },
+    )
+    telemetry = app.root / "fixture-telemetry.jsonl"
+    sink = Sink(telemetry, {})
+    sink.write(payload())
+
+    def response(stage, value):
+        binding = asdict(app.config.binding("coordinator"))
+        return {
+            "invocation_id": stage,
+            "role": "coordinator",
+            "outcome": "returned",
+            "session": {
+                "session_id": "coordinator",
+                "native_session_id": "native",
+                "binding": binding,
+            },
+            "binding": binding,
+            "evidence_path": str(app.root),
+            "telemetry_path": str(telemetry),
+            "telemetry": {
+                "span_count": 1,
+                "rejected_exports": 0,
+                "evidence_sha256": sink.evidence_digest(),
+            },
+            "events": [{"type": "turn.completed", "usage": {"output_tokens": 10}}],
+            "text": json.dumps(value),
+        }
+
+    decision = response(
+        "estimate",
+        {
+            "item_id": item_id,
+            "provider_revision": item.revision,
+            "prospective_high": 180000,
+            "historical_original_high": None,
+            "historical_usage": "unknown",
+            "estimate": {
+                "kind": "prospective_pre_execution",
+                "dated_at": "2026-10-01T12:44:11Z",
+                "generated_tokens": {"low": 90000, "high": 180000},
+            },
+        },
+    )
+    decision_path = tmp_path / "prepared-estimate.json"
+    atomic_json(decision_path, decision)
+    mutations = []
+
+    class AdmissionReached(Exception):
+        pass
+
+    async def model(item_id, stage, role, prompt, **kwargs):
+        if stage == "admit":
+            assert "Reconcile Documentation Semantic Checks" in prompt
+            raise AdmissionReached
+        assert stage.startswith("provider-")
+        retained = app._stage_path(item_id, stage)
+        if retained.exists():
+            return json.loads(retained.read_text())
+        operation = kwargs["provider_operation"]
+        record = json.loads(
+            (
+                app.root / "provider-agent-operations" / component(operation) / "requested.json"
+            ).read_text()
+        )
+        source.write_text(
+            source.read_text() + "\nProspective Execution High: 180000\nHistorical usage: unknown\n"
+        )
+        git(provider.repository, "add", "--", str(source.relative_to(provider.repository)))
+        git(provider.repository, "commit", "-m", "Record prospective estimate")
+        mutations.append(operation)
+        current = replace(provider.item(item_id), owner=None)
+        result = response(
+            stage,
+            {
+                "operation_id": record["stage_operation"],
+                "before_revision": item.revision,
+                "commit": git(provider.repository, "rev-parse", "HEAD"),
+                "after": asdict(current),
+                "policy": policy,
+            },
+        )
+        atomic_json(app._stage_path(item_id, stage), result)
+        return result
+
+    monkeypatch.setattr(app, "invoke", model)
+    receipt = asyncio.run(record_estimate(app, item_id, decision_path))
+    assert receipt["advancement_verified"] is True
+    assert asyncio.run(record_estimate(app, item_id, decision_path))["commit"] == receipt["commit"]
+    assert len(mutations) == 1
+    with pytest.raises(AdmissionReached):
+        asyncio.run(app.run_item(item_id))
+    frozen = json.loads(app._stage_path(item_id, "assignment").read_text())
+    assert frozen["original_high"] == 180000 and frozen["historical_original_high"] is None
+    assert app.provider.item(item_id).owner is None
+
+    assert "\nOwner:" not in source.read_text()
+    usage = app.usage_view(item_id, observed_item=app.provider.item(item_id))
+    assert usage["accounting_scope"] == "prospective_execution"
+    assert usage["historical_usage"] == "unknown"
+    assert usage["historical_original_high"] is None
+    assert usage["ceiling"] == 360000
