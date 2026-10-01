@@ -273,3 +273,98 @@ def test_recovered_ready_item_uses_continuation_reservation(config_file, provide
     with pytest.raises(RuntimeError, match="reservation verified"):
         asyncio.run(app._run_item(item.item_id))
     assert app.provider.item(item.item_id).state == "Starting"
+
+
+def test_incomplete_owner_release_is_corrected_once(config_file, provider, monkeypatch):
+    import asyncio
+
+    import yaml
+
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    path = provider.repository / provider.item("item-one").path
+    path.write_text(
+        path.read_text()
+        .replace("Status: Ready", "Status: Running")
+        .replace("Owner: Unowned", "Owner: old-owner")
+    )
+    git(provider.repository, "add", "--", str(path))
+    git(provider.repository, "commit", "-m", "Existing running owner")
+    original = provider.item("item-one")
+    app = Application(config)
+    decision = {
+        "role": "coordinator",
+        "invocation_id": "decision",
+        "outcome": "returned",
+        "session": {"session_id": "coordinator", "native_session_id": "native"},
+    }
+    atomic_json(app._stage_path(original.item_id, "decision"), decision)
+    authority = app.authority(
+        decision,
+        original.item_id,
+        operation="redispatch",
+        recovery={
+            "previous_owner": original.owner,
+            "ownership_ended": True,
+            "packet_digest": "hash",
+            "candidate": "candidate",
+            "runtime_evidence": ["proof"],
+            "reason": "Ended",
+        },
+    )
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+    writes = []
+
+    async def invoke(item_id, stage, role, prompt, **kwargs):
+        saved = app._stage_path(item_id, stage)
+        if saved.exists():
+            return json.loads(saved.read_text())
+        before = provider.item(item_id)
+        text = path.read_text().replace("Status: Running", "Status: Ready")
+        if writes:
+            assert '"target_owner": "Unowned"' in prompt
+            text = text.replace("Owner: old-owner", "Owner: Unowned")
+        path.write_text(text)
+        git(provider.repository, "add", "--", str(path))
+        git(provider.repository, "commit", "-m", "Owner effect " + str(len(writes)))
+        writes.append(git(provider.repository, "rev-parse", "HEAD"))
+        after = asdict(provider.item(item_id))
+        after.pop("content")
+        after.pop("revision")
+        result = {
+            "invocation_id": "effect-" + str(len(writes)),
+            "session": decision["session"],
+            "evidence_path": "fixture",
+            "text": json.dumps(
+                {
+                    "operation_id": item_id + ":" + stage,
+                    "before_revision": before.revision,
+                    "commit": writes[-1],
+                    "after": after,
+                }
+            ),
+        }
+        atomic_json(saved, result)
+        return result
+
+    monkeypatch.setattr(app, "invoke", invoke)
+
+    async def effect():
+        return await app.invoke_provider_transition(original, "Ready", authority, [original.path])
+
+    receipt = asyncio.run(effect())
+    assert receipt["after"]["owner"] == "Unowned"
+    assert asyncio.run(effect())["commit"] == receipt["commit"]
+    assert len(writes) == 2
+    incomplete = list((app.root / "provider-agent-operations").glob("*/incomplete-effect.json"))
+    assert len(incomplete) == 1
+    assert json.loads(incomplete[0].read_text())["advancement_verified"] is False
+    reconciled = app.reconcile_agent_provider(incomplete[0].parent / "requested.json")
+    assert reconciled["advancement_verified"] is True
+    assert reconciled["correction"]["after"]["owner"] == "Unowned"

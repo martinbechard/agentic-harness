@@ -421,6 +421,34 @@ class Application:
     async def invoke_provider_transition(self, item, target, authority, paths):
         """Submit one agent-managed operation; verify its commit before returning a receipt."""
         validate_transition(item, target, authority)
+        if (item.state, target) == ("Ready", "Ready"):
+            effects = []
+            for path in (self.root / "provider-agent-operations").glob("*/incomplete-effect.json"):
+                effect = json.loads(path.read_text())
+                if effect["commit"] == authority["recovery"]["repair_effect"]:
+                    effects.append((path, effect))
+            require(len(effects) == 1, "Owner correction lacks a unique incomplete effect")
+            path, effect = effects[0]
+            prior = json.loads((path.parent / "requested.json").read_text())
+            prior_authority = {
+                **authority,
+                "recovery": {
+                    k: v for k, v in authority["recovery"].items() if k != "repair_effect"
+                },
+            }
+            require(
+                prior["authority"] == prior_authority and effect["after"] == asdict(item),
+                "Owner correction differs from original authority or effect",
+            )
+            self.verify_provider_receipt(
+                prior,
+                {
+                    "operation_id": prior["stage_operation"],
+                    "before_revision": prior["item"]["revision"],
+                    **effect,
+                },
+                preserved_owner=True,
+            )
         archive_paths = [path for path in paths if path != item.path]
         if target == "Completed":
             require(
@@ -476,7 +504,8 @@ class Application:
                     "management skills. Manage configured claims yourself. Recheck the expected "
                     "revision at the write boundary; reject a mismatch. Do not implement source work. "
                     "You execute this decision on behalf of its recorded owner; you are not the canonical "
-                    "item session. Preserve that owner and make no additional lifecycle decisions. "
+                    "item session. Use the exact target owner supplied below; preserve former owners "
+                    "as history, not as the active Owner field. Make no additional lifecycle decisions. "
                     "Commit only the declared provider paths. If the outcome is uncertain, report it; "
                     "do not repeat the mutation. Return JSON with operation_id (the stage operation "
                     "below), before_revision, commit, and after (item_id, path, state, owner, "
@@ -492,6 +521,11 @@ class Application:
                             "target": target,
                             "authority": authority,
                             "paths": paths,
+                            "target_owner": "Unowned"
+                            if target == "Ready"
+                            else authority["session_id"]
+                            if target == "Running" and item.state == "Starting"
+                            else item.owner,
                         },
                         sort_keys=True,
                     )
@@ -525,24 +559,76 @@ class Application:
                 provider_operation=operation,
             )
             value = self.result_json(result)
-            receipt = self.verify_provider_receipt(record, value)
-            receipt["decision_owner"] = authority.get("session_id", authority["invocation_id"])
-            receipt["executing_invocation"] = result["invocation_id"]
-            receipt["executing_session"] = result["session"]
-            receipt["usage_evidence"] = result["evidence_path"]
-            receipt["advancement_verified"] = False
-            if not (evidence / "receipt.json").exists():
-                atomic_json(evidence / "receipt.json", receipt, exclusive=True)
-            self.validate_call_limits(
-                result, load_config(self.config_path).data["administrative_review_limits"]
-            )
-            receipt["advancement_verified"] = True
-            atomic_json(evidence / "receipt.json", receipt)
-            return receipt
+            if (item.state, target) == ("Running", "Ready") and value.get("after", {}).get(
+                "owner"
+            ) == item.owner:
+                incomplete = self.verify_provider_receipt(record, value, preserved_owner=True)
+                incomplete["advancement_verified"] = False
+                incomplete["repair_required"] = "release_active_owner"
+                atomic_json(evidence / "incomplete-effect.json", incomplete)
+                self.validate_call_limits(
+                    result, load_config(self.config_path).data["administrative_review_limits"]
+                )
+                corrected = {
+                    **authority,
+                    "recovery": {**authority["recovery"], "repair_effect": incomplete["commit"]},
+                }
+            else:
+                receipt = self.verify_provider_receipt(record, value)
+                receipt["decision_owner"] = authority.get("session_id", authority["invocation_id"])
+                receipt["executing_invocation"] = result["invocation_id"]
+                receipt["executing_session"] = result["session"]
+                receipt["usage_evidence"] = result["evidence_path"]
+                receipt["advancement_verified"] = False
+                if not (evidence / "receipt.json").exists():
+                    atomic_json(evidence / "receipt.json", receipt, exclusive=True)
+                self.validate_call_limits(
+                    result, load_config(self.config_path).data["administrative_review_limits"]
+                )
+                receipt["advancement_verified"] = True
+                atomic_json(evidence / "receipt.json", receipt)
+                return receipt
+
+        corrected_receipt = await self.invoke_provider_transition(
+            Item(**incomplete["after"]), target, corrected, paths
+        )
+        atomic_json(evidence / "resolution.json", {"corrected_by": corrected_receipt["operation"]})
+        return corrected_receipt
 
     def reconcile_agent_provider(self, request_path):
         """Record an immutable effect even when invocation policy evidence cannot permit advancement."""
         record = json.loads(request_path.read_text())
+        resolution = request_path.parent / "resolution.json"
+        if resolution.exists():
+            effect = json.loads((request_path.parent / "incomplete-effect.json").read_text())
+            self.verify_provider_receipt(
+                record,
+                {
+                    "operation_id": record["stage_operation"],
+                    "before_revision": record["item"]["revision"],
+                    **effect,
+                },
+                preserved_owner=True,
+            )
+            operation = json.loads(resolution.read_text())["corrected_by"]
+            correction_path = (
+                self.root / "provider-agent-operations" / component(operation) / "requested.json"
+            )
+            correction = json.loads(correction_path.read_text())
+            require(
+                correction["item"] == effect["after"]
+                and correction["authority"].get("recovery", {}).get("repair_effect")
+                == effect["commit"],
+                "Owner correction resolution differs",
+            )
+            receipt = self.reconcile_agent_provider(correction_path)
+            require(receipt["after"]["owner"] == "Unowned", "Owner release is incomplete")
+            return {
+                "operation": digest(record),
+                "incomplete_effect": effect,
+                "correction": receipt,
+                "advancement_verified": receipt.get("advancement_verified", False),
+            }
         destination = request_path.parent / "receipt.json"
         if destination.exists():
             receipt = json.loads(destination.read_text())
@@ -580,7 +666,7 @@ class Application:
         atomic_json(destination, receipt, exclusive=True)
         return receipt
 
-    def verify_provider_receipt(self, record, value):
+    def verify_provider_receipt(self, record, value, *, preserved_owner=False):
         """Check immutable provider evidence without parsing its lifecycle document format."""
         require(
             value.get("operation_id") == record["stage_operation"], "Provider operation differs"
@@ -605,8 +691,13 @@ class Application:
         expected_owner = record["item"]["owner"]
         if (record["item"]["state"], record["target"]) == ("Starting", "Running"):
             expected_owner = record["authority"]["session_id"]
-        if (record["item"]["state"], record["target"]) == ("Running", "Ready"):
-            expected_owner = "Unowned"
+        if record["target"] == "Ready" and record["authority"].get("operation") == "redispatch":
+            require(
+                not preserved_owner or record["item"]["state"] == "Running",
+                "Only the initial recovery effect may retain its prior owner",
+            )
+            if not preserved_owner:
+                expected_owner = "Unowned"
         require(after.owner == expected_owner, "Provider operation changed canonical owner")
         expected_path = record.get("expected_path", record["item"]["path"])
         require(after.path == expected_path, "Provider result path differs from destination")

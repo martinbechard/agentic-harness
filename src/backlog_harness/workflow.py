@@ -15,7 +15,7 @@ def validate_transition(item, target, authority):
         "Observed actor request is required",
     )
     require(authority.get("item_id") == item.item_id, "Authority names another item")
-    if (item.state, target) == ("Running", "Ready"):
+    if target == "Ready" and item.state in {"Running", "Ready"}:
         recovery = authority.get("recovery", {})
         require(
             actor == "coordinator"
@@ -27,6 +27,10 @@ def validate_transition(item, target, authority):
             and recovery.get("runtime_evidence")
             and recovery.get("reason"),
             "Recovery requires Coordinator authority and preserved ownership/candidate evidence",
+        )
+        require(
+            item.state == "Running" or recovery.get("repair_effect"),
+            "Same-state recovery requires a verified incomplete effect",
         )
     elif (item.state, target) == ("Ready", "Starting"):
         require(
