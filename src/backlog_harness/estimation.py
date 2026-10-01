@@ -210,6 +210,12 @@ async def prepare_item(app, item):
             "estimate:{kind:prospective_pre_execution,dated_at:ISO_date,generated_tokens:{low,high},"
             "...estimate-agent-work fields},authority_evidence:[{path,sha256,reason}]}. "
             "Do not infer approval from Ready alone when canonical content contains an explicit hold. "
+            "Preparation selects bounded scope and checks; it does not authorize implementation. "
+            "The harness separately obtains Coordinator Ready-to-Starting reservation and native "
+            "Orchestrator Starting-to-Running acceptance afterward. Their absence at this phase "
+            "is not itself a preparation blocker. Respect actual holds and recovery evidence; "
+            "a verified stopped owner with no source changes or candidate does not require "
+            "preserved-candidate recovery. Keep historical identity and unknown usage unchanged. "
             "Provider revision is SHA256(path UTF-8 + NUL + content UTF-8), not raw content SHA256. "
             "Configured bounds: "
             + json.dumps(plain(policy))
