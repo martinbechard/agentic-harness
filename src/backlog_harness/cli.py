@@ -36,6 +36,9 @@ def main(argv=None):
     recover_item = commands.add_parser("recover-item")
     recover_item.add_argument("item_id")
     recover_item.add_argument("--evidence", type=Path, required=True)
+    defer_item = commands.add_parser("defer-item")
+    defer_item.add_argument("item_id")
+    defer_item.add_argument("--question", type=Path, required=True)
     resume_observation = commands.add_parser("resume-provider-observation")
     resume_observation.add_argument("operation_id")
     resume_observation.add_argument("native_session_id")
@@ -103,6 +106,10 @@ def main(argv=None):
                 from .recovery_flow import recover_item
 
                 result = asyncio.run(recover_item(app, args.item_id, args.evidence))
+            elif args.command == "defer-item":
+                from .recovery_flow import defer_item
+
+                result = asyncio.run(defer_item(app, args.item_id, args.question))
             elif args.command == "resume-provider-observation":
                 result = asyncio.run(
                     app.resume_provider_observation(args.operation_id, args.native_session_id)

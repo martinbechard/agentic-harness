@@ -53,8 +53,14 @@ def validate_transition(item, target, authority):
         )
     elif (item.state, target) == ("Running", "User Action Required"):
         require(
-            actor == "orchestrator" and authority.get("session_id") == item.owner,
-            "Only the canonical owner may ask an item question",
+            (actor == "orchestrator" and authority.get("session_id") == item.owner)
+            or (
+                actor == "coordinator"
+                and authority.get("operation") == "await-user"
+                and authority.get("stopped_owner") == item.owner
+                and authority.get("outcome_evidence")
+            ),
+            "A question requires canonical ownership or Coordinator reconciliation of its stopped result",
         )
         question = authority.get("question", {})
         require(

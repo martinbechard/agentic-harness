@@ -198,3 +198,111 @@ async def recover_item(app, item_id, evidence_path):
                     exclusive=True,
                 )
     return await app.run_item(item_id)
+
+
+async def defer_item(app, item_id, question_path):
+    """Reconcile a stopped canonical rejection into the provider's question queue."""
+    require(
+        isinstance(app.provider, AgentProvider),
+        "Question handoff requires agent provider management",
+    )
+    supplied = json.loads(Path(question_path).read_text())
+    question = supplied["question"]
+    require(question.get("question_id") and question.get("text"), "Exact pending question required")
+    request_path = app._stage_path(item_id, "defer-input")
+    async with async_operation_lock(app.root / "item-locks" / (component(item_id) + ".lock")):
+        with operation_lock(app.root / "solo-execution.lock"):
+            if request_path.exists():
+                request = json.loads(request_path.read_text())
+                require(request["supplied"] == supplied, "Question handoff input changed")
+            else:
+                item = app.provider.item(item_id)
+                require(
+                    item.state == "Running", "Only a stopped Running owner requires this handoff"
+                )
+                outcome = json.loads(app._stage_path(item_id, "produce-review").read_text())
+                app.validate_invocation_result(outcome)
+                value = app.result_json(outcome)
+                require(
+                    outcome["session"]["session_id"] == item.owner
+                    and value.get("item_id") == item_id
+                    and value.get("request_completion") is False
+                    and value.get("blockers"),
+                    "Canonical declined completion evidence is missing",
+                )
+                paths = supplied["paths"]
+                require(
+                    len(paths) in {2, 3}
+                    and paths[0] == item.path
+                    and paths[1] == "backlog/user-action-required/" + Path(item.path).name
+                    and len(set(paths)) == len(paths)
+                    and all(not Path(p).is_absolute() and ".." not in Path(p).parts for p in paths),
+                    "Question handoff paths are invalid",
+                )
+                series = [
+                    line.removeprefix("Series: ")
+                    for line in item.content.splitlines()
+                    if line.startswith("Series: ")
+                ]
+                require(
+                    len(series) <= 1 and paths[2:] == series,
+                    "Question handoff series membership is required",
+                )
+                if len(paths) == 3:
+                    require(
+                        "Series: " + paths[2] in item.content.splitlines()
+                        and paths[2] == str(Path(item.path).parent / "index.md")
+                        and "](" + Path(item.path).name + ")"
+                        in (app.config.repository / paths[2]).read_text(),
+                        "Question handoff series membership is not established",
+                    )
+                request = {
+                    "item": asdict(item),
+                    "outcome_invocation": outcome["invocation_id"],
+                    "outcome": value,
+                    "supplied": supplied,
+                }
+                atomic_json(request_path, request, exclusive=True)
+            item = Item(**request["item"])
+            stage = "defer-decision-" + digest(request)
+            decision = await app.invoke(
+                item_id,
+                stage,
+                "coordinator",
+                "Reconcile this stopped canonical execution. Its explicit browser permission denial "
+                "must not be bypassed. The exact user question below is ALREADY PENDING; do not ask it "
+                "again, browse, mutate, or delegate. The unrelated bundle failure is established "
+                "pre-existing; retain it as residual evidence, not a second user question. Decide "
+                "whether to record User Action Required with the exact pending question, preserved "
+                "native owner/candidate/evidence, prohibited browser action, and declared provider move "
+                "and series membership paths. Return JSON {operation:await-user|assess,item_id,"
+                "provider_revision,question,paths,reason}. No new admission is authorized by this call.\n"
+                + json.dumps(request),
+                purpose="provider",
+            )
+            app.validate_call_limits(decision, app.config.data["coordinator_limits"])
+            value = app.result_json(decision)
+            require(
+                value.get("operation") == "await-user"
+                and value.get("item_id") == item_id
+                and value.get("provider_revision") == item.revision
+                and value.get("question") == question
+                and value.get("paths") == supplied["paths"]
+                and value.get("reason"),
+                "Coordinator did not authorize the exact question handoff",
+            )
+            return await app.transition(
+                item_id,
+                item.revision,
+                "User Action Required",
+                app.authority(
+                    decision,
+                    item_id,
+                    operation="await-user",
+                    stopped_owner=item.owner,
+                    outcome_evidence=request["outcome_invocation"],
+                    question=question,
+                ),
+                validate=validate_transition,
+                declared_paths=supplied["paths"],
+            )

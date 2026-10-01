@@ -368,3 +368,179 @@ def test_incomplete_owner_release_is_corrected_once(config_file, provider, monke
     reconciled = app.reconcile_agent_provider(incomplete[0].parent / "requested.json")
     assert reconciled["advancement_verified"] is True
     assert reconciled["correction"]["after"]["owner"] == "Unowned"
+
+
+@pytest.mark.parametrize("bad_path", [None, "destination", "series", "omitted_series"])
+@pytest.mark.parametrize("owner", ["canonical", "another"])
+def test_question_handoff_requires_canonical_declined_result(
+    config_file, provider, monkeypatch, tmp_path, owner, bad_path
+):
+    import asyncio
+
+    import yaml
+
+    from backlog_harness.recovery_flow import defer_item
+
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    item = replace(provider.item("item-one"), state="Running", owner="canonical")
+    if bad_path == "omitted_series":
+        item = replace(item, content=item.content + "\nSeries: backlog/feature-backlog/index.md\n")
+    monkeypatch.setattr(app.provider, "item", lambda _: item)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+    result = {
+        "invocation_id": "declined",
+        "session": {"session_id": owner},
+        "text": json.dumps(
+            {
+                "item_id": item.item_id,
+                "request_completion": False,
+                "blockers": ["Browser permission denied"],
+            }
+        ),
+    }
+    atomic_json(app._stage_path(item.item_id, "produce-review"), result)
+    question = {"question_id": "q1", "text": "Authorize local browser verification?"}
+    paths = [item.path, "backlog/user-action-required/item-one.md"]
+    if bad_path == "destination":
+        paths[1] = "backlog/user-action-required/unrelated.md"
+    elif bad_path == "series":
+        paths.append("backlog/unrelated/index.md")
+    supplied = {"question": question, "paths": paths}
+    question_file = tmp_path / "question.json"
+    question_file.write_text(json.dumps(supplied))
+    calls = []
+
+    async def invoke(*args, **kwargs):
+        calls.append("decision")
+        assert "ALREADY PENDING" in args[3]
+        return {
+            "role": "coordinator",
+            "outcome": "returned",
+            "invocation_id": "coordinator-decision",
+            "session": {"session_id": "coordinator", "native_session_id": "native"},
+            "text": json.dumps(
+                {
+                    "operation": "await-user",
+                    "item_id": item.item_id,
+                    "provider_revision": item.revision,
+                    "question": question,
+                    "paths": paths,
+                    "reason": "User owns browser permission",
+                }
+            ),
+        }
+
+    async def transition(item_id, revision, target, authority, **kwargs):
+        calls.append("transition")
+        validate_transition(item, target, authority)
+        assert authority["outcome_evidence"] == "declined"
+        assert kwargs["declared_paths"] == paths
+        return {"state": target}
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    monkeypatch.setattr(app, "transition", transition)
+    if owner != "canonical":
+        with pytest.raises(TransitionBlocked, match="declined completion evidence"):
+            asyncio.run(defer_item(app, item.item_id, question_file))
+        assert calls == []
+    elif bad_path:
+        with pytest.raises(TransitionBlocked, match="paths are invalid|series membership"):
+            asyncio.run(defer_item(app, item.item_id, question_file))
+        assert calls == []
+    else:
+        assert (
+            asyncio.run(defer_item(app, item.item_id, question_file))["state"]
+            == "User Action Required"
+        )
+        assert calls == ["decision", "transition"]
+
+
+@pytest.mark.parametrize("question_case", ["valid", "missing", "mismatch", "malformed"])
+def test_question_move_receipt_and_projection_include_series_link(
+    config_file, provider, question_case
+):
+    import yaml
+    from test_provider_coordination import policy_evidence
+
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    item = provider.item("item-one")
+    index = provider.repository / "backlog/feature-backlog/index.md"
+    index.write_text("[One](item-one.md)\n")
+    git(provider.repository, "add", "--", str(index))
+    git(provider.repository, "commit", "-m", "Series")
+    head = git(provider.repository, "rev-parse", "HEAD")
+    manifest = app.provider.source_manifest()
+    destination = "backlog/user-action-required/item-one.md"
+    paths = [item.path, destination, str(index.relative_to(provider.repository))]
+    policy = {
+        "eligible": False,
+        "mode": "SOLO",
+        "primary_branch": "main",
+        "evidence": policy_evidence(provider.repository),
+    }
+    before = {
+        "items": [asdict(item)],
+        "dependencies": {item.item_id: []},
+        "policy": policy,
+        "non_items": [{"path": paths[2], "kind": "index", "reason": "Series index"}],
+    }
+    question = {"question_id": "q1", "text": "Authorize browser verification?"}
+    target = provider.repository / destination
+    target.parent.mkdir()
+    target.write_text(
+        (provider.repository / item.path)
+        .read_text()
+        .replace("Status: Ready", "Status: User Action Required")
+        + (
+            "\nq1\nAuthorize browser verification?\n"
+            if question_case == "valid"
+            else "\nOther question\n"
+        )
+    )
+    (provider.repository / item.path).unlink()
+    index.write_text("[One](../user-action-required/item-one.md)\n")
+    git(provider.repository, "add", "--", *paths)
+    git(provider.repository, "commit", "-m", "Question queue")
+    after = provider.item(item.item_id)
+    record = {
+        "item": asdict(item),
+        "target": "User Action Required",
+        "authority": {"question": question if question_case != "malformed" else {}},
+        "head": head,
+        "paths": paths,
+        "expected_path": destination,
+        "stage_operation": "question-op",
+    }
+    value = {
+        "operation_id": "question-op",
+        "before_revision": item.revision,
+        "commit": git(provider.repository, "rev-parse", "HEAD"),
+        "after": asdict(after),
+    }
+    if question_case != "missing":
+        value["question"] = question if question_case != "malformed" else {}
+    if question_case != "valid":
+        with pytest.raises(TransitionBlocked, match="Committed provider question"):
+            app.verify_provider_receipt(record, value)
+        return
+    receipt = app.verify_provider_receipt(record, value)
+    app.advance_provider_projection(before, manifest, receipt, paths)
+    observed = app.provider.observation()
+    assert observed["items"][0]["path"] == destination
+    assert observed["questions"][item.item_id]["question_id"] == "q1"
+    assert observed["policy"]["eligible"] is False

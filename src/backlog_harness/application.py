@@ -250,7 +250,9 @@ class Application:
                 )
         return policy
 
-    async def transition(self, item_id, expected_revision, target, authority, *, validate):
+    async def transition(
+        self, item_id, expected_revision, target, authority, *, validate, declared_paths=None
+    ):
         if not isinstance(self.provider, AgentProvider):
             return self.provider.transition(
                 item_id, expected_revision, target, authority, validate=validate
@@ -278,7 +280,7 @@ class Application:
             if retained
             else self.provider.observation().get("transition_paths", {}).get(item_id, {})
         )
-        paths = retained[0]["paths"] if retained else routes.get(target)
+        paths = retained[0]["paths"] if retained else declared_paths or routes.get(target)
         if paths is None and target != "Completed":
             paths = [item.path]
         require(paths and item.path in paths, "Provider transition paths are missing")
@@ -303,6 +305,18 @@ class Application:
             for row in before["items"]
         ]
         value["policy"] = receipt.get("policy", before["policy"])
+        if receipt["after"]["state"] == "User Action Required" and receipt.get("question"):
+            value["questions"] = {
+                **value.get("questions", {}),
+                receipt["after"]["item_id"]: {
+                    **receipt["question"],
+                    "item_id": receipt["after"]["item_id"],
+                    "item_revision": receipt["after"]["revision"],
+                    "owner": receipt["after"]["owner"],
+                    "answer": None,
+                    "disposition": None,
+                },
+            }
         self.provider.validate_inventory(value)
         self.provider.validate_policy(value["policy"])
         value.update(
@@ -421,6 +435,29 @@ class Application:
     async def invoke_provider_transition(self, item, target, authority, paths):
         """Submit one agent-managed operation; verify its commit before returning a receipt."""
         validate_transition(item, target, authority)
+        if authority.get("operation") == "await-user":
+            outcomes = [
+                json.loads(p.read_text())
+                for p in self._stage_path(item.item_id, "unused").parent.glob("*.json")
+            ]
+            outcomes = [
+                v
+                for v in outcomes
+                if isinstance(v, dict)
+                and v.get("invocation_id") == authority.get("outcome_evidence")
+            ]
+            require(len(outcomes) == 1, "Question handoff lacks a unique canonical outcome")
+            outcome = outcomes[0]
+            self.validate_invocation_result(outcome)
+            value = self.result_json(outcome)
+            require(
+                outcome.get("role") == "orchestrator"
+                and outcome["session"]["session_id"] == item.owner
+                and value.get("item_id") == item.item_id
+                and value.get("request_completion") is False
+                and value.get("blockers"),
+                "Question handoff canonical outcome differs",
+            )
         if (item.state, target) == ("Ready", "Ready"):
             effects = []
             for path in (self.root / "provider-agent-operations").glob("*/incomplete-effect.json"):
@@ -455,7 +492,11 @@ class Application:
                 len(paths) == 2 and len(archive_paths) == 1,
                 "Completion requires exact source and archive paths",
             )
-        expected_path = archive_paths[0] if target == "Completed" else item.path
+        expected_path = (
+            archive_paths[0]
+            if target in {"Completed", "User Action Required"} and archive_paths
+            else item.path
+        )
         if authority["role"] == "operator":
             question, answer = authority["question"], authority["answer"]
             key = digest([question["question_id"], item.revision, answer["text"]])
@@ -511,6 +552,8 @@ class Application:
                     "below), before_revision, commit, and after (item_id, path, state, owner, "
                     "original_high). Omit document content and revision; the harness hydrates them "
                     "from your exact committed bytes. Also return policy with eligible (boolean for NEW admission), "
+                    "For User Action Required, record the supplied question_id and text verbatim in the "
+                    "provider record and return question exactly as supplied in authority. "
                     "mode, primary_branch, and evidence [{path,sha256,excerpt,supports:[mode/admission]}] "
                     "for current source after your transition. Preserve original_high and dependencies. "
                     "The revision is SHA256(path UTF-8 + NUL + content UTF-8).\n"
@@ -720,7 +763,7 @@ class Application:
         require(
             changed and set(changed) <= set(record["paths"]), "Provider commit exceeds operation"
         )
-        if record["target"] == "Completed":
+        if record["target"] == "Completed" or expected_path != record["item"]["path"]:
             require(set(changed) == set(record["paths"]), "Provider archive paths are incomplete")
             require(
                 not git(
@@ -741,6 +784,20 @@ class Application:
         )
         require(after.original_high == record["item"]["original_high"], "Original estimate changed")
         receipt = {"operation": digest(record), "commit": commit, "after": asdict(after)}
+        if record["target"] == "User Action Required":
+            question = record["authority"].get("question")
+            require(
+                isinstance(question, dict)
+                and value.get("question") == question
+                and isinstance(question.get("question_id"), str)
+                and bool(question["question_id"].strip())
+                and isinstance(question.get("text"), str)
+                and bool(question["text"].strip())
+                and question.get("question_id") in after.content
+                and question.get("text") in after.content,
+                "Committed provider question differs from the authorized question",
+            )
+            receipt["question"] = question
         if "policy" in value:
             receipt["policy"] = value["policy"]
         return receipt
@@ -2461,7 +2518,8 @@ class Application:
             )
         require(
             value.get("item_id") == item_id and value.get("request_completion") is True,
-            "Canonical completion request missing",
+            "Canonical completion request missing"
+            + (": " + json.dumps(value.get("blockers")) if value.get("blockers") else ""),
         )
         candidate = value.get("candidate")
         from .native_evidence import verify_native_review
