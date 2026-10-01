@@ -997,3 +997,176 @@ def test_ready_question_committed_receipt_preserves_content_and_link(provider, d
         receipt = app.verify_provider_receipt(record, value)
         assert receipt["question"] == question
         assert app.verify_provider_receipt(record, value) == receipt
+
+
+def test_ready_question_public_route_commits_and_replays(
+    config_file, provider, monkeypatch, tmp_path
+):
+    import asyncio
+    from pathlib import Path
+
+    import yaml
+    from test_provider_coordination import policy_evidence
+    from test_telemetry import payload
+
+    from backlog_harness.contracts import digest
+    from backlog_harness.recovery_flow import defer_item, question_handoff_paths
+    from backlog_harness.telemetry import Sink
+
+    config, data = config_file
+    data.update(repository=str(provider.repository), provider_interaction="agent")
+    data["profiles"]["control"]["permissions"] = ["workspace-write"]
+    for name in ("manage-work-items", "manage-work-items-file"):
+        p = Path(data["methodology_root"]) / "skills" / name / "SKILL.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("Fixture management skill")
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    item = provider.item("item-one")
+    index_path = "backlog/feature-backlog/index.md"
+    (provider.repository / item.path).write_text(item.content + f"\nSeries: {index_path}\n")
+    (provider.repository / index_path).write_text("[One](item-one.md)\n")
+    git(provider.repository, "add", "--", "backlog")
+    git(provider.repository, "commit", "-m", "Existing series")
+    item = provider.item(item.item_id)
+    atomic_json(
+        app.provider.cache_path,
+        {
+            "items": [asdict(item)],
+            "dependencies": {item.item_id: []},
+            "non_items": [{"path": index_path, "kind": "index", "reason": "Series index"}],
+            "questions": {},
+            "transition_paths": {},
+            "archive_debt": [],
+            "source_revision": app.provider.source_revision(),
+            "source_manifest": app.provider.source_manifest(),
+            "observer_digest": app.provider_observer_digest(app.config),
+            "policy": {
+                "eligible": True,
+                "mode": "SOLO",
+                "primary_branch": "main",
+                "evidence": policy_evidence(provider.repository),
+            },
+        },
+    )
+    calls = []
+    mutations = []
+
+    def envelope(stage, value):
+        native = app.root / "test-native" / stage
+        sink = Sink(native / "telemetry.jsonl", {})
+        sink.write(payload())
+        result = {
+            "invocation_id": stage,
+            "request_digest": digest(value),
+            "binding": asdict(app.config.binding("coordinator")),
+            "role": "coordinator",
+            "purpose": "provider",
+            "outcome": "returned",
+            "session": {"session_id": stage, "native_session_id": "native-" + stage},
+            "evidence_path": str(native),
+            "text": json.dumps(value),
+            "events": [{"type": "turn.completed", "usage": {"output_tokens": 1}}],
+            "telemetry_path": str(native / "telemetry.jsonl"),
+            "telemetry": {
+                "span_count": len(sink.seen),
+                "rejected_exports": 0,
+                "evidence_sha256": sink.evidence_digest(),
+            },
+        }
+        atomic_json(
+            native / "intent.json",
+            {
+                "invocation_id": stage,
+                "request_digest": result["request_digest"],
+                "binding": result["binding"],
+                "config_digest": app.config.file_digest,
+                "item_id": None,
+                "action": stage,
+                "operation_id": item.item_id + ":" + stage,
+            },
+        )
+        atomic_json(app._stage_path(item.item_id, stage), result)
+        return result
+
+    preparation = envelope(
+        "prepare",
+        {
+            "item_id": item.item_id,
+            "provider_revision": item.revision,
+            "blocked": "Conflicting requirements",
+        },
+    )
+    atomic_json(
+        app._stage_path(item.item_id, "preparation"),
+        {
+            "item": asdict(item),
+            "decision": preparation,
+            "invocation_config_digest": app.config.file_digest,
+        },
+    )
+    question = {"question_id": "conflict", "text": "Which requirement governs?"}
+    paths = question_handoff_paths(provider.repository, item)
+    supplied = tmp_path / "question.json"
+    atomic_json(supplied, {"question": question, "paths": paths})
+
+    async def native_agent(item_id, stage, role, prompt, **kwargs):
+        saved = app._stage_path(item_id, stage)
+        if saved.exists():
+            return json.loads(saved.read_text())
+        calls.append(stage)
+        if stage.startswith("defer-decision-"):
+            return envelope(
+                stage,
+                {
+                    "operation": "await-user",
+                    "item_id": item_id,
+                    "provider_revision": item.revision,
+                    "question": question,
+                    "paths": {
+                        "source": paths[0],
+                        "destination": paths[1],
+                        "series_membership": paths[2:],
+                    },
+                    "reason": "Conflicting requirements require a user answer",
+                },
+            )
+        assert kwargs["provider_operation"] and kwargs["read_only"] is False
+        request = json.loads(prompt.split("\n", 1)[1])
+        destination = provider.repository / paths[1]
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(request["ready_question_content"])
+        (provider.repository / paths[0]).unlink()
+        (provider.repository / index_path).write_text(
+            "[One](../user-action-required/item-one.md)\n"
+        )
+        git(provider.repository, "add", "--", *paths)
+        git(provider.repository, "commit", "-m", "Record question", "--", *paths)
+        mutations.append(git(provider.repository, "rev-parse", "HEAD"))
+        return envelope(
+            stage,
+            {
+                "operation_id": request["operation_id"],
+                "before_revision": item.revision,
+                "commit": mutations[-1],
+                "after": {
+                    "item_id": item_id,
+                    "path": paths[1],
+                    "state": "User Action Required",
+                    "owner": item.owner,
+                    "original_high": item.original_high,
+                },
+                "question": question,
+            },
+        )
+
+    monkeypatch.setattr(app, "invoke", native_agent)
+    first = asyncio.run(defer_item(app, item.item_id, supplied))
+    second = asyncio.run(defer_item(app, item.item_id, supplied))
+    assert first == second
+    assert len(calls) == 2 and len(mutations) == 1
+    assert app.provider.item(item.item_id).state == "User Action Required"
+    assert app.provider.question(app.provider.item(item.item_id))["text"] == question["text"]
+    assert not (provider.repository / paths[0]).exists()
+    assert question["text"] in (provider.repository / paths[1]).read_text()
+    assert "../user-action-required/item-one.md" in (provider.repository / index_path).read_text()
