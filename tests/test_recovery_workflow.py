@@ -562,7 +562,15 @@ def test_question_move_receipt_and_projection_include_series_link(
 
 @pytest.mark.parametrize(
     "case",
-    ["valid", "wrong_owner", "historical_owner", "resumed", "candidate", "decision_mismatch"],
+    [
+        "valid",
+        "wrong_owner",
+        "historical_owner",
+        "trimmed_section",
+        "resumed",
+        "candidate",
+        "decision_mismatch",
+    ],
 )
 def test_no_candidate_reconciliation_checks_native_stop_and_decision(
     config_file, provider, tmp_path, monkeypatch, case
@@ -590,7 +598,11 @@ def test_no_candidate_reconciliation_checks_native_stop_and_decision(
             + session,
         )
     section = item.content.split("## Running Acceptance Evidence\n", 1)[1].split("\n## ", 1)[0]
-    owner_binding = {"section_sha256": sha256(section.encode()).hexdigest()}
+    owner_binding = {
+        "section_sha256": sha256(
+            (section.strip() if case == "trimmed_section" else section).encode()
+        ).hexdigest()
+    }
     rows = [
         {"type": "session_meta", "payload": {"id": session}},
         {"type": "event_msg", "payload": {"type": "task_complete", "turn_id": turn}},
@@ -653,3 +665,12 @@ def test_no_candidate_reconciliation_checks_native_stop_and_decision(
     else:
         with pytest.raises(TransitionBlocked):
             app.validate_stopped_owner_decision(item, authority)
+
+
+def test_provider_revision_and_content_hash_are_distinct(provider):
+    from hashlib import sha256
+
+    item = provider.item("item-one")
+    content = (provider.repository / item.path).read_bytes()
+    assert item.revision == sha256(item.path.encode() + b"\0" + content).hexdigest()
+    assert item.revision != sha256(content).hexdigest()

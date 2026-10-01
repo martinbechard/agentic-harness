@@ -339,7 +339,11 @@ async def reconcile_stopped_owner(app, item_id, evidence_path):
                 stage,
                 "coordinator",
                 "Reconcile this stopped Running owner using the exact native runtime and provider "
-                "evidence. Read-only: no claims, browser, mutation, delegation or dispatch. Determine "
+                "evidence. provider_revision is SHA256(relative path UTF-8 + NUL + content UTF-8), "
+                "not the raw content SHA256. owner_binding.section_sha256 hashes the untrimmed text "
+                "after the unique ## Running Acceptance Evidence newline up to the next newline ## "
+                "heading (or EOF), preserving all whitespace. Read-only: no claims, browser, "
+                "mutation, delegation or dispatch. Determine "
                 "whether no source changes or candidate were produced and ordinary redispatch is safe. "
                 "Preserve all identity/history/unknown usage. This decision only permits Running to "
                 "Ready and Unowned; it authorizes no launch or global policy change. Return JSON "

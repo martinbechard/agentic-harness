@@ -4,7 +4,7 @@
 
 Use an explicit absolute repository, candidate workspace, methodology installation, and evidence root. The application never imports arbitrary configured adapters. Configuration reload happens before each harness-issued CLI invocation. The complete snapshot and resolved dependency digests govern that invocation. Accepted item scopes, checks and candidate storage remain frozen; incompatible edits fence the next invocation. The effective Codex home is recorded in the session binding and applied to both capability validation and launch; changing it cannot silently resume another authentication context. Changes to the originating CLI, authentication context, or profile cannot silently replace a retained native session.
 
-Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a7-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
+Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a10-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
 
 The fixture generator is a concrete configuration example:
 
@@ -92,3 +92,5 @@ Recovery usage is labelled `recovery_remaining_work`; historical usage and the h
 `reassess-policy` requests a source-backed Coordinator reassessment of global admission while preserving inventory and item-local questions. Missing or stale authority prevents projection changes.
 
 `reconcile-stopped-owner ITEM --evidence /absolute/runtime-evidence.json` accepts one `runtime_records` entry identifying a hashed native completion log and `owner_binding.section_sha256` binding the unique active Running Acceptance Evidence section, including its owner and canonical native identity. A Coordinator must establish that the recorded owner stopped without producing source changes or a candidate. The existing provider operation records Ready and Unowned while preserving history. This command does not launch replacement work.
+
+Recovery hashes have different domains: the provider revision hashes `path + NUL + content`; a content hash hashes only content. The owner-section hash preserves all whitespace after the Running Acceptance Evidence heading through the next level-two heading boundary. These values must not be compared interchangeably.
