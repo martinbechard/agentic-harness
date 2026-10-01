@@ -31,7 +31,9 @@ its parent must exist. Existing directories are refused. `PROTOTYPE_MODEL` may
 select a model supported by the installed CLI; otherwise native default applies.
 Dependencies are exact-pinned with a lockfile: codex-acp 2.1.1, ACP SDK 1.6.0,
 LangGraph JS 1.4.18. The lockfile resolves bundled Codex 0.159.3. The adapter installs its compatible Codex dependency locally.
-No global package or configuration is modified.
+The prototype installs packages locally and supplies configuration as child-process
+overrides; it does not explicitly edit global CLI settings. Normal CLI account and
+session persistence remain CLI-managed.
 
 The live demo gives Codex an incomplete greeting assignment. Codex must use its
 native tools to count names and record one preparation line, then formulate the
