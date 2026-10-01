@@ -237,6 +237,7 @@ class ConfigSnapshot:
                     ),
                     "permissions": profile["permissions"],
                     "tools": profile["tools"],
+                    **({"artifact_output": True} if profile.get("artifact_output", False) else {}),
                 }
             ),
         )
@@ -401,6 +402,10 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
                     not isinstance(v, str) or not v for v in profile[key]
                 ):
                     raise ConfigError(f"profile.{key} must be a list of strings")
+            if type(profile.get("artifact_output", False)) is not bool:
+                raise ConfigError("profile.artifact_output must be a boolean")
+            if profile.get("artifact_output") and profile["permissions"] != ["workspace-write"]:
+                raise ConfigError("Artifact output requires workspace-write permission")
             if profile["tools"] != ["native"]:
                 raise ConfigError(
                     "Codex supports the native tool set; arbitrary tool filtering is unsupported"

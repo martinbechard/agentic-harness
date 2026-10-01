@@ -12,7 +12,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from ...contracts import digest, utcnow, validate_workspace
-from ...evidence import EvidenceStore, JsonlWriter, atomic_json
+from ...evidence import EvidenceStore, JsonlWriter, atomic_json, component
 from ...runtime import AgentRequest, InvocationHandle, SessionHandle
 
 
@@ -157,6 +157,57 @@ class CodexAdapter:
         UUID(session.native_session_id)
         return await self._invoke(request, session)
 
+    @staticmethod
+    def prepare_artifact_output(request):
+        """Expose only an explicitly enabled invocation-local output directory."""
+        profile = request.snapshot.data["profiles"][request.binding.profile_name]
+        if (
+            not profile.get("artifact_output", False)
+            or request.read_only
+            or request.purpose not in {"implementation", "proof"}
+        ):
+            return None
+        root = request.snapshot.operational_root.resolve()
+        evidence = request.evidence_path
+        intent = json.loads((evidence / "intent.json").read_text())
+        expected = (
+            root
+            / "runs"
+            / component(intent["run_id"])
+            / "operations"
+            / component(request.operation_id)
+            / "invocations"
+            / component(request.invocation_id)
+        )
+        if (
+            evidence.absolute() != expected
+            or evidence.resolve() != expected
+            or intent["invocation_id"] != request.invocation_id
+            or intent["operation_id"] != request.operation_id
+            or intent["binding"] != asdict(request.binding)
+        ):
+            raise ValueError("Artifact output invocation identity differs")
+        output = evidence / "artifacts"
+        if output.is_symlink() or output.resolve() != output:
+            raise ValueError("Artifact output must not redirect writes")
+        output.mkdir(mode=0o700, exist_ok=True)
+        contract = {
+            "version": 1,
+            "invocation_id": request.invocation_id,
+            "operation_id": request.operation_id,
+            "path": str(output),
+            "writer": "invoked agent",
+            "reviewer_access": "read",
+            "permission_digest": request.binding.permission_digest,
+        }
+        saved = evidence / "artifact-output.json"
+        if saved.exists():
+            if json.loads(saved.read_text()) != contract:
+                raise ValueError("Artifact output contract changed")
+        else:
+            atomic_json(saved, contract, exclusive=True)
+        return contract
+
     async def _invoke(self, request: AgentRequest, session):
         prepared = await self.prepare_telemetry(request)
         profile = request.snapshot.data["profiles"][request.binding.profile_name]
@@ -165,7 +216,7 @@ class CodexAdapter:
         ).resolve()
         if request.purpose == "provider":
             provider_paths = self.validate_provider_request(request, cwd)
-        elif request.purpose == "implementation":
+        elif request.purpose in {"implementation", "proof"}:
             validate_workspace(cwd, request.snapshot.repository, request.snapshot.operational_root)
         else:
             raise ValueError("Unknown invocation purpose")
@@ -177,8 +228,10 @@ class CodexAdapter:
             and (cwd == request.snapshot.repository or not (cwd / ".git").is_dir())
         ):
             raise ValueError("Writable invocation requires a separate candidate repository")
+        if request.purpose == "proof" and (request.read_only or not profile.get("artifact_output")):
+            raise ValueError("Proof invocation requires explicit artifact output permission")
         filesystem = {":root": "read"}
-        if not request.read_only:
+        if not request.read_only and request.purpose != "proof":
             if request.purpose == "provider":
                 for name in provider_paths:
                     filesystem[str(cwd / name)] = "write"
@@ -186,6 +239,9 @@ class CodexAdapter:
                 filesystem[str(cwd)] = "write"
             filesystem[str(cwd / ".git")] = "write"
             filesystem[str(cwd / ".codex")] = "read"
+        artifact_output = self.prepare_artifact_output(request)
+        if artifact_output:
+            filesystem[artifact_output["path"]] = "write"
         permissions = (
             "{" + ",".join(json.dumps(k) + "=" + json.dumps(v) for k, v in filesystem.items()) + "}"
         )
@@ -262,6 +318,16 @@ class CodexAdapter:
             + "\nWorkflow request:\n"
             + request.prompt
         )
+        if artifact_output:
+            effective_prompt += (
+                "\nArtifact output contract: "
+                + json.dumps(artifact_output)
+                + "\nWrite operational proof artifacts only in this directory, separate from candidate "
+                "source. Harness receipts and other invocation directories remain read-only. "
+                "Give reviewers exact artifact paths and require read-only inspection. Native child "
+                "tool permissions are managed by the CLI; this prompt does not enforce child isolation. "
+                "Artifact presence does not establish independent review or workflow completion."
+            )
         EvidenceStore.requested(request.evidence_path)
         try:
             env = dict(os.environ)

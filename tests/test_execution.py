@@ -345,3 +345,121 @@ def test_resume_rejects_enabling_user_config(config_file, tmp_path):
     )
     with pytest.raises(ValueError, match="permission changes"):
         asyncio.run(CodexAdapter().resume_session(session, request))
+
+
+@pytest.mark.parametrize(
+    "purpose,read_only,enabled",
+    [
+        ("implementation", False, True),
+        ("implementation", True, True),
+        ("implementation", False, False),
+        ("proof", False, True),
+    ],
+)
+def test_invocation_artifact_permissions(config_file, tmp_path, purpose, read_only, enabled):
+    """The actual adapter command scopes output separately from source and receipts."""
+    import tomllib
+    from pathlib import Path
+
+    config, data = config_file
+    fake = tmp_path / "artifact-agent"
+    fake.write_text(
+        "#!" + sys.executable + "\n"
+        "import json,sys\n"
+        "print(json.dumps({'type':'thread.started','thread_id':'00000000-0000-4000-8000-000000000001'}))\n"
+        "print(json.dumps({'type':'item.completed','item':{'type':'agent_message','text':json.dumps({'argv':sys.argv,'prompt':sys.stdin.read()})}}))\n"
+        "print(json.dumps({'type':'turn.completed','usage':{'output_tokens':1}}))\n"
+    )
+    fake.chmod(0o755)
+    data["agent_clis"]["primary"]["executable"] = str(fake)
+    data["profiles"]["worker"]["artifact_output"] = enabled
+    data["operational_root"] = str(tmp_path / "ops")
+    config.write_text(yaml.safe_dump(data))
+    snapshot = load_config(config)
+    binding = snapshot.binding("orchestrator")
+    store = EvidenceStore(snapshot.operational_root, "item:one")
+
+    async def run():
+        with TelemetryReceiver(snapshot.operational_root) as receiver:
+            inv = str(uuid4())
+            path = store.begin("one:proof", inv, snapshot, binding, action="proof")
+            dest = receiver.register(
+                run_id="item:one", invocation_id=inv, role="orchestrator", adapter="codex"
+            )
+            request = AgentRequest(
+                "one:proof",
+                inv,
+                snapshot,
+                binding,
+                "do proof",
+                path,
+                dest,
+                read_only=read_only,
+                purpose=purpose,
+            )
+            handle = await CodexAdapter().start_session(request)
+            assert handle.outcome == "returned"
+            value = json.loads(
+                next(e["text"] for e in handle.events if e.get("item_type") == "agent_message")
+            )
+            setting = next(
+                a for a in value["argv"] if a.startswith("permissions.harness.filesystem=")
+            )
+            fs = tomllib.loads(setting)["permissions"]["harness"]["filesystem"]
+            assert fs[":root"] == "read"
+            output = path / "artifacts"
+            if enabled and not read_only:
+                assert fs[str(output)] == "write"
+                contract = json.loads((path / "artifact-output.json").read_text())
+                assert contract["path"] == str(output)
+                assert contract["invocation_id"] == inv
+                assert str(output) in value["prompt"]
+                assert "does not enforce child isolation" in value["prompt"]
+            else:
+                assert not output.exists()
+                assert not (path / "artifact-output.json").exists()
+            assert str(path) not in fs
+            assert str(snapshot.operational_root) not in fs
+            if purpose == "proof" or read_only:
+                assert set(fs) == (
+                    {":root", str(output)} if enabled and not read_only else {":root"}
+                )
+            else:
+                assert fs[str(Path(data["workspace"]))] == "write"
+
+    asyncio.run(run())
+
+
+def test_artifact_output_rejects_changed_binding_and_redirect(config_file, tmp_path):
+    from backlog_harness.runtime import SessionHandle
+
+    config, data = config_file
+    before = load_config(config)
+    session = SessionHandle(
+        "owner", "00000000-0000-4000-8000-000000000001", before.binding("orchestrator")
+    )
+    data["profiles"]["worker"]["artifact_output"] = True
+    data["operational_root"] = str(tmp_path / "ops")
+    config.write_text(yaml.safe_dump(data))
+    snapshot = load_config(config)
+    binding = snapshot.binding("orchestrator")
+    path = EvidenceStore(snapshot.operational_root, "item:one").begin(
+        "proof", "inv", snapshot, binding, action="proof"
+    )
+    request = AgentRequest(
+        "proof", "inv", snapshot, binding, "proof", path, None, read_only=False, purpose="proof"
+    )
+    with pytest.raises(ValueError, match="permission changes"):
+        asyncio.run(CodexAdapter().resume_session(session, request))
+    (path / "artifacts").symlink_to(tmp_path, target_is_directory=True)
+    with pytest.raises(ValueError, match="redirect"):
+        CodexAdapter.prepare_artifact_output(request)
+    (path / "artifacts").unlink()
+    with pytest.raises(ValueError, match="identity differs"):
+        CodexAdapter.prepare_artifact_output(replace(request, invocation_id="other"))
+    assert not (path / "artifacts").exists()
+    contract = CodexAdapter.prepare_artifact_output(request)
+    assert CodexAdapter.prepare_artifact_output(request) == contract
+    (path / "artifact-output.json").write_text("{}")
+    with pytest.raises(ValueError, match="contract changed"):
+        CodexAdapter.prepare_artifact_output(request)

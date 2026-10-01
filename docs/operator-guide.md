@@ -4,7 +4,7 @@
 
 Use an explicit absolute repository, candidate workspace, methodology installation, and evidence root. The application never imports arbitrary configured adapters. Configuration reload happens before each harness-issued CLI invocation. The complete snapshot and resolved dependency digests govern that invocation. Accepted item scopes, checks and candidate storage remain frozen; incompatible edits fence the next invocation. The effective Codex home is recorded in the session binding and applied to both capability validation and launch; changing it cannot silently resume another authentication context. Changes to the originating CLI or authentication context cannot replace a retained native session. For sessions with a recorded capability digest, model, reasoning effort, and skill changes reload on resume while the native session identity stays fixed. Role, permission, tool, and user-config-loading changes remain fenced. Each resumed invocation records its previous and current bindings plus the current configuration digest. Legacy sessions without the capability digest require an unchanged profile.
 
-Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a29-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
+Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a30-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
 
 The fixture generator is a concrete configuration example:
 
@@ -102,3 +102,42 @@ Recovery usage is labelled `recovery_remaining_work`; historical usage and the h
 `reconcile-stopped-owner ITEM --evidence /absolute/runtime-evidence.json` accepts one `runtime_records` entry identifying a hashed native completion log and `owner_binding.section_sha256` binding the unique active Running Acceptance Evidence section, including its owner and canonical native identity. A Coordinator must establish that the recorded owner stopped without producing source changes or a candidate. The existing provider operation records Ready and Unowned while preserving history. This command does not launch replacement work.
 
 Recovery hashes have different domains: the provider revision hashes `path + NUL + content`; a content hash hashes only content. The owner-section hash preserves all whitespace after the Running Acceptance Evidence heading through the next level-two heading boundary. These values must not be compared interchangeably.
+
+
+## Scoped Proof Artifacts
+
+`profiles.<name>.artifact_output: true` explicitly enables invocation-local operational
+output for that profile. The default is disabled. The adapter records the exact path,
+invocation identity and permission fingerprint in `artifact-output.json` beside the
+invocation receipt. Only its `artifacts` child directory becomes writable; the rest of
+the operational root, including harness receipts, remains read-only. A read-only or
+provider invocation never receives this grant. Symlink redirects and changed contracts
+are rejected. Enabling output changes the permission fingerprint and cannot silently
+resume an existing session.
+
+For a preserved Running item whose existing bounded continuation returned blocked,
+`run-proof ITEM --instruction /absolute/proof.txt` runs one separate proof invocation.
+Add `--prepare-only` to persist the exact invocation intent and report its artifact
+directory without launching a process or granting access. This makes a proposed
+permission change concrete before authorization. Repeating preparation preserves the
+same directory; the eventual invocation consumes that intent.
+Use an explicitly authorized configuration with artifact output enabled on its
+Orchestrator profile. It may share the original repository, operational root and frozen
+workflow; retain the original configuration for the canonical session. The request binds
+the current owner, revision, candidate, prior result and exact instruction. Both candidate
+source and provider source remain read-only during this proof invocation. Only its own
+artifact directory is writable. Repeating the same command reuses the retained stage;
+changed requests and unresolved invocations cannot launch replacement work.
+
+This route does not re-admit the item, replace the owner, change the accepted session's
+permissions, or permit delivery. Its result remains proof evidence for the canonical
+workflow to assess through an authorized continuation. Independent candidate review,
+semantic acceptance, usage guards and exact-candidate approval remain required. A
+successful CLI exit or the presence of output files does not establish those gates.
+
+The adapter enforces the launched process's filesystem boundary. Agents arrange native
+review and instruct reviewers to inspect artifacts read-only. Native child permissions
+are managed by the CLI; the harness does not claim independently enforced child
+read-only isolation. Agent-owned artifact files remain untrusted supporting evidence.
+Queue diagnostics retain both singular `blocker` and plural `blockers` details when an
+agent declines completion.

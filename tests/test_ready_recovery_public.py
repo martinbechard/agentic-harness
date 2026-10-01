@@ -761,3 +761,205 @@ def test_normal_queue_continues_same_blocked_preserved_execution(
     assert not app._stage_path(item.item_id, "delivery").exists()
     with pytest.raises(TransitionBlocked, match="Running preserved"):
         register_work_continuation(app, item.item_id, instruction)
+
+
+def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
+    config_file, provider, tmp_path, monkeypatch
+):
+    from dataclasses import replace
+
+    from backlog_harness.adapters.codex.adapter import CodexAdapter
+    from backlog_harness.contracts import freeze, load_config, plain
+    from backlog_harness.evidence import EvidenceStore
+    from backlog_harness.recovery_flow import register_work_continuation, run_artifact_proof
+    from backlog_harness.runtime import AgentRequest
+
+    app, item, packet, supplied, _, calls, mutations, _, _ = _public_case(
+        config_file, provider, tmp_path, monkeypatch
+    )
+    asyncio.run(recover_item(app, item.item_id, supplied))
+    external = app.invoke
+    proof_calls = []
+
+    async def blocked_then_proof(item_id, stage, role, prompt, **kwargs):
+        if kwargs.get("purpose") == "proof":
+            saved = app._stage_path(item_id, stage)
+            if saved.exists():
+                return json.loads(saved.read_text())
+            assert "session" not in kwargs
+            proof_calls.append(stage)
+            data = plain(app.config.data)
+            data["workspace"] = str(app.candidate_repository(item_id))
+            snapshot = replace(app.config, data=freeze(data))
+            binding = snapshot.binding(role)
+            operation = item_id + ":" + stage
+            operation_path = (
+                EvidenceStore(app.root, "item:" + item_id).run / "operations" / component(operation)
+            )
+            (intent_path,) = operation_path.glob("invocations/*/intent.json")
+            path = intent_path.parent
+            intent = json.loads(intent_path.read_text())
+            invocation_id = intent["invocation_id"]
+            assert intent["binding"] == asdict(binding)
+            assert intent["request_digest"] == digest(
+                ["proof", str(snapshot.repository), False, None, prompt]
+            )
+            EvidenceStore.requested(path)
+            request = AgentRequest(
+                operation,
+                invocation_id,
+                snapshot,
+                binding,
+                prompt,
+                path,
+                None,
+                read_only=False,
+                purpose="proof",
+            )
+            contract = CodexAdapter.prepare_artifact_output(request)
+            output = Path(contract["path"]) / "proof.json"
+            output.write_text(json.dumps({"candidate": packet["candidate"]["head"]}))
+            # A reviewer can read the exact output; its presence is not an acceptance verdict.
+            assert json.loads(output.read_text())["candidate"] == packet["candidate"]["head"]
+            result = json.loads(app._stage_path(item_id, "produce-review").read_text())
+            result.update(
+                invocation_id=invocation_id,
+                purpose="proof",
+                binding=asdict(binding),
+                evidence_path=str(path),
+            )
+            result["session"] = {
+                "session_id": "proof-owner",
+                "native_session_id": str(uuid5(NAMESPACE_URL, "proof-owner")),
+                "binding": asdict(binding),
+            }
+            result["events"] = [
+                {
+                    "at": "2026-10-01T12:01:00Z",
+                    "type": "turn.completed",
+                    "usage": {"output_tokens": 1},
+                }
+            ]
+            result["text"] = json.dumps(
+                {
+                    "item_id": item_id,
+                    "candidate": packet["candidate"]["head"],
+                    "status": "evidence-ready",
+                    "artifacts": [
+                        {"path": str(output), "sha256": sha256(output.read_bytes()).hexdigest()}
+                    ],
+                }
+            )
+            atomic_json(saved, result)
+            return result
+        result = await external(item_id, stage, role, prompt, **kwargs)
+        if stage == "produce-review" or stage.startswith("continue-work-"):
+            value = json.loads(result["text"])
+            value.pop("question", None)
+            value.update(request_completion=False, status="blocked")
+            if stage == "produce-review":
+                value["blockers"] = ["Missing semantic proof"]
+            else:
+                result["events"][-1]["usage"]["output_tokens"] = 3
+                value["blocker"] = {
+                    "operation": "historical output mkdir",
+                    "error": "PermissionError",
+                    "required_action": "Provide scoped artifact output",
+                }
+            result["text"] = json.dumps(value)
+            atomic_json(app._stage_path(item_id, stage), result)
+        return result
+
+    monkeypatch.setattr(app, "invoke", blocked_then_proof)
+    with pytest.raises(TransitionBlocked, match="Missing semantic proof"):
+        asyncio.run(app.run_item(item.item_id))
+    instruction = tmp_path / "proof.txt"
+    instruction.write_text("Reuse captures and run missing proof only; preserve all denials.")
+    registered = register_work_continuation(app, item.item_id, instruction)
+    with pytest.raises(TransitionBlocked, match="Provide scoped artifact output"):
+        asyncio.run(app.run_item(item.item_id))
+    owner = app.provider.item(item.item_id).owner
+    original = app._stage_path(item.item_id, registered["stage"]).read_bytes()
+    for field, invalid in (
+        ("candidate", "different"),
+        ("item_id", "other"),
+        ("request_completion", True),
+    ):
+        changed = json.loads(original)
+        value = json.loads(changed["text"])
+        value[field] = invalid
+        changed["text"] = json.dumps(value)
+        atomic_json(app._stage_path(item.item_id, registered["stage"]), changed)
+        with pytest.raises(TransitionBlocked, match="owned blocked continuation"):
+            asyncio.run(run_artifact_proof(app, item.item_id, instruction))
+        assert proof_calls == []
+    app._stage_path(item.item_id, registered["stage"]).write_bytes(original)
+    with pytest.raises(TransitionBlocked, match="explicitly configured"):
+        asyncio.run(run_artifact_proof(app, item.item_id, instruction))
+    assert proof_calls == []
+    config, data = config_file
+    data["profiles"]["worker"]["artifact_output"] = True
+    config.write_text(yaml.safe_dump(data))
+    app.config = load_config(config)
+    prepared = asyncio.run(run_artifact_proof(app, item.item_id, instruction, prepare_only=True))
+    assert prepared == asyncio.run(
+        run_artifact_proof(app, item.item_id, instruction, prepare_only=True)
+    )
+    output_dir = Path(prepared["artifact_directory"])
+    assert not output_dir.exists()
+    assert not (output_dir.parent / "artifact-output.json").exists()
+    assert not (output_dir.parent / "requested.json").exists()
+    assert not (output_dir.parent / "process.json").exists()
+    assert prepared["submitted"] is False and not proof_calls
+    guard = app.enforce_guard
+
+    async def held(_):
+        raise TransitionBlocked("Usage hold")
+
+    monkeypatch.setattr(app, "enforce_guard", held)
+    with pytest.raises(TransitionBlocked, match="Usage hold"):
+        asyncio.run(run_artifact_proof(app, item.item_id, instruction))
+    assert not proof_calls and not (output_dir.parent / "requested.json").exists()
+    monkeypatch.setattr(app, "enforce_guard", guard)
+    result = asyncio.run(run_artifact_proof(app, item.item_id, instruction))
+    assert (output_dir / "proof.json").is_file()
+    assert result["workflow_advanced"] is False
+    assert asyncio.run(run_artifact_proof(app, item.item_id, instruction)) == result
+    assert len(proof_calls) == 1
+    assert app.provider.item(item.item_id).owner == owner
+    assert app.provider.item(item.item_id).state == "Running"
+    assert mutations == ["Starting", "Running"]
+    assert calls.count("admit") == calls.count("accept") == calls.count("produce-review") == 1
+    assert app._stage_path(item.item_id, registered["stage"]).read_bytes() == original
+    assert not app._stage_path(item.item_id, "delivery").exists()
+    from backlog_harness.recovery_flow import validate_artifact_proof
+
+    request = json.loads(app._stage_path(item.item_id, "artifact-proof-request").read_text())
+    receipt = json.loads(app._stage_path(item.item_id, result["proof_stage"]).read_text())
+    acceptance = json.loads(app._stage_path(item.item_id, "accept").read_text())
+    for field, invalid in (
+        ("item_id", "other"),
+        ("candidate", "wrong"),
+        ("status", "done"),
+        ("artifacts", []),
+        ("artifacts", [{"path": result["result"]["artifacts"][0]["path"], "sha256": "wrong"}]),
+        ("artifacts", [{"path": str(provider.repository / "PROJECT.yaml"), "sha256": "bad"}]),
+    ):
+        changed = json.loads(json.dumps(receipt))
+        value = json.loads(changed["text"])
+        value[field] = invalid
+        changed["text"] = json.dumps(value)
+        with pytest.raises(TransitionBlocked):
+            validate_artifact_proof(
+                app, item.item_id, result["proof_stage"], request, changed, acceptance
+            )
+    changed = json.loads(json.dumps(receipt))
+    changed["binding"]["permission_digest"] = "changed"
+    with pytest.raises(TransitionBlocked, match="identity"):
+        validate_artifact_proof(
+            app, item.item_id, result["proof_stage"], request, changed, acceptance
+        )
+    instruction.write_text("Different work")
+    with pytest.raises(TransitionBlocked, match="proof request changed"):
+        asyncio.run(run_artifact_proof(app, item.item_id, instruction))
+    assert len(proof_calls) == 1

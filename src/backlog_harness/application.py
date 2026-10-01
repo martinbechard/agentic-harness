@@ -1176,7 +1176,7 @@ class Application:
                 "workspace" not in frozen or frozen["workspace"] == snapshot.data["workspace"],
                 "Accepted workspace changed; reconcile before another invocation",
             )
-        require(purpose in {"implementation", "provider"}, "Unknown invocation purpose")
+        require(purpose in {"implementation", "provider", "proof"}, "Unknown invocation purpose")
         if purpose == "provider":
             data = plain(snapshot.data)
             data["workspace"] = str(snapshot.repository)
@@ -1191,7 +1191,7 @@ class Application:
         # and access mode so a saved stage cannot be reused across execution purposes.
         request_hash = (
             digest([purpose, str(snapshot.repository), read_only, provider_operation, prompt])
-            if purpose == "provider"
+            if purpose != "implementation"
             else digest(prompt)
         )
         if saved.exists() and continuation is None:
@@ -2872,7 +2872,12 @@ class Application:
             value.get("item_id") == item_id
             and (value.get("request_completion") is True or approval_question),
             "Canonical completion request missing"
-            + (": " + json.dumps(value.get("blockers")) if value.get("blockers") else ""),
+            + (
+                ": "
+                + json.dumps({key: value[key] for key in ("blocker", "blockers") if value.get(key)})
+                if value.get("blocker") or value.get("blockers")
+                else ""
+            ),
         )
         candidate = value.get("candidate")
         if recovery and recovery["packet"].get("preserved_execution"):

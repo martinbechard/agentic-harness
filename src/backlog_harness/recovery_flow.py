@@ -4,10 +4,10 @@ import asyncio
 import json
 import shutil
 import subprocess
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
-from .contracts import digest, plain
+from .contracts import digest, freeze, plain
 from .evidence import EvidenceStore, async_operation_lock, atomic_json, component, operation_lock
 from .provider import AgentProvider, Item, git
 from .workflow import require, validate_transition
@@ -759,3 +759,200 @@ def work_continuation(app, item_id, acceptance):
         "Work continuation identity, result, or candidate changed",
     )
     return request
+
+
+async def run_artifact_proof(app, item_id, instruction_path, *, prepare_only=False):
+    """Run one retained-item proof without changing its accepted owner or source permissions."""
+    instruction = Path(instruction_path).read_text().strip()
+    require(instruction, "Proof instruction is empty")
+    async with async_operation_lock(app.root / "item-locks" / (component(item_id) + ".lock")):
+        with operation_lock(app.root / "solo-execution.lock"):
+            item = app.provider.item(item_id)
+            acceptance = json.loads(app._stage_path(item_id, "accept").read_text())
+            continuation = work_continuation(app, item_id, acceptance)
+            require(continuation is not None, "Proof requires a retained work continuation")
+            prior_stage = "continue-work-" + digest(continuation)
+            previous = json.loads(app._stage_path(item_id, prior_stage).read_text())
+            app.validate_invocation_result(previous)
+            value = app.result_json(previous)
+            require(
+                previous["session"] == acceptance["session"]
+                and value.get("item_id") == item_id
+                and value.get("candidate") == continuation["candidate"]
+                and value.get("status") == "blocked"
+                and value.get("request_completion") is False
+                and (value.get("blocker") or value.get("blockers"))
+                and not value.get("question"),
+                "Proof requires the owned blocked continuation result",
+            )
+            data = plain(app.config.data)
+            data["workspace"] = str(app.candidate_repository(item_id))
+            snapshot = replace(app.config, data=freeze(data))
+            binding = snapshot.binding("orchestrator")
+            require(
+                snapshot.data["profiles"][binding.profile_name].get("artifact_output") is True,
+                "Proof requires explicitly configured artifact_output permission",
+            )
+            request = {
+                "item_id": item_id,
+                "revision": item.revision,
+                "owner": item.owner,
+                "candidate": continuation["candidate"],
+                "previous_result_digest": digest(previous),
+                "instruction": instruction,
+                "binding": asdict(binding),
+            }
+            saved = app._stage_path(item_id, "artifact-proof-request")
+            if saved.exists():
+                require(json.loads(saved.read_text()) == request, "Retained proof request changed")
+            else:
+                atomic_json(saved, request, exclusive=True)
+            stage = "artifact-proof-" + digest(request)
+            prompt = (
+                "Perform only the missing proof for this retained candidate. The canonical owner "
+                "is unchanged; this separate proof invocation has no lifecycle or delivery authority. "
+                "Candidate source, historical inputs and harness receipts are read-only. Use only "
+                "the invocation artifact-output contract for proof output. Preserve explicit denials. "
+                "Reuse verified captures and source review; do not repeat production or admission. "
+                "Arrange any independent Judges/review through native delegation, require read-only "
+                "review, and preserve their exact identities, candidate bindings, verdicts and evidence. "
+                'No claims. Return JSON {item_id,candidate,status:"evidence-ready"|"blocked",'
+                'artifacts:[{path:"absolute output file",sha256:"file digest"}],blockers:[]}. '
+                "Evidence-ready requires output files with supporting evidence; blocked requires "
+                "exact blockers. A successful invocation is not workflow completion. "
+                "Bound request: "
+                + json.dumps(request)
+                + "\nRetained blocked result: "
+                + json.dumps(value)
+            )
+            if prepare_only:
+                from uuid import uuid4
+
+                resolved_binding = binding
+                operation = item_id + ":" + stage
+                store = EvidenceStore(app.root, "item:" + item_id)
+                operation_path = store.run / "operations" / component(operation)
+                paths = list(operation_path.glob("invocations/*/intent.json"))
+                expected_hash = digest(["proof", str(snapshot.repository), False, None, prompt])
+                if operation_path.exists():
+                    require(len(paths) == 1, "Proof invocation intent is absent or ambiguous")
+                    path = paths[0].parent
+                    prior = EvidenceStore.reconcile(path)
+                    require(
+                        prior["request_digest"] == expected_hash
+                        and prior["binding"] == asdict(resolved_binding)
+                        and prior["config_digest"] == snapshot.file_digest,
+                        "Prepared proof invocation changed",
+                    )
+                else:
+                    path = store.begin(
+                        operation,
+                        str(uuid4()),
+                        snapshot,
+                        resolved_binding,
+                        action=stage,
+                        item_id=item_id,
+                        request_digest=expected_hash,
+                    )
+                return {
+                    "item_id": item_id,
+                    "owner": item.owner,
+                    "candidate": request["candidate"],
+                    "proof_stage": stage,
+                    "artifact_directory": str(path / "artifacts"),
+                    "submitted": (path / "requested.json").exists(),
+                    "workflow_advanced": False,
+                }
+            await app.enforce_guard(item_id)
+            result = await app.invoke(
+                item_id, stage, "orchestrator", prompt, read_only=False, purpose="proof"
+            )
+            require(app.provider.item(item_id) == item, "Canonical item changed during proof")
+            require(
+                git(app.candidate_repository(item_id), "rev-parse", "HEAD") == request["candidate"]
+                and not git(app.candidate_repository(item_id), "status", "--porcelain"),
+                "Candidate changed during proof",
+            )
+            proof = validate_artifact_proof(app, item_id, stage, request, result, acceptance)
+            return {
+                "item_id": item_id,
+                "owner": item.owner,
+                "candidate": request["candidate"],
+                "proof_stage": stage,
+                "result": proof,
+                "workflow_advanced": False,
+            }
+
+
+def validate_artifact_proof(app, item_id, stage, request, result, acceptance):
+    """Bind reported proof files to this invocation without asserting semantic acceptance."""
+    from hashlib import sha256
+
+    value = app.result_json(result)
+    require(
+        result.get("binding") == request["binding"]
+        and result.get("role") == "orchestrator"
+        and result.get("purpose") == "proof"
+        and result["session"]["native_session_id"] != acceptance["session"]["native_session_id"]
+        and result["session"]["session_id"] != request["owner"]
+        and value.get("item_id") == item_id
+        and value.get("candidate") == request["candidate"]
+        and value.get("status") in {"evidence-ready", "blocked"},
+        "Returned proof identity or status differs",
+    )
+    operation = item_id + ":" + stage
+    expected = (
+        app.root.resolve()
+        / "runs"
+        / component("item:" + item_id)
+        / "operations"
+        / component(operation)
+        / "invocations"
+        / component(result["invocation_id"])
+    )
+    evidence = Path(result["evidence_path"])
+    require(
+        evidence.absolute() == expected and evidence.resolve() == expected,
+        "Returned proof evidence path differs",
+    )
+    output = expected / "artifacts"
+    contract = json.loads((evidence / "artifact-output.json").read_text())
+    require(
+        contract
+        == {
+            "version": 1,
+            "invocation_id": result["invocation_id"],
+            "operation_id": operation,
+            "path": str(output),
+            "writer": "invoked agent",
+            "reviewer_access": "read",
+            "permission_digest": request["binding"]["permission_digest"],
+        },
+        "Returned proof artifact contract differs",
+    )
+    artifacts = value.get("artifacts")
+    require(
+        isinstance(artifacts, list)
+        and (
+            bool(artifacts)
+            if value["status"] == "evidence-ready"
+            else bool(value.get("blocker") or value.get("blockers"))
+        ),
+        "Proof needs output artifacts or concrete blockers",
+    )
+    require(not output.is_symlink() and output.resolve() == output, "Proof output redirected")
+    for artifact in artifacts:
+        require(
+            isinstance(artifact, dict) and set(artifact) == {"path", "sha256"},
+            "Invalid proof artifact",
+        )
+        require(isinstance(artifact["path"], str), "Invalid proof artifact path")
+        path = Path(artifact["path"])
+        require(
+            path.is_absolute()
+            and path.resolve().is_relative_to(output)
+            and path.is_file()
+            and sha256(path.read_bytes()).hexdigest() == artifact["sha256"],
+            "Proof artifact escaped output directory or hash differs",
+        )
+    return value

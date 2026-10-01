@@ -211,3 +211,23 @@ def test_item_workflow_cannot_override_preparation_or_gates(config_file, overrid
     path.write_text(yaml.safe_dump(data))
     with pytest.raises(ConfigError, match="only override"):
         load_config(path)
+
+
+@pytest.mark.parametrize("setting", ["true", 1, None])
+def test_artifact_output_requires_explicit_boolean(config_file, setting):
+    path, data = config_file
+    data["profiles"]["worker"]["artifact_output"] = setting
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match="artifact_output"):
+        load_config(path)
+
+
+def test_disabled_artifact_permission_preserves_existing_digest(config_file):
+    path, data = config_file
+    before = load_config(path).binding("orchestrator")
+    data["profiles"]["worker"]["artifact_output"] = False
+    path.write_text(yaml.safe_dump(data))
+    assert load_config(path).binding("orchestrator").permission_digest == before.permission_digest
+    data["profiles"]["worker"]["artifact_output"] = True
+    path.write_text(yaml.safe_dump(data))
+    assert load_config(path).binding("orchestrator").permission_digest != before.permission_digest
