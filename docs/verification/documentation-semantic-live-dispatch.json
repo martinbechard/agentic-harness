@@ -1,7 +1,7 @@
 {
-  "installed_version": "0.1.0a17",
+  "installed_version": "0.1.0a18",
   "item_id": "reconcile-documentation-semantic-checks-with-authorized-source-revisions",
-  "state": "Running",
+  "state": "Completed",
   "revision": "a8c71e0d9669a2aa76bd768f901a91034c396ae529b9d5c924213c1808bdca78",
   "canonical_owner": "fac6fa57-49e6-435a-84f0-ba9345b474df",
   "native_session_id": "01a0f79a-dea5-7662-9de8-d062770d6625",
@@ -9,6 +9,13 @@
   "prospective_high": 180000,
   "historical_original_high": null,
   "historical_usage": "unknown",
-  "completion_verified": false,
-  "claim_operations_permitted": false
+  "completion_verified": true,
+  "claim_operations_permitted": false,
+  "candidate": "4ffc623884f9f72462ae8f871c7ffce70bc5d785",
+  "main_commit": "06fc53a5b3fe2caa9eb8bb3ab9f150a6de85e782",
+  "provider_completion_commit": "7680a4f439b93105690c75a013e95c1dd148ef23",
+  "provider_completion_operation": "a2917fed800499c3e1b26922ca98da3f113a162553ff5e98fdbfcdc096bde412",
+  "completed_path": "backlog/completed-backlog/defects/reconcile-documentation-semantic-checks-with-authorized-source-revisions.md",
+  "preserved_untracked_files": 34,
+  "preservation_reverified_after_closure": true
 }
