@@ -2003,13 +2003,13 @@ class Application:
         self, item_id, question_id, expected_revision, text, *, retained_delivery=None
     ):
         with operation_lock(self.root / "item-locks" / (component(item_id) + ".lock")):
-            item = self.provider.item(item_id)
             operation_path = self._stage_path(
                 item_id, "answer-operation-" + digest([question_id, expected_revision, text])
             )
             if operation_path.exists():
                 operation = json.loads(operation_path.read_text())
             else:
+                item = self.provider.item(item_id)
                 require(item.revision == expected_revision, "Stale question revision")
                 question = self.provider.question(item)
                 require(

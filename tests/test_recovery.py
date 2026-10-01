@@ -884,3 +884,35 @@ def test_advanced_path_comparison_preserves_exact_git_names(provider, tmp_path, 
     assert not compatible_primary_paths(
         primary, candidate_repo, git(candidate_repo, "rev-parse", "HEAD"), base, "HEAD", [name]
     )
+
+
+def test_pending_answer_reconciles_effect_before_reading_stale_projection(config_file, monkeypatch):
+    import asyncio
+
+    config, _ = config_file
+    app = Application(config)
+
+    operation = {
+        "question": {"question_id": "q1", "text": "Proceed?"},
+        "answer": {"text": "yes", "digest": digest("yes"), "question_revision": "before"},
+        "before_revision": "before",
+    }
+    atomic_json(
+        app._stage_path("item-one", "answer-operation-" + digest(["q1", "before", "yes"])),
+        operation,
+    )
+
+    def stale(_):
+        raise AssertionError("Stale projection must not prevent retained effect reconciliation")
+
+    monkeypatch.setattr(app.provider, "item", stale)
+    monkeypatch.setattr(app, "item_quiescent", lambda _: True)
+
+    async def reconcile(item_id, revision, target, authority, **kwargs):
+        assert (item_id, revision, target) == ("item-one", "before", "User Action Required")
+        assert authority["answer"] == operation["answer"]
+        raise RuntimeError("Reached original effect reconciliation")
+
+    monkeypatch.setattr(app, "transition", reconcile)
+    with pytest.raises(RuntimeError, match="Reached original effect reconciliation"):
+        asyncio.run(app.resume_answer("item-one"))
