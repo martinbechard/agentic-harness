@@ -348,15 +348,18 @@ def test_resume_rejects_enabling_user_config(config_file, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "purpose,read_only,enabled",
+    "purpose,read_only,enabled,disable_memories",
     [
-        ("implementation", False, True),
-        ("implementation", True, True),
-        ("implementation", False, False),
-        ("proof", False, True),
+        ("implementation", False, True, True),
+        ("implementation", True, True, True),
+        ("implementation", False, False, True),
+        ("proof", False, True, True),
+        ("implementation", False, False, False),
     ],
 )
-def test_invocation_artifact_permissions(config_file, tmp_path, purpose, read_only, enabled):
+def test_invocation_artifact_permissions(
+    config_file, tmp_path, purpose, read_only, enabled, disable_memories
+):
     """The actual adapter command scopes output separately from source and receipts."""
     import tomllib
     from pathlib import Path
@@ -372,6 +375,8 @@ def test_invocation_artifact_permissions(config_file, tmp_path, purpose, read_on
     )
     fake.chmod(0o755)
     data["agent_clis"]["primary"]["executable"] = str(fake)
+    if not disable_memories:
+        data["agent_clis"]["primary"]["adapter_options"] = {"disable_memories": False}
     data["profiles"]["worker"]["artifact_output"] = enabled
     data["operational_root"] = str(tmp_path / "ops")
     config.write_text(yaml.safe_dump(data))
@@ -402,6 +407,7 @@ def test_invocation_artifact_permissions(config_file, tmp_path, purpose, read_on
             value = json.loads(
                 next(e["text"] for e in handle.events if e.get("item_type") == "agent_message")
             )
+            assert ("features.memories=false" in value["argv"]) == disable_memories
             setting = next(
                 a for a in value["argv"] if a.startswith("permissions.harness.filesystem=")
             )

@@ -275,6 +275,12 @@ class CodexAdapter:
             .get("load_user_config", False)
         ):
             args.insert(3, "--ignore-user-config")
+        if (
+            request.snapshot.data["agent_clis"][request.binding.cli_name]
+            .get("adapter_options", {})
+            .get("disable_memories", True)
+        ):
+            args.extend(["-c", "features.memories=false"])
         for override in prepared["overrides"]:
             args.extend(["-c", override])
         if session:

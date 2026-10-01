@@ -1826,7 +1826,8 @@ class Application:
         incident = json.loads(incidents[-1].read_text())
         usage = self.usage_view(item_id)
         require(
-            usage["status"] != "unknown", "Unknown usage must be restored before allowance review"
+            usage["status"] != "unknown" and type(usage.get("generated_tokens")) is int,
+            "Unknown usage must be restored before allowance review",
         )
         proposed = usage["ceiling"] if requested_ceiling is None else requested_ceiling
         require(
@@ -1929,7 +1930,9 @@ class Application:
             )
         )
 
-    async def answer(self, item_id, question_id, expected_revision, text):
+    async def answer(
+        self, item_id, question_id, expected_revision, text, *, retained_delivery=None
+    ):
         with operation_lock(self.root / "item-locks" / (component(item_id) + ".lock")):
             item = self.provider.item(item_id)
             operation_path = self._stage_path(
@@ -1954,6 +1957,26 @@ class Application:
                     "before_revision": expected_revision,
                 }
                 atomic_json(operation_path, operation, exclusive=True)
+            require(
+                operation.get("retained_delivery") in (None, retained_delivery),
+                "Answer delivery authorization changed",
+            )
+            if retained_delivery:
+                from .recovery_flow import retained_delivery_result
+
+                authorization = retained_delivery["authorization"]
+                require(
+                    authorization["item_id"] == item_id
+                    and authorization["question_id"] == question_id
+                    and authorization["revision"] == expected_revision
+                    and authorization["answer"] == text,
+                    "Retained delivery answer differs from authorization",
+                )
+                conditional = retained_delivery_result(self, item_id, retained_delivery)
+                operation["retained_delivery"] = retained_delivery
+                atomic_json(operation_path, operation)
+            if "result" in operation:
+                return operation["result"]
             question, answer = operation["question"], operation["answer"]
             require(self.item_quiescent(item_id), "Canonical execution is not quiescent")
             persisted = await self.transition(
@@ -1971,17 +1994,25 @@ class Application:
                 validate=validate_transition,
             )
             acceptance = json.loads(self._stage_path(item_id, "accept").read_text())
-            await self.enforce_guard(item_id)
-            stage = "answer-" + digest([question_id, answer["digest"]])
-            disposition = await self.invoke(
-                item_id,
-                stage,
-                "orchestrator",
-                "Classify the exact operator answer to your question. This invocation is read-only. Do not implement, delegate, or mutate. Only approve authorizes continuation; defer, decline and ambiguous retain the wait. Return only JSON with question_id, answer_digest, disposition approve/defer/decline/ambiguous and reason.\n"
-                + json.dumps({"question": question, "answer": answer}, sort_keys=True),
-                session=self.session(acceptance),
-            )
-            value = self.result_json(disposition)
+            if retained_delivery:
+                disposition = conditional
+                value = {
+                    "question_id": question_id,
+                    "answer_digest": answer["digest"],
+                    "disposition": "approve",
+                }
+            else:
+                await self.enforce_guard(item_id)
+                stage = "answer-" + digest([question_id, answer["digest"]])
+                disposition = await self.invoke(
+                    item_id,
+                    stage,
+                    "orchestrator",
+                    "Classify the exact operator answer to your question. This invocation is read-only. Do not implement, delegate, or mutate. Only approve authorizes continuation; defer, decline and ambiguous retain the wait. Return only JSON with question_id, answer_digest, disposition approve/defer/decline/ambiguous and reason.\n"
+                    + json.dumps({"question": question, "answer": answer}, sort_keys=True),
+                    session=self.session(acceptance),
+                )
+                value = self.result_json(disposition)
             require(
                 value.get("question_id") == question_id
                 and value.get("answer_digest") == answer["digest"]
@@ -1995,6 +2026,11 @@ class Application:
                 question=question,
                 answer=answer,
                 disposition=value["disposition"],
+                **(
+                    {"operator_authorization": retained_delivery["authorization"]}
+                    if retained_delivery
+                    else {}
+                ),
             )
             result = await self.transition(
                 item_id, persisted["revision"], target, authority, validate=validate_transition
@@ -2005,6 +2041,7 @@ class Application:
                     {
                         "stage": "produce-review-" + digest([question_id, answer["digest"]]),
                         "approval": authority,
+                        **({"retained_delivery": retained_delivery} if retained_delivery else {}),
                     },
                 )
             operation["result"] = {**result, "disposition": value["disposition"]}
@@ -2027,6 +2064,7 @@ class Application:
             operation["question"]["question_id"],
             operation["before_revision"],
             operation["answer"]["text"],
+            retained_delivery=operation.get("retained_delivery"),
         )
 
     def _interrupted_provider_usage(self, path, prior, session):
@@ -2676,6 +2714,12 @@ class Application:
                     validate=validate_transition,
                 )
                 item = self.provider.item(item_id)
+        continuation_path = self._stage_path(item_id, "continuation")
+        retained_delivery = (
+            json.loads(continuation_path.read_text()).get("retained_delivery")
+            if continuation_path.exists()
+            else None
+        )
         acceptance_path = self._stage_path(item_id, "accept")
         if item.state == "Running":
             require(
@@ -2688,7 +2732,8 @@ class Application:
                 "Retained acceptance differs from the canonical owner",
             )
             self.validate_invocation_result(acceptance)
-            await self.enforce_guard(item_id)
+            if not retained_delivery:
+                await self.enforce_guard(item_id)
         else:
             require(item.state == "Starting", "Only Starting may launch canonical acceptance")
             require(
@@ -2878,22 +2923,28 @@ class Application:
                     "proof_reviewer_session in your response. Do not repeat proof or review: "
                     + proof_review_path.read_text()
                 )
-        await self.enforce_guard(item_id)
-        produced = await self.invoke(
-            item_id,
-            stage,
-            "orchestrator",
-            prompt,
-            session=self.session(acceptance),
-            read_only=False,
-        )
+        if retained_delivery:
+            from .recovery_flow import retained_delivery_result
+
+            produced = retained_delivery_result(self, item_id, retained_delivery)
+        else:
+            await self.enforce_guard(item_id)
+            produced = await self.invoke(
+                item_id,
+                stage,
+                "orchestrator",
+                prompt,
+                session=self.session(acceptance),
+                read_only=False,
+            )
         value = self.result_json(produced)
         approval_question = bool(
-            recovery
+            not retained_delivery
+            and recovery
             and recovery["packet"].get("preserved_execution", {}).get("candidate_approval_required")
             and value.get("question")
         )
-        if value.get("question"):
+        if value.get("question") and not retained_delivery:
             require(
                 value.get("item_id") == item_id and isinstance(value["question"], dict),
                 "Unbound question",
@@ -2915,7 +2966,7 @@ class Application:
                 )
         require(
             value.get("item_id") == item_id
-            and (value.get("request_completion") is True or approval_question),
+            and (value.get("request_completion") is True or approval_question or retained_delivery),
             "Canonical completion request missing"
             + (
                 ": "
@@ -2996,7 +3047,8 @@ class Application:
                 == digest(approved.get("answer", {}).get("text")),
                 "Exact preserved-candidate approval is required before delivery",
             )
-        await self.enforce_guard(item_id)
+        if not retained_delivery:
+            await self.enforce_guard(item_id)
         from .delivery import integrate
 
         if isinstance(self.provider, AgentProvider):

@@ -4,7 +4,7 @@
 
 Use explicit absolute paths for the target repository, candidate workspace and methodology installation. Evidence defaults to the target repository's `.agent-ops/backlog-harness`; set `operational_root` only for a deliberate absolute override. The application never imports arbitrary configured adapters. Configuration reload happens before each harness-issued CLI invocation. The complete snapshot and resolved dependency digests govern that invocation. Accepted item scopes, checks and candidate storage remain frozen; incompatible edits fence the next invocation. The effective Codex home is recorded in the session binding and applied to both capability validation and launch; changing it cannot silently resume another authentication context. Changes to the originating CLI or authentication context cannot replace a retained native session. For sessions with a recorded capability digest, model, reasoning effort, and skill changes reload on resume while the native session identity stays fixed. Role, permission, tool, and user-config-loading changes remain fenced. Each resumed invocation records its previous and current bindings plus the current configuration digest. Legacy sessions without the capability digest require an unchanged profile.
 
-Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a32-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
+Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a33-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
 
 The fixture generator is a concrete configuration example:
 
@@ -189,5 +189,35 @@ retains an unknown exact total and reports `coverage: incomplete`. Deduplicated 
 output is exposed as `generated_tokens_lower_bound`, including CLI-internal work seen by
 the invocation exporter. A lower bound at or above the ceiling reports `crossed`; below
 the ceiling it remains `unknown`. Both prevent generation. Raising a reviewed ceiling
-does not repair incomplete coverage. Exact-candidate delivery approval and usage review
-are separate decisions; neither clears the other gate.
+does not repair incomplete coverage. Delivery authorization and usage review are
+separate decisions; neither clears the other gate.
+
+When the canonical Orchestrator has already returned a conditional delivery request
+(`status: awaiting_exact_candidate_approval`), existing operator authorization can be
+bound without another model call to classify the answer:
+
+```sh
+agentic-harness --config /absolute/config.yaml authorize-delivery ITEM --authorization /absolute/authorization.json
+```
+
+The JSON contains exactly `item_id`, `question_id`, `revision`, `candidate`,
+`disposition` (the string `approve`), `answer`, and `source_reference`. Bind it to the
+current question, revision and reviewed candidate; retain the actual authorization
+and its source. The command does not invent approval or ask the operator to repeat
+authorization already given. It uses the existing provider answer and resume operations.
+The normal queue then reuses the original conditional result and accepted reviews,
+checks the exact candidate and evidence, integrates it, verifies it, and closes the item.
+No implementation or proof generation is permitted by this path. Incomplete usage still
+blocks further generation; provider administration retains its separate limits.
+Interrupted answer operations retain the same authorization for `resume-answer`.
+
+Delivery permits an overlapping path already advanced on the primary branch only when
+its Git object and mode exactly match the reviewed candidate. Conflicting changes and
+overlapping untracked files still block integration. Delivery receipts prevent replaying
+an already proven merge.
+
+Harness Codex invocations disable automatic CLI memory generation by default through a
+per-process `features.memories=false` override. This avoids unrelated memory work inside
+an item invocation; it does not disable native tools, skills or delegation or edit global
+CLI settings. Set `adapter_options.disable_memories: false` explicitly to opt out. All
+observed usage remains subject to the usual coverage and attribution checks.

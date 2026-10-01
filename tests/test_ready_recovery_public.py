@@ -286,6 +286,7 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                 else {
                     "item_id": item_id,
                     "question": question,
+                    "status": "awaiting_exact_candidate_approval",
                     "candidate": packet["candidate"]["head"],
                     "reviewer_session": reviewer,
                 }
@@ -303,12 +304,15 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                 .replace("Status: " + before["state"], "Status: " + target)
                 .replace("Owner: " + before["owner"], "Owner: " + owner)
             )
-            destination = paths[1] if target == "User Action Required" else paths[0]
+            destination = paths[-1] if target in {"User Action Required", "Completed"} else paths[0]
             if target == "User Action Required":
                 content += (
                     "\nQuestion ID: " + question["question_id"] + "\n" + question["text"] + "\n"
                 )
+            if destination != paths[0]:
                 (provider.repository / paths[0]).unlink()
+            if request["authority"].get("answer"):
+                content += "\n" + request["authority"]["answer"]["text"] + "\n"
             output = provider.repository / destination
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(content)
@@ -328,7 +332,7 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                 },
             }
             if target == "User Action Required":
-                value["question"] = question
+                value["question"] = request["authority"]["question"]
         return envelope(stage, role, value, kwargs)
 
     monkeypatch.setattr(app, "invoke", native_agent)
@@ -1301,3 +1305,153 @@ def test_unreconciled_exported_usage_retains_lower_bound_and_generation_fence(
     assert invalid["status"] == "configuration_invalid" and not invalid["may_generate"]
     assert invalid["generated_tokens"] is None and invalid["coverage"] == "incomplete"
     assert invalid["generated_tokens_lower_bound"] == view["generated_tokens_lower_bound"]
+
+
+def _awaiting_delivery(config_file, provider, tmp_path, monkeypatch):
+    app, item, packet, supplied, _, calls, mutations, _, question = _public_case(
+        config_file, provider, tmp_path, monkeypatch
+    )
+    exclude = provider.repository / ".git/info/exclude"
+    exclude.write_text(exclude.read_text() + "\n.agent-ops/\n")
+    # Give the provider repository the preserved source base, as a real checkout has.
+    git(
+        provider.repository,
+        "fetch",
+        str(packet["candidate"]["checkout"]),
+        packet["candidate"]["base"],
+    )
+    git(provider.repository, "merge", "--allow-unrelated-histories", "--no-edit", "FETCH_HEAD")
+    asyncio.run(recover_item(app, item.item_id, supplied))
+    asyncio.run(app.run_item(item.item_id))
+    current = app.provider.item(item.item_id)
+    cached = json.loads(app.provider.cache_path.read_text())
+    cached["transition_paths"] = {
+        item.item_id: {"Completed": [current.path, "backlog/archive/item-one.md"]}
+    }
+    atomic_json(app.provider.cache_path, cached)
+    authorization = {
+        "item_id": item.item_id,
+        "question_id": question["question_id"],
+        "revision": current.revision,
+        "candidate": packet["candidate"]["head"],
+        "disposition": "approve",
+        "answer": "Deliver the exact accepted candidate under my existing authorization.",
+        "source_reference": "operator chat turn: authorized routine delivery",
+    }
+    path = tmp_path / "authorization.json"
+    atomic_json(path, authorization)
+    return app, item, path, calls, mutations
+
+
+@pytest.mark.parametrize("interrupt_answer", [False, True])
+def test_retained_delivery_completes_under_incomplete_usage_without_generation(
+    config_file, provider, tmp_path, monkeypatch, interrupt_answer
+):
+    from backlog_harness.recovery_flow import authorize_retained_delivery
+
+    app, item, path, calls, mutations = _awaiting_delivery(
+        config_file, provider, tmp_path, monkeypatch
+    )
+
+    async def blocked(*args, **kwargs):
+        raise AssertionError("No implementation generation may be attempted")
+
+    monkeypatch.setattr(app, "enforce_guard", blocked)
+    monkeypatch.setattr(
+        app,
+        "usage_view",
+        lambda _: {
+            "status": "crossed",
+            "generated_tokens": None,
+            "generated_tokens_lower_bound": 100,
+            "may_generate": False,
+        },
+    )
+    atomic_json(
+        app._stage_path(item.item_id, "historical-unstructured"),
+        {"role": "orchestrator", "text": "historical prose, not a conditional request"},
+    )
+    before = len(calls)
+    if interrupt_answer:
+        original_transition = app.transition
+
+        async def interrupted(*args, **kwargs):
+            if args[2] == "Running":
+                raise RuntimeError("interrupt before authorized resume")
+            return await original_transition(*args, **kwargs)
+
+        monkeypatch.setattr(app, "transition", interrupted)
+        with pytest.raises(RuntimeError, match="interrupt before"):
+            asyncio.run(authorize_retained_delivery(app, item.item_id, path))
+        monkeypatch.setattr(app, "transition", original_transition)
+        answer = asyncio.run(app.resume_answer(item.item_id))
+    else:
+        answer = asyncio.run(authorize_retained_delivery(app, item.item_id, path))
+    assert answer["state"] == "Running"
+    result = asyncio.run(app.run_item(item.item_id))
+    assert result["state"] == "Completed" and result["delivery"]["verified"]
+    assert all(stage.startswith("provider-") for stage in calls[before:])
+    assert mutations[-3:] == ["User Action Required", "Running", "Completed"]
+    head = git(provider.repository, "rev-parse", "HEAD")
+    count = len(calls)
+    assert asyncio.run(authorize_retained_delivery(app, item.item_id, path)) == answer
+    assert len(calls) == count and git(provider.repository, "rev-parse", "HEAD") == head
+
+
+@pytest.mark.parametrize("defect", ["candidate", "missing", "canonical", "invalid"])
+def test_retained_delivery_rejects_unbound_authorization(
+    config_file, provider, tmp_path, monkeypatch, defect
+):
+    from backlog_harness.recovery_flow import authorize_retained_delivery
+
+    app, item, path, calls, mutations = _awaiting_delivery(
+        config_file, provider, tmp_path, monkeypatch
+    )
+    authorization = json.loads(path.read_text())
+    if defect == "candidate":
+        authorization["candidate"] = "0" * 40
+    elif defect == "missing":
+        authorization.pop("source_reference")
+    elif defect == "invalid":
+        authorization["disposition"] = "decline"
+    else:
+        stage = app._stage_path(item.item_id, "produce-review")
+        record = json.loads(stage.read_text())
+        record["session"]["native_session_id"] = "wrong"
+        atomic_json(stage, record)
+    atomic_json(path, authorization)
+    before = (len(calls), len(mutations))
+    with pytest.raises(TransitionBlocked):
+        asyncio.run(authorize_retained_delivery(app, item.item_id, path))
+    assert (len(calls), len(mutations)) == before
+    assert not app._stage_path(item.item_id, "retained-delivery-authorization").exists()
+
+
+@pytest.mark.parametrize("fault", ["missing", "reject", "wrong-candidate"])
+def test_retained_delivery_still_requires_exact_independent_review(
+    config_file, provider, tmp_path, monkeypatch, fault
+):
+    from backlog_harness.recovery_flow import authorize_retained_delivery
+
+    app, item, path, calls, mutations = _awaiting_delivery(
+        config_file, provider, tmp_path, monkeypatch
+    )
+    asyncio.run(authorize_retained_delivery(app, item.item_id, path))
+    produced = json.loads(app._stage_path(item.item_id, "produce-review").read_text())
+    reviewer = json.loads(produced["text"])["reviewer_session"]
+    log = tmp_path / "native-home/sessions/2026/10/01" / f"rollout-{reviewer}.jsonl"
+    if fault == "missing":
+        log.unlink()
+    else:
+        rows = [json.loads(line) for line in log.read_text().splitlines()]
+        value = json.loads(rows[-1]["payload"]["last_agent_message"])
+        value["verdict" if fault == "reject" else "candidate"] = (
+            "REJECT" if fault == "reject" else "0" * 40
+        )
+        rows[-1]["payload"]["last_agent_message"] = json.dumps(value)
+        log.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    before = (len(calls), len(mutations), git(provider.repository, "rev-parse", "HEAD"))
+    with pytest.raises(TransitionBlocked):
+        asyncio.run(app.run_item(item.item_id))
+    assert (len(calls), len(mutations), git(provider.repository, "rev-parse", "HEAD")) == before
+    assert not app._stage_path(item.item_id, "delivery").exists()

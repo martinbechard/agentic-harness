@@ -44,6 +44,29 @@ def preserved_untracked(repository):
     return result
 
 
+def compatible_primary_paths(primary, candidate_repo, candidate, base, head, changed):
+    """Permit overlap only when the primary tree already has the exact candidate entries."""
+    env = {**os.environ, "GIT_NO_REPLACE_OBJECTS": "1", "GIT_LITERAL_PATHSPECS": "1"}
+    for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+        env.pop(key, None)
+
+    def raw(repository, *args):
+        result = subprocess.run(
+            ["git", "-C", str(repository), *args], capture_output=True, check=False, env=env
+        )
+        if result.returncode:
+            raise TransitionBlocked(result.stderr.decode(errors="replace")[:2000])
+        return result.stdout
+
+    advanced = raw(primary, "diff", "--name-only", "-z", base, head, "--", *changed)
+    return all(
+        raw(primary, "ls-tree", "-z", head, "--", os.fsdecode(name))
+        == raw(candidate_repo, "ls-tree", "-z", candidate, "--", os.fsdecode(name))
+        for name in advanced.split(b"\0")
+        if name
+    )
+
+
 def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
     path = app._stage_path(item_id, "delivery")
     primary = app.config.repository
@@ -94,7 +117,7 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
             )
         else:
             require(
-                not git(primary, "diff", "--name-only", base, "HEAD", "--", *changed),
+                compatible_primary_paths(primary, candidate_repo, candidate, base, "HEAD", changed),
                 "Primary source paths advanced after candidate base",
             )
             prior = {
@@ -126,7 +149,7 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
                 "An incomplete merge needs manual resolution",
             )
             require(
-                not git(primary, "diff", "--name-only", base, head, "--", *changed),
+                compatible_primary_paths(primary, candidate_repo, candidate, base, head, changed),
                 "Primary source changed",
             )
             git(primary, "fetch", "--no-tags", str(candidate_repo), candidate)

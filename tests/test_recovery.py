@@ -435,8 +435,9 @@ def test_cached_telemetry_receipt_cannot_replace_missing_file(config_file):
         app.validate_invocation_result(result)
 
 
+@pytest.mark.parametrize("incomplete", [False, True])
 def test_hold_review_retries_frozen_request_after_allowance_write(
-    config_file, provider, monkeypatch
+    config_file, provider, monkeypatch, incomplete
 ):
     import asyncio
     import json
@@ -485,7 +486,7 @@ def test_hold_review_retries_frozen_request_after_allowance_write(
         ceiling = json.loads(allowance.read_text())["ceiling"] if allowance.exists() else 200
         return {
             "status": "below" if 250 < ceiling else "crossed",
-            "generated_tokens": 250,
+            "generated_tokens": None if incomplete else 250,
             "original_high": 100,
             "ceiling": ceiling,
             "may_generate": 250 < ceiling,
@@ -511,6 +512,15 @@ def test_hold_review_retries_frozen_request_after_allowance_write(
 
     monkeypatch.setattr(app, "usage_view", usage)
     monkeypatch.setattr(app, "invoke", decision)
+    if incomplete:
+        with pytest.raises(TransitionBlocked, match="Unknown usage"):
+            asyncio.run(
+                app.review_hold(
+                    item.item_id, requested_ceiling=500, reference="existing authorization"
+                )
+            )
+        assert not prompts
+        return
     real_transition = app.provider.transition
 
     def crash_transition(*args, **kwargs):
@@ -800,3 +810,77 @@ def test_delivery_preservation_ignores_ambient_git_overrides(provider, tmp_path,
     assert preserved_untracked(provider.repository) == expected
     real.write_text("changed")
     assert preserved_untracked(provider.repository) != expected
+
+
+@pytest.mark.parametrize("overlap", ["identical", "content", "mode"])
+def test_delivery_allows_only_identical_advanced_tree_entries(provider, tmp_path, overlap):
+    primary = provider.repository
+    candidate_repo = tmp_path / "candidate"
+    subprocess.run(
+        ["git", "clone", str(primary), str(candidate_repo)], check=True, capture_output=True
+    )
+    git(candidate_repo, "config", "user.name", "Test")
+    git(candidate_repo, "config", "user.email", "test@example.invalid")
+    base = git(candidate_repo, "rev-parse", "HEAD")
+    (candidate_repo / "answer.txt").write_text("42\n")
+    git(candidate_repo, "add", "answer.txt")
+    git(candidate_repo, "commit", "-m", "Candidate source")
+    candidate = git(candidate_repo, "rev-parse", "HEAD")
+    (primary / "answer.txt").write_text("different\n" if overlap == "content" else "42\n")
+    if overlap == "mode":
+        (primary / "answer.txt").chmod(0o755)
+    git(primary, "add", "answer.txt")
+    git(primary, "commit", "-m", "Independent primary source")
+    before = git(primary, "rev-parse", "HEAD")
+    review = {
+        "candidate": candidate,
+        "producer_session": "producer",
+        "reviewer_session": "reviewer",
+        "verdict": "ACCEPT",
+        "native_verified": True,
+        "fresh_context": True,
+        "evidence_sha256": "review",
+        "unresolved_findings": [],
+    }
+    checks = [
+        {"candidate": candidate, "argv": ["test"], "returncode": 0, "evidence_sha256": "check"}
+    ]
+    app = SimpleNamespace(
+        provider=provider,
+        config=SimpleNamespace(
+            repository=primary, data={"workflow": {"allowed_paths": ["answer.txt"]}}
+        ),
+        _stage_path=lambda item, name: tmp_path / "stages" / (name + ".json"),
+        checks=lambda repo, item, commit, name: [{**checks[0], "candidate": commit}],
+    )
+    if overlap != "identical":
+        with pytest.raises(TransitionBlocked, match="advanced"):
+            integrate(app, "item-one", candidate_repo, candidate, base, review, checks)
+        assert git(primary, "rev-parse", "HEAD") == before
+    else:
+        result = integrate(app, "item-one", candidate_repo, candidate, base, review, checks)
+        assert result["verified"] and result["disposition"] == "READY"
+        head = git(primary, "rev-parse", "HEAD")
+        assert integrate(app, "item-one", candidate_repo, candidate, base, review, checks) == result
+        assert git(primary, "rev-parse", "HEAD") == head
+
+
+@pytest.mark.parametrize("name", ["é.txt", " leading.txt", "line\nbreak.txt"])
+def test_advanced_path_comparison_preserves_exact_git_names(provider, tmp_path, name):
+    from backlog_harness.delivery import compatible_primary_paths
+
+    primary = provider.repository
+    candidate_repo = tmp_path / "candidate"
+    subprocess.run(
+        ["git", "clone", str(primary), str(candidate_repo)], check=True, capture_output=True
+    )
+    git(candidate_repo, "config", "user.name", "Test")
+    git(candidate_repo, "config", "user.email", "test@example.invalid")
+    base = git(primary, "rev-parse", "HEAD")
+    for repo, content in [(primary, "main"), (candidate_repo, "candidate")]:
+        (repo / name).write_text(content)
+        git(repo, "add", "--", name)
+        git(repo, "commit", "-m", "Advance")
+    assert not compatible_primary_paths(
+        primary, candidate_repo, git(candidate_repo, "rev-parse", "HEAD"), base, "HEAD", [name]
+    )

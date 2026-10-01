@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .contracts import digest, freeze, plain
 from .evidence import EvidenceStore, async_operation_lock, atomic_json, component, operation_lock
-from .provider import AgentProvider, Item, git
+from .provider import AgentProvider, Item, TransitionBlocked, git
 from .workflow import require, validate_transition
 
 
@@ -1065,3 +1065,119 @@ def proof_continuation(app, item_id, acceptance):
         "Proof continuation identity or evidence changed",
     )
     return {"request": packet, "proof": value}
+
+
+def retained_delivery_result(app, item_id, registration, *, registered=True):
+    """Validate the canonical conditional delivery request; this never creates agent evidence."""
+    saved = app._stage_path(item_id, "retained-delivery-authorization")
+    require(
+        not registered or (saved.exists() and json.loads(saved.read_text()) == registration),
+        "Retained delivery authorization changed",
+    )
+    result = json.loads(app._stage_path(item_id, registration["stage"]).read_text())
+    app.validate_invocation_result(result)
+    acceptance = json.loads(app._stage_path(item_id, "accept").read_text())
+    value = app.result_json(result)
+    require(
+        isinstance(value, dict) and isinstance(value.get("question"), dict),
+        "Canonical conditional delivery request is malformed",
+    )
+    authorization = registration["authorization"]
+    require(
+        digest(result) == registration["result_digest"]
+        and result["session"] == acceptance["session"]
+        and result["role"] == "orchestrator"
+        and value.get("item_id") == item_id
+        and value.get("status") == "awaiting_exact_candidate_approval"
+        and value.get("candidate") == authorization["candidate"]
+        and value.get("question", {}).get("candidate") == authorization["candidate"]
+        and value["question"].get("question_id") == authorization["question_id"]
+        and authorization["disposition"] == "approve"
+        and authorization["source_reference"]
+        and authorization["answer"],
+        "Canonical conditional delivery request or authorization differs",
+    )
+    return result
+
+
+async def authorize_retained_delivery(app, item_id, authorization_path):
+    """Apply an explicit operator answer to an already verified conditional delivery request."""
+    authorization = json.loads(Path(authorization_path).read_text())
+    require(
+        isinstance(authorization, dict)
+        and set(authorization)
+        == {
+            "item_id",
+            "question_id",
+            "revision",
+            "candidate",
+            "disposition",
+            "answer",
+            "source_reference",
+        }
+        and authorization["item_id"] == item_id
+        and authorization["disposition"] == "approve"
+        and all(isinstance(v, str) and v.strip() for v in authorization.values()),
+        "Explicit bound delivery authorization is required",
+    )
+    with operation_lock(app.root / "item-locks" / (component(item_id) + ".lock")):
+        path = app._stage_path(item_id, "retained-delivery-authorization")
+        if path.exists():
+            registration = json.loads(path.read_text())
+            require(
+                registration["authorization"] == authorization, "Delivery authorization changed"
+            )
+        else:
+            item = app.provider.item(item_id)
+            question = app.provider.question(item)
+            require(
+                item.state == "User Action Required"
+                and item.revision == authorization["revision"]
+                and question
+                and question.get("question_id") == authorization["question_id"]
+                and question.get("candidate") == authorization["candidate"],
+                "Delivery authorization does not answer the current candidate question",
+            )
+            candidates = []
+            for stage in app._stage_path(item_id, "unused").parent.glob("*.json"):
+                try:
+                    record = json.loads(stage.read_text())
+                except (ValueError, OSError):
+                    continue
+                if (
+                    not isinstance(record, dict)
+                    or record.get("role") != "orchestrator"
+                    or not record.get("text")
+                ):
+                    continue
+                try:
+                    value = app.result_json(record)
+                except (ValueError, TypeError, KeyError, TransitionBlocked):
+                    continue
+                if not isinstance(value, dict):
+                    continue
+                if (
+                    value.get("question")
+                    == {k: question[k] for k in ("question_id", "text", "candidate")}
+                    and value.get("status") == "awaiting_exact_candidate_approval"
+                ):
+                    candidates.append((stage.stem, record))
+            require(
+                len(candidates) == 1, "Unique canonical conditional delivery request is required"
+            )
+            stage, result = candidates[0]
+            registration = {
+                "authorization": authorization,
+                "stage": stage,
+                "result_digest": digest(result),
+            }
+            retained_delivery_result(app, item_id, registration, registered=False)
+            atomic_json(path, registration, exclusive=True)
+        retained_delivery_result(app, item_id, registration)
+    return await app.answer(
+        item_id,
+        authorization["question_id"],
+        authorization["revision"],
+        authorization["answer"],
+        retained_delivery=registration,
+    )

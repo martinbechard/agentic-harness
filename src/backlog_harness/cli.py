@@ -43,6 +43,9 @@ def main(argv=None):
     proof_followup = commands.add_parser("continue-proof")
     proof_followup.add_argument("item_id")
     proof_followup.add_argument("--instruction", type=Path, required=True)
+    deliver = commands.add_parser("authorize-delivery")
+    deliver.add_argument("item_id")
+    deliver.add_argument("--authorization", type=Path, required=True)
     proof = commands.add_parser("run-proof")
     proof.add_argument("item_id")
     proof.add_argument("--instruction", type=Path, required=True)
@@ -120,6 +123,12 @@ def main(argv=None):
                     "item_count": len(observed["items"]),
                     "policy": observed["policy"],
                 }
+            elif args.command == "authorize-delivery":
+                from .recovery_flow import authorize_retained_delivery
+
+                result = asyncio.run(
+                    authorize_retained_delivery(app, args.item_id, args.authorization)
+                )
             elif args.command == "resume-answer":
                 result = asyncio.run(app.resume_answer(args.item_id))
             elif args.command == "recover-provider":

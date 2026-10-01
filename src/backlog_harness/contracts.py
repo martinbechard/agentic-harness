@@ -380,8 +380,15 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
             if not isinstance(cli.get("adapter_options", {}), dict):
                 raise ConfigError("adapter_options must be a mapping")
             options = cli.get("adapter_options", {})
-            if set(options) - {"native_max_threads", "codex_home", "load_user_config"}:
+            if set(options) - {
+                "native_max_threads",
+                "codex_home",
+                "load_user_config",
+                "disable_memories",
+            }:
                 raise ConfigError("Unsupported Codex adapter option")
+            if type(options.get("disable_memories", True)) is not bool:
+                raise ConfigError("disable_memories must be a boolean")
             if type(options.get("load_user_config", False)) is not bool:
                 raise ConfigError("load_user_config must be a boolean")
             if (
