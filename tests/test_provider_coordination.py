@@ -355,6 +355,15 @@ def test_agent_observation_refresh_is_cached_and_never_parses_headers(
     assert len(calls) == 1
     assert calls[0]["purpose"] == "provider"
     assert app.provider.policy()["mode"] == "SOLO"
+    from backlog_harness.contracts import digest
+
+    cached = json.loads(app.provider.cache_path.read_text())
+    cached["observer_digest"] = digest(
+        [app.config.file_digest, app.config.binding("coordinator").relevant_digest]
+    )
+    app.provider.cache_path.write_text(json.dumps(cached))
+    asyncio.run(app.refresh_provider())
+    assert len(calls) == 1
     data["workflow"]["allowed_paths"] = ["another.py"]
     data["workflow"]["checks"] = [["python3", "-m", "unittest"]]
     config.write_text(yaml.safe_dump(data))
@@ -744,3 +753,107 @@ def test_policy_reassessment_requires_current_authority(config_file, provider, m
         with pytest.raises(TransitionBlocked):
             asyncio.run(app.reassess_policy())
         assert json.loads(app.provider.cache_path.read_text()) == original
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+@pytest.mark.parametrize("confirmed_operation", ["new", "assess"])
+def test_admission_uses_current_dependencies_and_retains_clarification(
+    config_file, provider, monkeypatch, confirmed_operation, legacy
+):
+    import asyncio
+    import json
+    from dataclasses import asdict, replace
+
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import atomic_json
+
+    config, data = config_file
+    data.update(repository=str(provider.repository), provider_interaction="agent")
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    item = provider.item("item-one")
+    predecessor = replace(
+        item,
+        item_id="predecessor",
+        state="Completed",
+        content="Status: Completed\nAccepted mapping authorizes Phase 2.",
+    )
+    monkeypatch.setattr(
+        app.provider, "item", lambda key: item if key == item.item_id else predecessor
+    )
+    monkeypatch.setattr(
+        app.provider, "observation", lambda: {"dependencies": {item.item_id: ["predecessor"]}}
+    )
+    monkeypatch.setattr(app, "reconcile", list)
+    monkeypatch.setattr(app, "execution_policy", lambda _: {})
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+    session = {
+        "session_id": "coordinator",
+        "native_session_id": "native",
+        "binding": asdict(app.config.binding("coordinator")),
+    }
+    calls = []
+
+    async def invoke(item_id, stage, role, prompt, **kwargs):
+        calls.append(stage)
+        if stage == "admit-confirmed":
+            assert kwargs["session"].session_id == session["session_id"]
+        assert '"state": "Completed"' in prompt
+        assert "Accepted mapping authorizes Phase 2" in prompt
+        value = {
+            "operation": "assess" if stage == "admit" else confirmed_operation,
+            "item_id": item_id,
+            "provider_revision": item.revision,
+            "reason": "Current predecessor proof",
+        }
+        result = {
+            "invocation_id": stage,
+            "outcome": "returned",
+            "session": session,
+            "binding": session["binding"],
+            "role": role,
+            "text": json.dumps(value),
+        }
+        atomic_json(app._stage_path(item_id, stage), result)
+        return result
+
+    async def transition(item_id, revision, target, authority, **kwargs):
+        assert target == "Starting" and authority["invocation_id"] == "admit-confirmed"
+        raise RuntimeError("verified clarified admission")
+
+    original_bytes = None
+    if legacy:
+        original = {
+            "invocation_id": "old-admit",
+            "request_digest": "old-prompt-digest",
+            "session": session,
+            "binding": session["binding"],
+            "role": "coordinator",
+            "outcome": "returned",
+            "text": json.dumps(
+                {"operation": "assess", "item_id": item.item_id, "provider_revision": item.revision}
+            ),
+        }
+        atomic_json(app._stage_path(item.item_id, "admit"), original)
+        original_bytes = app._stage_path(item.item_id, "admit").read_bytes()
+        monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "invoke", invoke)
+    monkeypatch.setattr(app, "transition", transition)
+    with pytest.raises(
+        (RuntimeError, TransitionBlocked),
+        match="verified clarified admission"
+        if confirmed_operation == "new"
+        else "No current Coordinator admission",
+    ):
+        asyncio.run(app._run_item(item.item_id))
+    assert calls == (["admit-confirmed"] if legacy else ["admit", "admit-confirmed"])
+    if legacy:
+        assert app._stage_path(item.item_id, "admit").read_bytes() == original_bytes
+    assert app.admission_path(item.item_id).name == "admit-confirmed.json"
+    changed = json.loads(app.admission_path(item.item_id).read_text())
+    changed["session"] = {**session, "session_id": "other"}
+    atomic_json(app._stage_path(item.item_id, "admit-confirmed"), changed)
+    with pytest.raises(TransitionBlocked, match="clarification identity"):
+        app.admission_path(item.item_id)

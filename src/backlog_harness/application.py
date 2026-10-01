@@ -63,6 +63,13 @@ class Application:
             )
             if self.provider.cache_path.exists():
                 cached = json.loads(self.provider.cache_path.read_text())
+                legacy_observer = digest(
+                    [current.file_digest, current.binding("coordinator").relevant_digest]
+                )
+                if cached.get("observer_digest") == legacy_observer:
+                    self.provider.validate_policy(cached["policy"])
+                    cached["observer_digest"] = observer
+                    atomic_json(self.provider.cache_path, cached)
                 if (
                     cached["source_revision"] == revision
                     and cached.get("observer_digest") == observer
@@ -431,6 +438,25 @@ class Application:
             "Provider management skills are missing",
         )
 
+    def admission_path(self, item_id):
+        original = self._stage_path(item_id, "admit")
+        confirmed = self._stage_path(item_id, "admit-confirmed")
+        if confirmed.exists():
+            before, after = (json.loads(path.read_text()) for path in (original, confirmed))
+            require(
+                before["session"] == after["session"] and before["binding"] == after["binding"],
+                "Admission clarification identity differs",
+            )
+            return confirmed
+        return original
+
+    def admission_dependencies(self, item_id):
+        if not isinstance(self.provider, AgentProvider):
+            return []
+        names = self.provider.observation().get("dependencies", {}).get(item_id)
+        require(names is not None, "Admission dependencies are unknown")
+        return [asdict(self.provider.item(name)) for name in names]
+
     async def enforce_guard(self, item_id):
         try:
             return self.guard(item_id)
@@ -438,7 +464,7 @@ class Application:
             if isinstance(self.provider, AgentProvider):
                 item = self.provider.item(item_id)
                 view = self.usage_view(item_id)
-                admission = self._stage_path(item_id, "admit")
+                admission = self.admission_path(item_id)
                 if (
                     not view["may_generate"]
                     and item.state in {"Starting", "Running"}
@@ -1644,7 +1670,7 @@ class Application:
                     },
                     exclusive=True,
                 )
-            admit_path = self._stage_path(item_id, "admit")
+            admit_path = self.admission_path(item_id)
             if item.state in {"Starting", "Running"} and admit_path.exists():
                 admit = json.loads(admit_path.read_text())
                 self.provider.transition(
@@ -2387,27 +2413,68 @@ class Application:
                         if other.item_id != item_id and other.state in {"Starting", "Running"}:
                             theirs = set(self.item_workflow(other.item_id)["allowed_paths"])
                             require(not mine & theirs, "Concurrent assignment scopes overlap")
-                decision = await self.invoke(
-                    item_id,
-                    "admit",
-                    "coordinator",
-                    "You are the Dev Backlog Coordinator. Decide whether to admit this user-authorized bounded "
-                    "Work Item using its current provider record below. Do not implement, mutate files, or delegate. "
-                    "Return only JSON with operation new or assess, item_id, provider_revision, and reason. "
-                    + (
-                        "This is a new native reservation for the SAME recovered item, not general new "
-                        "backlog admission. Revalidate and apply this persisted Coordinator redispatch "
-                        "authorization under the existing serial crisis reservation; global admission "
-                        "remains closed for other items. Recovery authorization: "
-                        + json.dumps(self.recovery_record(item_id))
-                        + "\n"
-                        if self.recovery_record(item_id)
-                        else ""
+                retained_admission = self._stage_path(item_id, "admit")
+                if retained_admission.exists():
+                    decision = json.loads(retained_admission.read_text())
+                    self.validate_invocation_result(decision)
+                    require(
+                        decision.get("role") == "coordinator", "Retained admission actor differs"
                     )
-                    + f"Provider revision: {item.revision}\n\n{item.content}",
-                )
+                    prior = self.result_json(decision)
+                    require(
+                        prior.get("item_id") == item_id
+                        and prior.get("provider_revision") == item.revision
+                        and prior.get("operation") in {"new", "assess"},
+                        "Retained admission identity differs",
+                    )
+                else:
+                    decision = await self.invoke(
+                        item_id,
+                        "admit",
+                        "coordinator",
+                        "You are the Dev Backlog Coordinator. Decide whether to admit this user-authorized bounded "
+                        "Work Item using its current provider record below. Do not implement, mutate files, or delegate. "
+                        "Return only JSON with operation new or assess, item_id, provider_revision, and reason. "
+                        + (
+                            "This is a new native reservation for the SAME recovered item, not general new "
+                            "backlog admission. Revalidate and apply this persisted Coordinator redispatch "
+                            "authorization under the existing serial crisis reservation; global admission "
+                            "remains closed for other items. Recovery authorization: "
+                            + json.dumps(self.recovery_record(item_id))
+                            + "\n"
+                            if self.recovery_record(item_id)
+                            else ""
+                        )
+                        + "Current authoritative dependency records override conditional historical queue prose:\n"
+                        + json.dumps(self.admission_dependencies(item_id))
+                        + "\n"
+                        + f"Provider revision: {item.revision}\n\n{item.content}",
+                    )
                 self.validate_call_limits(decision, self.config.data["coordinator_limits"])
                 value = self.result_json(decision)
+                if value.get("operation") == "assess" and self.admission_dependencies(item_id):
+                    decision = await self.invoke(
+                        item_id,
+                        "admit-confirmed",
+                        "coordinator",
+                        "Reassess only your retained admission decision against the current authoritative "
+                        "dependency records below. Conditional historical queue prose is not a current "
+                        "predecessor state. Verify accepted predecessor dispositions as well as status. "
+                        "Do not mutate, implement, delegate, invoke claims, or launch anything. Return "
+                        "the same JSON schema; operation new only when evidence warrants admission, "
+                        "otherwise assess with the concrete remaining blocker.\n"
+                        + json.dumps(
+                            {
+                                "item_id": item_id,
+                                "provider_revision": item.revision,
+                                "dependencies": self.admission_dependencies(item_id),
+                            }
+                        ),
+                        session=self.session(decision),
+                    )
+                    self.validate_call_limits(decision, self.config.data["coordinator_limits"])
+                    self.admission_path(item_id)
+                    value = self.result_json(decision)
                 require(
                     value.get("operation") == "new"
                     and value.get("item_id") == item_id
@@ -2438,10 +2505,10 @@ class Application:
         else:
             require(item.state == "Starting", "Only Starting may launch canonical acceptance")
             require(
-                self._stage_path(item_id, "admit").exists(),
+                self.admission_path(item_id).exists(),
                 "Starting reservation has no retained admission evidence; reconcile before launch",
             )
-            admission = json.loads(self._stage_path(item_id, "admit").read_text())
+            admission = json.loads(self.admission_path(item_id).read_text())
             admitted = self.result_json(admission)
             source_revision = frozen_assignment.get("provider_revision")
             require(
