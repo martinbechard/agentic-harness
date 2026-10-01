@@ -161,6 +161,15 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                 "evidence_sha256": sink.evidence_digest(),
             },
         }
+        atomic_json(native / "session.json", result["session"])
+        atomic_json(
+            native / "execution-context.json",
+            {
+                "purpose": result["purpose"],
+                "read_only": kwargs.get("read_only", True),
+                "provider_operation": kwargs.get("provider_operation"),
+            },
+        )
         atomic_json(
             native / "intent.json",
             {
@@ -182,7 +191,9 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
             return json.loads(saved.read_text())
         calls.append(stage)
         prompts[stage] = prompt
-        if stage.startswith("recover-decision-"):
+        if stage == "reservation-effect-reconciliation":
+            value = json.loads(prompt)
+        elif stage.startswith("recover-decision-"):
             value = {
                 "operation": "redispatch",
                 "item_id": item_id,
@@ -441,3 +452,218 @@ def test_ready_recovery_rejects_unbound_historical_owner(
     with pytest.raises(TransitionBlocked, match="did not authorize"):
         asyncio.run(recover_item(app, item.item_id, supplied))
     assert not mutations and not app._stage_path(item.item_id, "assignment").exists()
+
+
+def test_normal_queue_waits_for_committed_provider_result(
+    config_file, provider, tmp_path, monkeypatch
+):
+    from backlog_harness.coordination import RunController
+
+    config_file[1]["poll_seconds"] = 0.01
+    app, item, packet, supplied, _, calls, mutations, _, _ = _public_case(
+        config_file, provider, tmp_path, monkeypatch
+    )
+    asyncio.run(recover_item(app, item.item_id, supplied))
+    external = app.invoke
+    committed, release, settled = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    interrupted = []
+
+    async def delayed_result(*args, **kwargs):
+        result = await external(*args, **kwargs)
+        value = json.loads(result["text"])
+        if value.get("after", {}).get("state") == "Starting":
+            committed.set()
+            try:
+                await release.wait()
+            except asyncio.CancelledError:
+                interrupted.append(args[1])
+                raise
+        return result
+
+    monkeypatch.setattr(app, "invoke", delayed_result)
+
+    def publish(value):
+        if value.get("result", {}).get("state") == "User Action Required":
+            settled.set()
+
+    async def exercise():
+        controller = RunController(app, publish)
+        running = asyncio.create_task(controller.run("until-terminal"))
+        try:
+            await asyncio.wait_for(committed.wait(), 5)
+            # The provider has committed, but the external invocation has not returned.
+            with pytest.raises(TransitionBlocked, match="observation is stale"):
+                app.provider.snapshot()
+            await asyncio.sleep(0.15)
+            assert not running.done() and not interrupted
+            assert mutations == ["Starting"]
+            release.set()
+            await asyncio.wait_for(settled.wait(), 10)
+            await controller.stop()
+            await running
+        finally:
+            release.set()
+            if not running.done():
+                await controller.stop()
+                await running
+
+    asyncio.run(exercise())
+    assert not interrupted
+    assert mutations == ["Starting", "Running", "User Action Required"]
+    assert calls.count("admit") == 1 and calls.count("produce-review") == 1
+    assert app.provider.item(item.item_id).state == "User Action Required"
+    assert (
+        app.recovery_record(item.item_id)["packet"]["preserved_execution"]
+        == packet["preserved_execution"]
+    )
+    receipts = [
+        json.loads(p.read_text())
+        for p in (app.root / "provider-agent-operations").glob("*/receipt.json")
+    ]
+    reservations = [r for r in receipts if r["after"]["state"] == "Starting"]
+    assert len(reservations) == 1 and reservations[0]["advancement_verified"]
+
+
+@pytest.mark.parametrize(
+    "invalid", [None, "owner", "writable", "budget", "later_effect", "action", "operation"]
+)
+def test_normal_queue_reconciles_interrupted_committed_reservation(
+    config_file, provider, tmp_path, monkeypatch, invalid
+):
+    from backlog_harness.contracts import AgentBinding
+    from backlog_harness.coordination import RunController
+    from backlog_harness.evidence import EvidenceStore
+    from backlog_harness.recovery_flow import reconcile_starting_effect
+    from backlog_harness.runtime import SessionHandle
+
+    config_file[1]["poll_seconds"] = 0.01
+    app, item, packet, supplied, _, calls, mutations, _, _ = _public_case(
+        config_file, provider, tmp_path, monkeypatch
+    )
+    asyncio.run(recover_item(app, item.item_id, supplied))
+    external = app.invoke
+    interrupted = {}
+
+    async def interrupt_after_commit(*args, **kwargs):
+        result = await external(*args, **kwargs)
+        value = json.loads(result["text"])
+        if value.get("after", {}).get("state") == "Starting":
+            result["outcome"] = "unresolved"
+            store = EvidenceStore(app.root, "item:" + item.item_id)
+            path = store.begin(
+                item.item_id + ":" + args[1],
+                result["invocation_id"],
+                app.config,
+                app.config.binding("coordinator"),
+                action=args[1],
+                request_digest=result["request_digest"],
+            )
+            EvidenceStore.requested(path)
+            EvidenceStore.outcome(path, "unresolved", failure_reason="CancelledError")
+            atomic_json(path / "process.json", {"pid": 99999999, "started": "stopped"})
+            atomic_json(
+                path / "execution-context.json",
+                {
+                    "purpose": "provider",
+                    "read_only": False,
+                    "provider_operation": kwargs["provider_operation"],
+                },
+            )
+            result["evidence_path"] = str(path)
+            result["telemetry"]["coverage"] = "observed_unverified"
+            atomic_json(app._stage_path(item.item_id, args[1]), result)
+            interrupted.update(result=result, value=value, operation=kwargs["provider_operation"])
+            raise RuntimeError("Interrupted after commit; usage incomplete")
+        return result
+
+    async def run_to_event(predicate):
+        settled = asyncio.Event()
+        controller = RunController(app, lambda value: settled.set() if predicate(value) else None)
+        task = asyncio.create_task(controller.run("until-terminal"))
+        try:
+            await asyncio.wait_for(settled.wait(), 10)
+            await controller.stop()
+            await task
+        finally:
+            if not task.done():
+                await controller.stop()
+                await task
+
+    monkeypatch.setattr(app, "invoke", interrupt_after_commit)
+    asyncio.run(run_to_event(lambda value: "blocked" in value))
+    assert mutations == ["Starting"]
+    assert calls.count("admit") == 1
+    original = interrupted["result"]
+    session = original["session"]
+    monkeypatch.setattr(app, "invoke", external)
+    result = asyncio.run(
+        app.invoke(
+            item.item_id,
+            "reservation-effect-reconciliation",
+            "coordinator",
+            json.dumps(interrupted["value"]),
+            session=SessionHandle(
+                session["session_id"],
+                session["native_session_id"],
+                AgentBinding(**session["binding"]),
+            ),
+            read_only=True,
+            purpose="provider",
+        )
+    )
+    if invalid == "owner":
+        value = json.loads(result["text"])
+        value["after"]["owner"] = "other"
+        result["text"] = json.dumps(value)
+    if invalid == "writable":
+        atomic_json(
+            Path(result["evidence_path"]) / "execution-context.json",
+            {"purpose": "provider", "read_only": False},
+        )
+    if invalid in {"action", "operation"}:
+        intent_path = Path(result["evidence_path"]) / "intent.json"
+        intent = json.loads(intent_path.read_text())
+        intent["action" if invalid == "action" else "operation_id"] = (
+            "unrelated-read-only-operation"
+        )
+        atomic_json(intent_path, intent)
+    if invalid == "budget":
+        result["events"][-1]["usage"]["output_tokens"] = 999999999
+    if invalid == "later_effect":
+        canonical = provider.repository / item.path
+        canonical.write_text(canonical.read_text() + "\nLater conflicting effect\n")
+        git(provider.repository, "add", "--", item.path)
+        git(provider.repository, "commit", "-m", "Later effect", "--", item.path)
+    proof = app._stage_path(item.item_id, "reservation-effect-reconciliation")
+    atomic_json(proof, result)
+    root = app.root / "provider-agent-operations" / component(interrupted["operation"])
+    if invalid:
+        with pytest.raises(TransitionBlocked):
+            reconcile_starting_effect(app, interrupted["operation"], proof)
+        assert not (root / "effect-reconciliation.json").exists()
+        assert mutations == ["Starting"]
+        return
+    reconciled = reconcile_starting_effect(app, interrupted["operation"], proof)
+    assert reconciled["effect_verified"] and not reconciled["original_advancement_verified"]
+    assert reconcile_starting_effect(app, interrupted["operation"], proof) == reconciled
+    receipt = json.loads((root / "receipt.json").read_text())
+    assert receipt["advancement_verified"] is False
+    assert (
+        json.loads(app._stage_path(item.item_id, original["invocation_id"]).read_text())["outcome"]
+        == "unresolved"
+    )
+    assert (
+        json.loads((root / "effect-reconciliation.json").read_text())["original_usage_coverage"]
+        == "incomplete"
+    )
+    (app.root / "scheduling-blocks.json").unlink()
+    asyncio.run(
+        run_to_event(lambda value: value.get("result", {}).get("state") == "User Action Required")
+    )
+    assert mutations == ["Starting", "Running", "User Action Required"]
+    assert calls.count("admit") == 1 and calls.count("produce-review") == 1
+    assert (
+        app.recovery_record(item.item_id)["packet"]["preserved_execution"]
+        == packet["preserved_execution"]
+    )
+    assert not app._stage_path(item.item_id, "delivery").exists()

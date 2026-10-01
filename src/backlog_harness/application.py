@@ -514,10 +514,15 @@ class Application:
         receipt_path = path.parent / "receipt.json"
         require(receipt_path.exists(), "Agent admission receipt is unresolved")
         receipt = json.loads(receipt_path.read_text())
-        require(
-            receipt.get("advancement_verified") is True,
-            "Provider admission effect is recorded but advancement remains fenced",
-        )
+        if receipt.get("advancement_verified") is not True:
+            from .recovery_flow import verify_starting_effect
+
+            reconciliation = path.parent / "effect-reconciliation.json"
+            require(
+                reconciliation.exists(),
+                "Provider admission effect is recorded but advancement remains fenced",
+            )
+            verify_starting_effect(self, record, receipt, json.loads(reconciliation.read_text()))
         self.verify_provider_receipt(
             record,
             {"operation_id": record["stage_operation"], "before_revision": revision, **receipt},

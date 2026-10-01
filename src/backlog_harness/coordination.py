@@ -8,7 +8,7 @@ import re
 from collections import Counter
 
 from .contracts import ConfigError, digest, load_config, utcnow
-from .evidence import EvidenceError, atomic_json, operation_lock
+from .evidence import EvidenceError, async_operation_lock, atomic_json, operation_lock
 from .provider import TERMINAL, AgentProvider, TransitionBlocked
 
 
@@ -190,8 +190,16 @@ class RunController:
                         continue
                     self.app.config = current
                     if isinstance(self.app.provider, AgentProvider):
-                        await self.app.refresh_provider()
-                    items = self.app.provider.snapshot()
+                        # A committed mutation is not observable until its result and
+                        # projection are retained. Do not cancel that invocation by
+                        # reading the intermediate, stale provider observation.
+                        async with async_operation_lock(
+                            current.repository / ".git/agentic-provider.lock"
+                        ):
+                            await self.app.refresh_provider()
+                            items = self.app.provider.snapshot()
+                    else:
+                        items = self.app.provider.snapshot()
                     limit = (
                         1
                         if current.data["workflow"]["mode"] == "SOLO"

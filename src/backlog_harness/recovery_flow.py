@@ -8,7 +8,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .contracts import digest, plain
-from .evidence import async_operation_lock, atomic_json, component, operation_lock
+from .evidence import EvidenceStore, async_operation_lock, atomic_json, component, operation_lock
 from .provider import AgentProvider, Item, git
 from .workflow import require, validate_transition
 
@@ -513,3 +513,137 @@ async def reconcile_stopped_owner(app, item_id, evidence_path):
                 ),
                 validate=validate_transition,
             )
+
+
+def verify_starting_effect(app, record, receipt, reconciliation):
+    """Verify a separate read-only receipt without completing the interrupted call."""
+    require(
+        record["item"]["state"] == "Ready"
+        and record["target"] == "Starting"
+        and receipt.get("advancement_verified") is False,
+        "Effect reconciliation requires an interrupted Starting reservation",
+    )
+    stage = record["stage_operation"][len(record["item"]["item_id"]) + 1 :]
+    original = json.loads(app._stage_path(record["item"]["item_id"], stage).read_text())
+    original_path = Path(original["evidence_path"])
+    prior = EvidenceStore.reconcile(original_path)
+    require(
+        original["outcome"] == "unresolved"
+        and prior["outcome"] == "unresolved"
+        and prior["invocation_id"] == original["invocation_id"]
+        and prior["operation_id"] == record["stage_operation"]
+        and prior["binding"] == original["binding"]
+        and app.process_stopped(original_path)
+        and reconciliation["original_invocation_id"] == original["invocation_id"]
+        and reconciliation["original_result_digest"] == digest(original)
+        and reconciliation["operation"] == digest(record),
+        "Interrupted provider identity differs",
+    )
+    result = reconciliation["result"]
+    app.validate_invocation_result(result)
+    app.validate_call_limits(result, app.config.data["administrative_review_limits"])
+    evidence = Path(result["evidence_path"])
+    require(
+        evidence.resolve().is_relative_to(app.root.resolve()),
+        "Reconciliation evidence escaped root",
+    )
+    intent = json.loads((evidence / "intent.json").read_text())
+    context = json.loads((evidence / "execution-context.json").read_text())
+    native_session = json.loads((evidence / "session.json").read_text())
+    require(
+        result["invocation_id"] != original["invocation_id"]
+        and result["role"] == record["executing_role"]
+        and result["session"] == original["session"]
+        and result["binding"] == original["binding"]
+        and intent["invocation_id"] == result["invocation_id"]
+        and intent["request_digest"] == result["request_digest"]
+        and intent["binding"] == result["binding"]
+        and intent["action"] == "reservation-effect-reconciliation"
+        and intent["operation_id"]
+        == record["item"]["item_id"] + ":reservation-effect-reconciliation"
+        and all(native_session.get(key) == value for key, value in result["session"].items())
+        and context.get("purpose") == "provider"
+        and context.get("read_only") is True
+        and context.get("provider_operation") is None,
+        "Effect reconciliation was not a separate same-session read-only invocation",
+    )
+    observed = app.verify_provider_receipt(record, app.result_json(result))
+    require(
+        all(observed[key] == receipt[key] for key in ("operation", "commit", "after"))
+        and reconciliation["effect"] == observed,
+        "Reconciled provider effect differs",
+    )
+    before = record["item"]["content"]
+    require(before.splitlines().count("Status: Ready") == 1, "Starting source status is ambiguous")
+    preserved = before.replace("Status: Ready", "Status: Starting", 1)
+    require(
+        observed["after"]["content"].startswith(preserved),
+        "Starting reconciliation changed existing requirements",
+    )
+    return observed
+
+
+def reconcile_starting_effect(app, operation_id, evidence_path):
+    """Record an already committed reservation; never retry the provider mutation."""
+    require(
+        isinstance(app.provider, AgentProvider), "Effect reconciliation requires agent management"
+    )
+    root = app.root / "provider-agent-operations" / component(operation_id)
+    record = json.loads((root / "requested.json").read_text())
+    require(digest(record) == operation_id, "Provider operation identity differs")
+    result = json.loads(Path(evidence_path).read_text())
+    stage = record["stage_operation"][len(record["item"]["item_id"]) + 1 :]
+    original = json.loads(app._stage_path(record["item"]["item_id"], stage).read_text())
+    observed = app.verify_provider_receipt(record, app.result_json(result))
+    reconciliation = {
+        "operation": operation_id,
+        "original_invocation_id": original["invocation_id"],
+        "original_result_digest": digest(original),
+        "original_outcome": "unresolved",
+        "original_usage_coverage": "incomplete",
+        "result": result,
+        "effect": observed,
+    }
+    receipt_path = root / "receipt.json"
+    receipt = (
+        json.loads(receipt_path.read_text())
+        if receipt_path.exists()
+        else {
+            **observed,
+            "advancement_verified": False,
+        }
+    )
+    with operation_lock(app.config.repository / ".git/agentic-provider.lock"):
+        verify_starting_effect(app, record, receipt, reconciliation)
+        require(
+            not git(
+                app.config.repository, "diff", observed["commit"], "HEAD", "--", *record["paths"]
+            )
+            and not git(app.config.repository, "status", "--porcelain", "--", *record["paths"]),
+            "Later or uncommitted provider effect conflicts with reconciliation",
+        )
+        saved = root / "effect-reconciliation.json"
+        if saved.exists():
+            require(
+                json.loads(saved.read_text()) == reconciliation, "Reconciliation evidence changed"
+            )
+        else:
+            atomic_json(saved, reconciliation, exclusive=True)
+        if not receipt_path.exists():
+            atomic_json(receipt_path, receipt, exclusive=True)
+        before = json.loads(app.provider.cache_path.read_text())
+        current = next(
+            row for row in before["items"] if row["item_id"] == record["item"]["item_id"]
+        )
+        require(current in (record["item"], observed["after"]), "Provider projection changed")
+        app.advance_provider_projection(
+            before, record["source_manifest"], observed, record["paths"]
+        )
+    return {
+        "item_id": record["item"]["item_id"],
+        "state": "Starting",
+        "effect_verified": True,
+        "original_advancement_verified": False,
+        "receipt": str(saved),
+        "commit": observed["commit"],
+    }
