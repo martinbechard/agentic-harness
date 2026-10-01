@@ -5,7 +5,7 @@ version: 1
 repository: /Users/martinbechard/dev/dev-methodology
 workspace: /Users/martinbechard/dev/agentic-harness/.agent-ops/dev-methodology-workspace
 candidate_root: /Users/martinbechard/dev/agentic-harness/.agent-ops/dev-methodology-candidates
-operational_root: /Users/martinbechard/dev/agentic-harness/.agent-ops/dev-methodology-evidence
+# Evidence defaults to the target repository's .agent-ops/backlog-harness directory.
 methodology_root: /Users/martinbechard/dev/dev-methodology
 provider: file
 provider_interaction: agent

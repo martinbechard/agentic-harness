@@ -2,7 +2,7 @@
 
 ## Configuration And Installation
 
-Use an explicit absolute repository, candidate workspace, methodology installation, and evidence root. The application never imports arbitrary configured adapters. Configuration reload happens before each harness-issued CLI invocation. The complete snapshot and resolved dependency digests govern that invocation. Accepted item scopes, checks and candidate storage remain frozen; incompatible edits fence the next invocation. The effective Codex home is recorded in the session binding and applied to both capability validation and launch; changing it cannot silently resume another authentication context. Changes to the originating CLI or authentication context cannot replace a retained native session. For sessions with a recorded capability digest, model, reasoning effort, and skill changes reload on resume while the native session identity stays fixed. Role, permission, tool, and user-config-loading changes remain fenced. Each resumed invocation records its previous and current bindings plus the current configuration digest. Legacy sessions without the capability digest require an unchanged profile.
+Use explicit absolute paths for the target repository, candidate workspace and methodology installation. Evidence defaults to the target repository's `.agent-ops/backlog-harness`; set `operational_root` only for a deliberate absolute override. The application never imports arbitrary configured adapters. Configuration reload happens before each harness-issued CLI invocation. The complete snapshot and resolved dependency digests govern that invocation. Accepted item scopes, checks and candidate storage remain frozen; incompatible edits fence the next invocation. The effective Codex home is recorded in the session binding and applied to both capability validation and launch; changing it cannot silently resume another authentication context. Changes to the originating CLI or authentication context cannot replace a retained native session. For sessions with a recorded capability digest, model, reasoning effort, and skill changes reload on resume while the native session identity stays fixed. Role, permission, tool, and user-config-loading changes remain fenced. Each resumed invocation records its previous and current bindings plus the current configuration digest. Legacy sessions without the capability digest require an unchanged profile.
 
 Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a30-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
 
@@ -141,3 +141,30 @@ are managed by the CLI; the harness does not claim independently enforced child
 read-only isolation. Agent-owned artifact files remain untrusted supporting evidence.
 Queue diagnostics retain both singular `blocker` and plural `blockers` details when an
 agent declines completion.
+
+
+## Target-Owned Evidence Storage
+
+When `operational_root` is omitted, evidence belongs to the configured target repository
+at `<repository>/.agent-ops/backlog-harness`, independent of the launch directory and installed
+harness location. An explicit absolute `operational_root` remains supported. Setup
+configurations should omit that override unless a different evidence location is explicitly intended.
+
+For an existing run, stop admission and verify all invocations are stopped before moving
+its evidence. A deliberate filesystem relocation can retain every file unchanged and
+leave the old root as a compatibility symlink to the target-owned directory. Verify a
+complete file/hash manifest before and after relocation, then update the configured root.
+This preserves absolute references in historical telemetry and receipts without rewriting
+submitted evidence, owner identities, candidates or native sessions. Keep the relocation
+manifest and rollback information with the evidence. Do not resume an old running process
+against the changed configuration. Rebind currently effective scheduling holds to the
+new configuration digest when their item revision and substantive scope are unchanged;
+keep admission paused until continuity is verified.
+
+A prepared but never-submitted invocation must still reject a changed configuration.
+If only its storage root changes, retain the original preparation records, verify the
+unchanged request and binding, and deliberately rebind that unsubmitted intent's
+configuration digest before preparing it again. Preserve its invocation ID. Never apply
+this step to an invocation with a submission or process record. Existing permission
+denials remain in force; relocating storage does not approve delivery or broaden native
+filesystem access beyond an explicitly authorized artifact-output directory.

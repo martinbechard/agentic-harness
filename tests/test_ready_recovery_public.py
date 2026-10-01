@@ -763,8 +763,9 @@ def test_normal_queue_continues_same_blocked_preserved_execution(
         register_work_continuation(app, item.item_id, instruction)
 
 
+@pytest.mark.parametrize("relocate", [False, True])
 def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
-    config_file, provider, tmp_path, monkeypatch
+    config_file, provider, tmp_path, monkeypatch, relocate
 ):
     from dataclasses import replace
 
@@ -774,6 +775,7 @@ def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
     from backlog_harness.recovery_flow import register_work_continuation, run_artifact_proof
     from backlog_harness.runtime import AgentRequest
 
+    config_file[1]["operational_root"] = str(tmp_path / "legacy-execution-evidence")
     app, item, packet, supplied, _, calls, mutations, _, _ = _public_case(
         config_file, provider, tmp_path, monkeypatch
     )
@@ -911,6 +913,44 @@ def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
     assert not (output_dir.parent / "requested.json").exists()
     assert not (output_dir.parent / "process.json").exists()
     assert prepared["submitted"] is False and not proof_calls
+    if relocate:
+        old_root = app.root
+        new_root = provider.repository / ".agent-ops/backlog-harness"
+        new_root.parent.mkdir(parents=True, exist_ok=True)
+        before = {
+            str(p.relative_to(old_root)): p.read_bytes() for p in old_root.rglob("*") if p.is_file()
+        }
+        old_root.rename(new_root)
+        old_root.symlink_to(new_root, target_is_directory=True)
+        assert before == {
+            str(p.relative_to(new_root)): p.read_bytes() for p in new_root.rglob("*") if p.is_file()
+        }
+        del data["operational_root"]
+        config.write_text(yaml.safe_dump(data))
+        app = Application(config)
+        monkeypatch.setattr(app, "invoke", blocked_then_proof)
+        with pytest.raises(TransitionBlocked, match="Prepared proof invocation changed"):
+            asyncio.run(run_artifact_proof(app, item.item_id, instruction, prepare_only=True))
+        # Only this never-submitted preparation is deliberately rebound. Original bytes survive.
+        history = new_root / "relocation-history"
+        history.mkdir()
+        prior_id = json.loads((output_dir.parent / "intent.json").read_text())["invocation_id"]
+        for name, field in (("intent.json", "config_digest"), ("config.json", "digest")):
+            path = output_dir.parent / name
+            (history / name).write_bytes(path.read_bytes())
+            record = json.loads(path.read_text())
+            record[field] = app.config.file_digest
+            atomic_json(path, record)
+        prepared = asyncio.run(
+            run_artifact_proof(app, item.item_id, instruction, prepare_only=True)
+        )
+        output_dir = Path(prepared["artifact_directory"])
+        assert output_dir.is_relative_to(new_root)
+        assert (
+            json.loads((output_dir.parent / "intent.json").read_text())["invocation_id"] == prior_id
+        )
+        assert app.provider.item(item.item_id).owner == owner
+        assert app._stage_path(item.item_id, registered["stage"]).read_bytes() == original
     guard = app.enforce_guard
 
     async def held(_):

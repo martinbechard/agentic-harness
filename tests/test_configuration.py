@@ -231,3 +231,32 @@ def test_disabled_artifact_permission_preserves_existing_digest(config_file):
     data["profiles"]["worker"]["artifact_output"] = True
     path.write_text(yaml.safe_dump(data))
     assert load_config(path).binding("orchestrator").permission_digest != before.permission_digest
+
+
+@pytest.mark.parametrize("target", ["project-one", "project-two"])
+def test_default_evidence_belongs_to_target_not_launch_directory(
+    config_file, tmp_path, monkeypatch, target
+):
+    from backlog_harness.contracts import load_control_config
+
+    config, data = config_file
+    repository = tmp_path / target
+    repository.mkdir()
+    launch = tmp_path / "unrelated-launch"
+    launch.mkdir()
+    data["repository"] = str(repository)
+    config.write_text(yaml.safe_dump(data))
+    monkeypatch.chdir(launch)
+    expected = repository / ".agent-ops/backlog-harness"
+    assert load_config(config).operational_root == expected
+    del data["profiles"]
+    config.write_text(yaml.safe_dump(data))
+    assert load_control_config(config).operational_root == expected
+
+
+def test_explicit_evidence_override_is_preserved(config_file, tmp_path):
+    config, data = config_file
+    override = tmp_path / "explicit-evidence"
+    data["operational_root"] = str(override)
+    config.write_text(yaml.safe_dump(data))
+    assert load_config(config).operational_root == override
