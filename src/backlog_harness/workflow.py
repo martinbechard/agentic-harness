@@ -23,7 +23,7 @@ def validate_transition(item, target, authority):
             and recovery.get("previous_owner") == item.owner
             and recovery.get("ownership_ended") is True
             and recovery.get("packet_digest")
-            and recovery.get("candidate")
+            and (recovery.get("candidate") or recovery.get("no_source_changes") is True)
             and recovery.get("runtime_evidence")
             and recovery.get("reason"),
             "Recovery requires Coordinator authority and preserved ownership/candidate evidence",

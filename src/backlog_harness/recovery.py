@@ -255,3 +255,26 @@ def validate_packet(packet: dict, item: Item, repository: Path) -> dict:
         normalized, sort_keys=True, separators=(",", ":"), allow_nan=False
     ).encode()
     return {"packet": normalized, "digest": sha256(canonical).hexdigest()}
+
+
+def validate_active_owner_binding(item, runtime, binding):
+    """Bind stopped evidence to the active acceptance section, not historical mentions."""
+    require(isinstance(binding, dict), "Active owner binding is required")
+    heading = "## Running Acceptance Evidence"
+    require(item.content.splitlines().count(heading) == 1, "Active acceptance section is ambiguous")
+    section = item.content.split(heading + "\n", 1)[1].split("\n## ", 1)[0]
+    require(
+        binding.get("section_sha256") == sha256(section.encode()).hexdigest(),
+        "Active owner binding is stale",
+    )
+    require("Owner: " + item.owner in section.splitlines(), "Active acceptance owner differs")
+    identities = set(
+        re.findall(
+            r"^Canonical (?:Conversation|Task): `?([0-9a-f-]{36})`?\s*$", section, re.MULTILINE
+        )
+    )
+    require(
+        identities == {runtime["native_session_id"]},
+        "Stopped runtime is not the active canonical owner",
+    )
+    return binding

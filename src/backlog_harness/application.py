@@ -83,7 +83,8 @@ class Application:
                 "transition_paths:{item_id:{Completed:[exact_source_and_archive_paths]}}}. "
                 "Omitted dependency entries are unknown and cannot "
                 "authorize execution; use [] only for explicitly established no dependencies. "
-                "policy.eligible is a boolean for NEW admission, not a list of existing owners. "
+                "policy.eligible is GLOBAL NEW admission, not item-local eligibility or a list of owners. "
+                "An item-local user wait does not establish a global pause; cite global authority. "
                 "Determine mode and eligibility from current Coordinator/crisis authority; do not "
                 "infer expiry. Policy evidence must be [{path,sha256,excerpt,supports:[mode/admission]}], "
                 "citing exact current source bytes and the authority for both mode and admission. "
@@ -123,6 +124,52 @@ class Application:
                 self.accept_provider_clarification(result, clarification, revision, observer)
             else:
                 self._accept_provider_observation(result, revision, observer)
+
+    async def reassess_policy(self):
+        """Reassess scheduling authority without repeating or replacing inventory."""
+        require(
+            isinstance(self.provider, AgentProvider), "Policy reassessment requires agent provider"
+        )
+        async with async_operation_lock(self.root / "provider-refresh.lock"):
+            observed = self.provider.observation()
+            revision = observed["source_revision"]
+            result = await self.invoke(
+                "provider-policy",
+                "reassess-" + digest([revision, observed["policy"]]),
+                "coordinator",
+                "Reassess global admission from current source authority. Read-only: no mutation, "
+                "delegation, claims, browser use or launches. The prior projection may confuse an "
+                "item-local wait with a global pause. An item awaiting user action and a stopped "
+                "owner do not themselves establish a global dispatch pause. Determine whether "
+                "current crisis rules permit other independent work, preserving serial execution "
+                "and all item-local restrictions. Do not infer permission from this request. "
+                "Return JSON {source_revision,reason,policy:{eligible:boolean,mode,primary_branch,"
+                "evidence:[{path,sha256,excerpt,supports:[mode/admission]}]}}. Cite exact source "
+                "bytes establishing global authority, not merely one item's eligibility.\n"
+                + json.dumps({"source_revision": revision, "prior_policy": observed["policy"]}),
+                purpose="provider",
+            )
+            self.validate_invocation_result(result)
+            self.validate_call_limits(result, self.config.data["coordinator_limits"])
+            answer = self.result_json(result)
+            require(
+                answer.get("source_revision") == revision
+                and isinstance(answer.get("reason"), str)
+                and answer["reason"].strip(),
+                "Policy reassessment identity or reason is missing",
+            )
+            self.provider.validate_policy(answer.get("policy", {}))
+            require(
+                self.provider.source_revision() == revision,
+                "Provider changed during policy reassessment",
+            )
+            observed["policy"] = answer["policy"]
+            observed["policy_reassessment"] = {
+                "invocation_id": result["invocation_id"],
+                "reason": answer["reason"],
+            }
+            atomic_json(self.provider.cache_path, observed)
+            return observed["policy"]
 
     def accept_provider_clarification(self, original, clarification, revision, observer):
         """Bind a small same-session schema clarification to the retained full inventory."""
@@ -432,9 +479,38 @@ class Application:
             {"operation_id": record["stage_operation"], "before_revision": revision, **receipt},
         )
 
+    def validate_stopped_owner_decision(self, item, authority):
+        from .recovery import _validate_runtime_record, validate_active_owner_binding
+
+        recovery = authority["recovery"]
+        require(not recovery.get("candidate"), "No-change recovery cannot supply a candidate")
+        for runtime in recovery["runtime_evidence"]:
+            _validate_runtime_record(runtime)
+            validate_active_owner_binding(item, runtime, recovery.get("owner_binding"))
+        decision_path = self._stage_path(item.item_id, recovery["decision_stage"])
+        decision = json.loads(decision_path.read_text())
+        self.validate_invocation_result(decision)
+        value = self.result_json(decision)
+        require(
+            decision["invocation_id"] == authority["invocation_id"]
+            and value.get("item_id") == item.item_id
+            and value.get("provider_revision") == item.revision
+            and value.get("previous_owner") == item.owner
+            and value.get("ownership_ended") is True
+            and value.get("no_source_changes") is True
+            and value.get("operation") == "redispatch"
+            and value.get("runtime_digest") == digest(recovery["runtime_evidence"])
+            and value.get("owner_binding_digest") == digest(recovery["owner_binding"]),
+            "No-change recovery decision differs",
+        )
+
     async def invoke_provider_transition(self, item, target, authority, paths):
         """Submit one agent-managed operation; verify its commit before returning a receipt."""
         validate_transition(item, target, authority)
+        if authority.get("recovery", {}).get("no_source_changes") is True and not authority[
+            "recovery"
+        ].get("repair_effect"):
+            self.validate_stopped_owner_decision(item, authority)
         if authority.get("operation") == "await-user":
             outcomes = [
                 json.loads(p.read_text())
@@ -551,7 +627,8 @@ class Application:
                     "do not repeat the mutation. Return JSON with operation_id (the stage operation "
                     "below), before_revision, commit, and after (item_id, path, state, owner, "
                     "original_high). Omit document content and revision; the harness hydrates them "
-                    "from your exact committed bytes. Also return policy with eligible (boolean for NEW admission), "
+                    "from your exact committed bytes. Also return policy with eligible (GLOBAL NEW admission, "
+                    "never inferred solely from this item-local wait), "
                     "For User Action Required, record the supplied question_id and text verbatim in the "
                     "provider record and return question exactly as supplied in authority. "
                     "mode, primary_branch, and evidence [{path,sha256,excerpt,supports:[mode/admission]}] "

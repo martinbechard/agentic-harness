@@ -21,6 +21,7 @@ def main(argv=None):
     commands.add_parser("app")
     commands.add_parser("reconcile")
     commands.add_parser("refresh-provider")
+    commands.add_parser("reassess-policy")
     batch = commands.add_parser("run")
     modes = batch.add_mutually_exclusive_group(required=True)
     modes.add_argument("--until-terminal", action="store_true")
@@ -36,6 +37,9 @@ def main(argv=None):
     recover_item = commands.add_parser("recover-item")
     recover_item.add_argument("item_id")
     recover_item.add_argument("--evidence", type=Path, required=True)
+    stopped = commands.add_parser("reconcile-stopped-owner")
+    stopped.add_argument("item_id")
+    stopped.add_argument("--evidence", type=Path, required=True)
     defer_item = commands.add_parser("defer-item")
     defer_item.add_argument("item_id")
     defer_item.add_argument("--question", type=Path, required=True)
@@ -85,6 +89,8 @@ def main(argv=None):
             app = Application(args.config, control_only=control_only)
             if args.command == "reconcile":
                 result = app.reconcile()
+            elif args.command == "reassess-policy":
+                result = asyncio.run(app.reassess_policy())
             elif args.command == "refresh-provider":
                 from .provider import AgentProvider, TransitionBlocked
 
@@ -106,6 +112,10 @@ def main(argv=None):
                 from .recovery_flow import recover_item
 
                 result = asyncio.run(recover_item(app, args.item_id, args.evidence))
+            elif args.command == "reconcile-stopped-owner":
+                from .recovery_flow import reconcile_stopped_owner
+
+                result = asyncio.run(reconcile_stopped_owner(app, args.item_id, args.evidence))
             elif args.command == "defer-item":
                 from .recovery_flow import defer_item
 

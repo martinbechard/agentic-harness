@@ -306,3 +306,83 @@ async def defer_item(app, item_id, question_path):
                 validate=validate_transition,
                 declared_paths=supplied["paths"],
             )
+
+
+async def reconcile_stopped_owner(app, item_id, evidence_path):
+    """Release a stopped owner with no source candidate; do not schedule a replacement."""
+    from .recovery import _validate_runtime_record, validate_active_owner_binding
+
+    require(isinstance(app.provider, AgentProvider), "Owner reconciliation requires agent provider")
+    supplied = json.loads(Path(evidence_path).read_text())
+    runtime = supplied["runtime_records"]
+    require(
+        isinstance(runtime, list) and len(runtime) == 1, "One stopped canonical runtime is required"
+    )
+    async with async_operation_lock(app.root / "item-locks" / (component(item_id) + ".lock")):
+        with operation_lock(app.root / "solo-execution.lock"):
+            request_path = app._stage_path(item_id, "stopped-owner-input")
+            if request_path.exists():
+                request = json.loads(request_path.read_text())
+                require(request["supplied"] == supplied, "Stopped owner input changed")
+                item = Item(**request["item"])
+            else:
+                item = app.provider.item(item_id)
+                require(item.state == "Running", "Stopped owner must be Running")
+                request = {"item": asdict(item), "supplied": supplied}
+                atomic_json(request_path, request, exclusive=True)
+            for record in runtime:
+                _validate_runtime_record(record)
+                validate_active_owner_binding(item, record, supplied.get("owner_binding"))
+            stage = "stopped-owner-decision-" + digest(request)
+            decision = await app.invoke(
+                item_id,
+                stage,
+                "coordinator",
+                "Reconcile this stopped Running owner using the exact native runtime and provider "
+                "evidence. Read-only: no claims, browser, mutation, delegation or dispatch. Determine "
+                "whether no source changes or candidate were produced and ordinary redispatch is safe. "
+                "Preserve all identity/history/unknown usage. This decision only permits Running to "
+                "Ready and Unowned; it authorizes no launch or global policy change. Return JSON "
+                "{operation:redispatch|assess,item_id,provider_revision,previous_owner,ownership_ended:"
+                "boolean,no_source_changes:boolean,runtime_digest,owner_binding_digest,reason}. If a candidate exists, "
+                "return assess; do not discard it.\n"
+                + json.dumps(
+                    {
+                        **request,
+                        "runtime_digest": digest(runtime),
+                        "owner_binding_digest": digest(supplied["owner_binding"]),
+                    }
+                ),
+                purpose="provider",
+            )
+            app.validate_invocation_result(decision)
+            app.validate_call_limits(decision, app.config.data["coordinator_limits"])
+            value = app.result_json(decision)
+            require(
+                value.get("operation") == "redispatch"
+                and value.get("no_source_changes") is True
+                and isinstance(value.get("reason"), str)
+                and value["reason"].strip(),
+                "Coordinator did not establish no-change owner reconciliation",
+            )
+            return await app.transition(
+                item_id,
+                item.revision,
+                "Ready",
+                app.authority(
+                    decision,
+                    item_id,
+                    operation="redispatch",
+                    recovery={
+                        "previous_owner": item.owner,
+                        "ownership_ended": True,
+                        "no_source_changes": True,
+                        "packet_digest": digest(request),
+                        "runtime_evidence": runtime,
+                        "decision_stage": stage,
+                        "owner_binding": supplied["owner_binding"],
+                        "reason": value["reason"],
+                    },
+                ),
+                validate=validate_transition,
+            )

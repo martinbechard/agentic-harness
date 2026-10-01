@@ -275,7 +275,10 @@ def test_recovered_ready_item_uses_continuation_reservation(config_file, provide
     assert app.provider.item(item.item_id).state == "Starting"
 
 
-def test_incomplete_owner_release_is_corrected_once(config_file, provider, monkeypatch):
+@pytest.mark.parametrize("no_candidate", [False, True])
+def test_incomplete_owner_release_is_corrected_once(
+    config_file, provider, monkeypatch, no_candidate
+):
     import asyncio
 
     import yaml
@@ -317,6 +320,17 @@ def test_incomplete_owner_release_is_corrected_once(config_file, provider, monke
             "reason": "Ended",
         },
     )
+    decision_checks = []
+    if no_candidate:
+        authority["recovery"].pop("candidate")
+        authority["recovery"]["no_source_changes"] = True
+
+        def validate_original(item, request):
+            assert item == original
+            assert not request["recovery"].get("repair_effect")
+            decision_checks.append(item.revision)
+
+        monkeypatch.setattr(app, "validate_stopped_owner_decision", validate_original)
     monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
     monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
     writes = []
@@ -544,3 +558,98 @@ def test_question_move_receipt_and_projection_include_series_link(
     assert observed["items"][0]["path"] == destination
     assert observed["questions"][item.item_id]["question_id"] == "q1"
     assert observed["policy"]["eligible"] is False
+
+
+@pytest.mark.parametrize(
+    "case",
+    ["valid", "wrong_owner", "historical_owner", "resumed", "candidate", "decision_mismatch"],
+)
+def test_no_candidate_reconciliation_checks_native_stop_and_decision(
+    config_file, provider, tmp_path, monkeypatch, case
+):
+    from hashlib import sha256
+    from uuid import uuid4
+
+    from backlog_harness.contracts import digest
+
+    app = Application(config_file[0])
+    session, turn = str(uuid4()), str(uuid4())
+    item = replace(
+        provider.item("item-one"),
+        state="Running",
+        owner="old-owner",
+        content="## Running Acceptance Evidence\n\nOwner: old-owner\nCanonical Conversation: `"
+        + session
+        + "`\n",
+    )
+    if case == "historical_owner":
+        item = replace(
+            item,
+            content=item.content.replace(session, str(uuid4()))
+            + "\n## History\nPrior session: "
+            + session,
+        )
+    section = item.content.split("## Running Acceptance Evidence\n", 1)[1].split("\n## ", 1)[0]
+    owner_binding = {"section_sha256": sha256(section.encode()).hexdigest()}
+    rows = [
+        {"type": "session_meta", "payload": {"id": session}},
+        {"type": "event_msg", "payload": {"type": "task_complete", "turn_id": turn}},
+    ]
+    if case == "resumed":
+        rows.append(
+            {"type": "event_msg", "payload": {"type": "task_started", "turn_id": str(uuid4())}}
+        )
+    path = tmp_path / "runtime.jsonl"
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    runtime = [
+        {
+            "path": str(path),
+            "sha256": sha256(path.read_bytes()).hexdigest(),
+            "native_session_id": session,
+            "final_turn_id": turn,
+        }
+    ]
+    decision = {
+        "invocation_id": "decision",
+        "text": json.dumps(
+            {
+                "item_id": item.item_id,
+                "provider_revision": item.revision,
+                "previous_owner": item.owner,
+                "ownership_ended": True,
+                "no_source_changes": True,
+                "operation": "redispatch",
+                "runtime_digest": digest(runtime) if case != "decision_mismatch" else "wrong",
+                "owner_binding_digest": digest(owner_binding),
+            }
+        ),
+    }
+    atomic_json(app._stage_path(item.item_id, "stopped-decision"), decision)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    authority = {
+        "role": "coordinator",
+        "invocation_id": "decision",
+        "observed_result": True,
+        "operation": "redispatch",
+        "item_id": item.item_id,
+        "recovery": {
+            "previous_owner": item.owner,
+            "ownership_ended": True,
+            "no_source_changes": True,
+            "packet_digest": "packet",
+            "runtime_evidence": runtime,
+            "reason": "Stopped without source changes",
+            "decision_stage": "stopped-decision",
+            "owner_binding": owner_binding,
+        },
+    }
+    if case == "wrong_owner":
+        item = replace(item, content="Another canonical execution")
+    if case == "candidate":
+        authority["recovery"]["candidate"] = "unexpected-candidate"
+    if case == "valid":
+        validate_transition(item, "Ready", authority)
+        app.validate_stopped_owner_decision(item, authority)
+    else:
+        with pytest.raises(TransitionBlocked):
+            app.validate_stopped_owner_decision(item, authority)

@@ -672,3 +672,70 @@ def test_explicit_unknown_dependencies_are_retained_but_block_execution(
     monkeypatch.setattr(view, "observation", lambda: value)
     with pytest.raises(TransitionBlocked, match="dependencies are unknown"):
         asyncio.run(app._run_item(item.item_id))
+
+
+@pytest.mark.parametrize("case", ["valid", "missing", "stale", "item_changed"])
+def test_policy_reassessment_requires_current_authority(config_file, provider, monkeypatch, case):
+    import asyncio
+    import json
+
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import atomic_json
+
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    revision = app.provider.source_revision()
+    evidence = policy_evidence(provider.repository)
+    original = {
+        "source_revision": revision,
+        "policy": {
+            "eligible": False,
+            "mode": "SOLO",
+            "primary_branch": "main",
+            "evidence": evidence,
+        },
+        "items": [],
+        "questions": {"waiting": {"question_id": "q1"}},
+    }
+    atomic_json(app.provider.cache_path, original)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+
+    async def invoke(*args, **kwargs):
+        policy = {**original["policy"], "eligible": True}
+        if case == "missing":
+            policy["evidence"] = []
+        if case == "stale":
+            policy["evidence"] = [{**evidence[0], "sha256": "0" * 64}]
+        if case == "item_changed":
+            (provider.repository / "backlog/feature-backlog/item-one.md").write_text("Changed")
+        return {
+            "invocation_id": "policy-decision",
+            "text": json.dumps(
+                {
+                    "source_revision": revision,
+                    "reason": "Current global authority",
+                    "policy": policy,
+                }
+            ),
+        }
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    if case == "valid":
+        assert asyncio.run(app.reassess_policy())["eligible"] is True
+        current = app.provider.observation()
+        assert current["questions"] == original["questions"]
+        assert current["items"] == original["items"]
+        assert current["policy_reassessment"]["invocation_id"] == "policy-decision"
+    else:
+        with pytest.raises(TransitionBlocked):
+            asyncio.run(app.reassess_policy())
+        assert json.loads(app.provider.cache_path.read_text()) == original
