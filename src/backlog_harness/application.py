@@ -45,6 +45,18 @@ class Application:
         self.projection_lock = threading.Lock()
         self.trace_cache = {}
 
+    @staticmethod
+    def provider_observer_digest(current):
+        return digest(
+            [
+                str(current.repository),
+                current.data.get("methodology_root"),
+                current.data.get("provider"),
+                current.data.get("provider_interaction"),
+                current.binding("coordinator").relevant_digest,
+            ]
+        )
+
     async def refresh_provider(self):
         """Refresh on material file-provider changes; ordinary projections remain model-free."""
         if not isinstance(self.provider, AgentProvider):
@@ -52,15 +64,7 @@ class Application:
         async with async_operation_lock(self.root / "provider-refresh.lock"):
             revision = self.provider.source_revision()
             current = load_config(self.config_path)
-            observer = digest(
-                [
-                    str(current.repository),
-                    current.data.get("methodology_root"),
-                    current.data.get("provider"),
-                    current.data.get("provider_interaction"),
-                    current.binding("coordinator").relevant_digest,
-                ]
-            )
+            observer = self.provider_observer_digest(current)
             if self.provider.cache_path.exists():
                 cached = json.loads(self.provider.cache_path.read_text())
                 legacy_observer = digest(
@@ -419,8 +423,7 @@ class Application:
             )
             observation = self.provider.observation()
             require(
-                observation.get("observer_digest")
-                == digest([current.file_digest, observer.relevant_digest]),
+                observation.get("observer_digest") == self.provider_observer_digest(current),
                 "Helper discovery configuration is stale",
             )
             helper = observation.get("helper", {})

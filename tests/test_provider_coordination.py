@@ -857,3 +857,128 @@ def test_admission_uses_current_dependencies_and_retains_clarification(
     atomic_json(app._stage_path(item.item_id, "admit-confirmed"), changed)
     with pytest.raises(TransitionBlocked, match="clarification identity"):
         app.admission_path(item.item_id)
+
+
+def test_helper_discovery_uses_provider_fingerprint_after_workflow_change(
+    config_file, provider, monkeypatch, tmp_path
+):
+    from pathlib import Path
+
+    import yaml
+
+    from backlog_harness.application import Application
+
+    config, data = config_file
+    data.update(repository=str(provider.repository), provider_interaction="agent")
+    home = tmp_path / "native-home"
+    home.mkdir()
+    (home / "config.toml").write_text("")
+    data["agent_clis"]["primary"]["adapter_options"] = {
+        "codex_home": str(home),
+        "load_user_config": True,
+    }
+    data["profiles"]["control"]["permissions"] = ["workspace-write"]
+    project = provider.repository / "PROJECT.yaml"
+    value = yaml.safe_load(project.read_text())
+    value["resource_coordination"] = {"selected": "resource-claim"}
+    value["agent_claim_transport"] = {"selected": "mcp"}
+    project.write_text(yaml.safe_dump(value))
+    for name in [
+        "manage-work-items",
+        "manage-work-items-file",
+        "resource-claim",
+        "resource-claim-helper",
+        "resource-claim-helper-mcp",
+    ]:
+        skill = Path(data["methodology_root"]) / "skills" / name / "SKILL.md"
+        skill.parent.mkdir(parents=True, exist_ok=True)
+        skill.write_text("Fixture skill")
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    observed = {
+        "observer_digest": app.provider_observer_digest(app.config),
+        "helper": {
+            "discovery": "native_tool_catalog",
+            "available": True,
+            "tools": ["claim_acquire", "claim_release", "claim_heartbeat", "claim_status"],
+        },
+    }
+    import asyncio
+    import json
+    from dataclasses import asdict
+
+    from test_telemetry import payload
+
+    from backlog_harness.evidence import atomic_json
+    from backlog_harness.telemetry import Sink
+
+    item = provider.item("item-one")
+    predecessor_path = provider.repository / "backlog/feature-backlog/predecessor.md"
+    predecessor_path.write_text(
+        item.content.replace("item-one", "predecessor").replace(
+            "Status: Ready", "Status: Completed"
+        )
+    )
+    predecessor = provider.item("predecessor")
+    observed.update(
+        source_revision=app.provider.source_revision(),
+        source_manifest=app.provider.source_manifest(),
+        policy={
+            "eligible": True,
+            "mode": "SOLO",
+            "primary_branch": "main",
+            "evidence": policy_evidence(provider.repository),
+        },
+        items=[asdict(item), asdict(predecessor)],
+        dependencies={item.item_id: [predecessor.item_id], predecessor.item_id: []},
+    )
+    atomic_json(app.provider.cache_path, observed)
+    telemetry_path = app.root / "retained-admission-telemetry.jsonl"
+    sink = Sink(telemetry_path, {})
+    sink.write(payload())
+    binding = asdict(app.config.binding("coordinator"))
+    receipt = {
+        "invocation_id": "old-admission",
+        "role": "coordinator",
+        "outcome": "returned",
+        "session": {"session_id": "coordinator", "native_session_id": "native", "binding": binding},
+        "binding": binding,
+        "telemetry_path": str(telemetry_path),
+        "telemetry": {
+            "span_count": 1,
+            "rejected_exports": 0,
+            "evidence_sha256": sink.evidence_digest(),
+        },
+        "events": [{"type": "turn.completed", "usage": {"output_tokens": 10}}],
+        "text": json.dumps(
+            {"operation": "assess", "item_id": item.item_id, "provider_revision": item.revision}
+        ),
+        "request_digest": "historical-prompt",
+    }
+    admit = app._stage_path(item.item_id, "admit")
+    atomic_json(admit, receipt)
+    original = admit.read_bytes()
+    external_calls = []
+
+    async def invoke(item_id, stage, role, prompt, **kwargs):
+        external_calls.append(stage)
+        assert stage == "admit-confirmed"
+        assert kwargs["session"].native_session_id == "native"
+        assert '"state": "Completed"' in prompt
+        raise RuntimeError("reached retained-session clarification")
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    data["workflow"]["allowed_paths"] = ["updated.py"]
+    config.write_text(yaml.safe_dump(data))
+    app.validate_management_readiness("coordinator")
+    app = Application(config)
+    monkeypatch.setattr(app, "invoke", invoke)
+    with pytest.raises(RuntimeError, match="reached retained-session clarification"):
+        asyncio.run(app.run_item(item.item_id))
+    assert external_calls == ["admit-confirmed"]
+    assert admit.read_bytes() == original
+    assert provider.item(item.item_id).state == "Ready"
+    data["profiles"]["control"]["model"] = "different-model"
+    config.write_text(yaml.safe_dump(data))
+    with pytest.raises(TransitionBlocked, match="discovery configuration is stale"):
+        app.validate_management_readiness("coordinator")
