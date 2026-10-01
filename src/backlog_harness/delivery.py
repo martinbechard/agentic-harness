@@ -3,15 +3,21 @@
 import json
 
 from .evidence import atomic_json
-from .provider import git
+from .provider import AgentProvider, git
 from .workflow import require, validate_candidate
 
 
 def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
     path = app._stage_path(item_id, "delivery")
     primary = app.config.repository
-    with app.provider.transaction():
-        app.provider.policy()
+    policy_check = lambda: app.execution_policy(item_id)
+    transaction = (
+        app.provider.transaction(policy_check=policy_check)
+        if isinstance(app.provider, AgentProvider)
+        else app.provider.transaction()
+    )
+    with transaction:
+        policy_check() if isinstance(app.provider, AgentProvider) else app.provider.policy()
         require(
             not git(primary, "status", "--porcelain"),
             "Primary checkout is dirty; reconcile without resetting",
@@ -28,6 +34,9 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
             review["producer_session"],
             review,
             checks,
+            preserved=bool(app.recovery_record(item_id))
+            if hasattr(app, "recovery_record")
+            else False,
         )
         prior = json.loads(path.read_text()) if path.exists() else None
         if prior:

@@ -60,6 +60,14 @@ class Application:
                     and cached.get("observer_digest") == observer
                 ):
                     return
+                if (
+                    cached.get("source_manifest") == self.provider.source_manifest()
+                    and cached.get("observer_digest") == observer
+                ):
+                    self.provider.validate_policy(cached["policy"])
+                    cached["source_revision"] = revision
+                    atomic_json(self.provider.cache_path, cached)
+                    return
             result = await self.invoke(
                 "provider-inventory",
                 "observe-" + digest([revision, observer]),
@@ -96,10 +104,7 @@ class Application:
                 and bool(identities - dependencies.keys())
                 and value.get("dependency_omissions") != "unknown"
             )
-            if (
-                type(value.get("policy", {}).get("eligible")) is not bool
-                or ambiguous_dependencies
-            ):
+            if type(value.get("policy", {}).get("eligible")) is not bool or ambiguous_dependencies:
                 self.validate_invocation_result(result)
                 self.validate_call_limits(result, current.data["coordinator_limits"])
                 clarification = await self.invoke(
@@ -194,6 +199,7 @@ class Application:
                 "source_revision": revision,
                 "observer_digest": observer,
                 "invocation_id": result["invocation_id"],
+                "source_manifest": self.provider.source_manifest(),
             },
         )
         return value
@@ -207,10 +213,42 @@ class Application:
             frozen = json.loads(assignment.read_text())
             if "workflow" in frozen:
                 return frozen["workflow"]
+        recovery = self.recovery_record(item_id)
+        if recovery:
+            return recovery["workflow"]
         selected = plain(self.config.data["workflow"])
         selected.update(selected.get("items", {}).get(item_id, {}))
         selected.pop("items", None)
         return selected
+
+    def recovery_record(self, item_id):
+        path = self._stage_path(item_id, "recovery")
+        return json.loads(path.read_text()) if path.exists() else None
+
+    def execution_policy(self, item_id):
+        if not isinstance(self.provider, AgentProvider):
+            return self.provider.policy()
+        policy = self.provider.observation()["policy"]
+        self.provider.validate_policy(policy)
+        if policy["eligible"] is not True:
+            recovery = self.recovery_record(item_id)
+            require(recovery is not None, "No item-specific recovery authorization")
+            decision = json.loads(self._stage_path(item_id, recovery["decision_stage"]).read_text())
+            self.validate_invocation_result(decision)
+            answer = self.result_json(decision)
+            require(
+                answer.get("item_id") == item_id
+                and answer.get("continuation_authorized") is True
+                and answer.get("operation") == "redispatch"
+                and recovery["decision_invocation"] == decision["invocation_id"],
+                "Recovery continuation authority differs",
+            )
+            for name, expected in recovery["policy_sources"].items():
+                require(
+                    sha256((self.config.repository / name).read_bytes()).hexdigest() == expected,
+                    "Recovery policy source changed",
+                )
+        return policy
 
     async def transition(self, item_id, expected_revision, target, authority, *, validate):
         if not isinstance(self.provider, AgentProvider):
@@ -244,13 +282,35 @@ class Application:
         if paths is None and target != "Completed":
             paths = [item.path]
         require(paths and item.path in paths, "Provider transition paths are missing")
+        before = json.loads(self.provider.cache_path.read_text())
+        manifest = retained[0]["source_manifest"] if retained else self.provider.source_manifest()
         receipt = await self.invoke_provider_transition(item, target, authority, paths)
-        await self.refresh_provider()
+        self.advance_provider_projection(before, manifest, receipt, paths)
         current = self.provider.item(item_id)
         require(
             asdict(current) == receipt["after"], "Provider refresh differs from committed receipt"
         )
         return {**receipt, "item_id": item_id, "state": current.state, "revision": current.revision}
+
+    def advance_provider_projection(self, before, manifest, receipt, paths):
+        """Project one verified effect without asking an agent to reread unrelated history."""
+        current = self.provider.source_manifest()
+        changed = {p for p in set(manifest) | set(current) if manifest.get(p) != current.get(p)}
+        require(changed <= set(paths), "Unrelated provider changes require fresh observation")
+        value = dict(before)
+        value["items"] = [
+            receipt["after"] if row["item_id"] == receipt["after"]["item_id"] else row
+            for row in before["items"]
+        ]
+        value["policy"] = receipt.get("policy", before["policy"])
+        self.provider.validate_inventory(value)
+        self.provider.validate_policy(value["policy"])
+        value.update(
+            source_revision=self.provider.source_revision(),
+            source_manifest=current,
+            last_provider_receipt=receipt["operation"],
+        )
+        atomic_json(self.provider.cache_path, value)
 
     def validate_management_readiness(self, role):
         """Check selected skills and native helper discovery before a new mutation."""
@@ -419,8 +479,12 @@ class Application:
                     "item session. Preserve that owner and make no additional lifecycle decisions. "
                     "Commit only the declared provider paths. If the outcome is uncertain, report it; "
                     "do not repeat the mutation. Return JSON with operation_id (the stage operation "
-                    "below), before_revision, commit, and after (item_id, path, revision, state, owner, "
-                    "original_high, content). The revision is SHA256(path UTF-8 + NUL + content UTF-8).\n"
+                    "below), before_revision, commit, and after (item_id, path, state, owner, "
+                    "original_high). Omit document content and revision; the harness hydrates them "
+                    "from your exact committed bytes. Also return policy with eligible (boolean for NEW admission), "
+                    "mode, primary_branch, and evidence [{path,sha256,excerpt,supports:[mode/admission]}] "
+                    "for current source after your transition. Preserve original_high and dependencies. "
+                    "The revision is SHA256(path UTF-8 + NUL + content UTF-8).\n"
                     + json.dumps(
                         {
                             "operation_id": item.item_id + ":" + stage,
@@ -444,6 +508,7 @@ class Application:
                     "executing_role": executing_role,
                     "paths": paths,
                     "expected_path": expected_path,
+                    "source_manifest": self.provider.source_manifest(),
                 }
                 atomic_json(request_path, record, exclusive=True)
             operation = digest(record)
@@ -523,12 +588,25 @@ class Application:
         require(
             value.get("before_revision") == record["item"]["revision"], "Provider revision differs"
         )
-        after = Item(**value["after"])
+        commit = value.get("commit")
+        require(
+            isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40,64}", commit),
+            "Provider commit identity is missing",
+        )
+        row = dict(value["after"])
+        expected_path = record.get("expected_path", record["item"]["path"])
+        require(row.get("path") == expected_path, "Provider result path differs from destination")
+        committed = blob(self.config.repository, commit, expected_path)
+        row.setdefault("content", committed.decode())
+        row.setdefault("revision", sha256(expected_path.encode() + b"\0" + committed).hexdigest())
+        after = Item(**row)
         require(after.item_id == record["item"]["item_id"], "Provider item differs")
         require(after.state == record["target"], "Provider transition is incomplete")
         expected_owner = record["item"]["owner"]
         if (record["item"]["state"], record["target"]) == ("Starting", "Running"):
             expected_owner = record["authority"]["session_id"]
+        if (record["item"]["state"], record["target"]) == ("Running", "Ready"):
+            expected_owner = "Unowned"
         require(after.owner == expected_owner, "Provider operation changed canonical owner")
         expected_path = record.get("expected_path", record["item"]["path"])
         require(after.path == expected_path, "Provider result path differs from destination")
@@ -570,7 +648,11 @@ class Application:
             sha256(after.path.encode() + b"\0" + content).hexdigest() == after.revision,
             "Provider resulting revision differs",
         )
-        return {"operation": digest(record), "commit": commit, "after": asdict(after)}
+        require(after.original_high == record["item"]["original_high"], "Original estimate changed")
+        receipt = {"operation": digest(record), "commit": commit, "after": asdict(after)}
+        if "policy" in value:
+            receipt["policy"] = value["policy"]
+        return receipt
 
     def candidate_repository(self, item_id):
         if "candidate_root" not in self.config.data:
@@ -714,9 +796,16 @@ class Application:
         assignment = self._stage_path(item_id, "assignment")
         if assignment.exists():
             frozen = json.loads(assignment.read_text())
-            selected = plain(snapshot.data["workflow"])
-            selected.update(selected.get("items", {}).get(item_id, {}))
-            selected.pop("items", None)
+            recovery = self.recovery_record(item_id)
+            selected = recovery["workflow"] if recovery else plain(snapshot.data["workflow"])
+            if recovery:
+                require(
+                    plain(snapshot.data["workflow"]) == recovery["config_workflow"],
+                    "Recovery workflow configuration changed",
+                )
+            if not recovery:
+                selected.update(selected.get("items", {}).get(item_id, {}))
+                selected.pop("items", None)
             require(
                 "workflow" not in frozen or selected == frozen["workflow"],
                 "Accepted workflow changed; reconcile before another invocation",
@@ -1287,6 +1376,17 @@ class Application:
             "ceiling": ceiling,
             "may_generate": total < ceiling,
             "overshoot": max(0, total - ceiling),
+            **(
+                {
+                    "accounting_scope": "recovery_remaining_work",
+                    "historical_usage": "unknown",
+                    "historical_original_high": self.recovery_record(item_id)[
+                        "historical_original_high"
+                    ],
+                }
+                if self.recovery_record(item_id)
+                else {}
+            ),
         }
 
     def guard(self, item_id):
@@ -1966,7 +2066,7 @@ class Application:
             ):
                 if isinstance(self.provider, AgentProvider):
                     await self.refresh_provider()
-                    project_mode = self.provider.policy()["mode"]
+                    project_mode = self.execution_policy(item_id)["mode"]
                     self.validate_management_readiness("coordinator")
                     self.validate_management_readiness("orchestrator")
                 else:
@@ -1989,7 +2089,7 @@ class Application:
 
     async def _run_item(self, item_id):
         self.reconcile()
-        self.provider.policy()
+        self.execution_policy(item_id)
         item = self.provider.item(item_id)
         if item.state == "Completed":
             return {"item_id": item_id, "state": item.state, "revision": item.revision}
@@ -2034,7 +2134,10 @@ class Application:
             require(
                 frozen_assignment.get("provider_revision") == item.revision
                 and assignment == item.content
-                and frozen_assignment.get("original_high") == item.original_high,
+                and frozen_assignment.get(
+                    "historical_original_high", frozen_assignment.get("original_high")
+                )
+                == item.original_high,
                 "Ready provider record differs from the frozen assignment; reconcile before admission",
             )
         workflow = self.item_workflow(item_id)
@@ -2042,7 +2145,7 @@ class Application:
         require(
             candidate_repo != self.config.repository, "Candidate must be separate from provider"
         )
-        require(item.original_high is not None, "Original estimate is missing")
+        require(frozen_assignment["original_high"] is not None, "Execution estimate is missing")
         if item.state == "Ready":
             async with async_operation_lock(self.root / "admission.lock"):
                 if self.config.data["workflow"]["mode"] == "MULTITASK":
@@ -2058,7 +2161,17 @@ class Application:
                     "You are the Dev Backlog Coordinator. Decide whether to admit this user-authorized bounded "
                     "Work Item using its current provider record below. Do not implement, mutate files, or delegate. "
                     "Return only JSON with operation new or assess, item_id, provider_revision, and reason. "
-                    f"Provider revision: {item.revision}\n\n{item.content}",
+                    + (
+                        "This is a new native reservation for the SAME recovered item, not general new "
+                        "backlog admission. Revalidate and apply this persisted Coordinator redispatch "
+                        "authorization under the existing serial crisis reservation; global admission "
+                        "remains closed for other items. Recovery authorization: "
+                        + json.dumps(self.recovery_record(item_id))
+                        + "\n"
+                        if self.recovery_record(item_id)
+                        else ""
+                    )
+                    + f"Provider revision: {item.revision}\n\n{item.content}",
                 )
                 self.validate_call_limits(decision, self.config.data["coordinator_limits"])
                 value = self.result_json(decision)
@@ -2199,6 +2312,28 @@ class Application:
             + assignment
         )
         prompt += "\nIf an exact operator answer is required before implementation, return only JSON with item_id and question {question_id, text}. Leave the candidate clean at its base commit. Do not implement before approval."
+        recovery = self.recovery_record(item_id)
+        if recovery:
+            prompt = (
+                "Running is recorded for your new native execution. Continue the preserved candidate; "
+                "do not restart implementation or create a commit merely to satisfy the workflow. "
+                "Agents own coordination and native delegation. Follow current claim-free crisis authority; "
+                "do not invoke claims. Prior desktop execution is historical and must not resume. "
+                "Finish the outstanding browser verification using legitimate local HTTP serving and "
+                "supported browser tools. Confirm browser tools in the actual native tool catalog; "
+                "configuration alone is not capability evidence. Preserve historical semantic evidence and obtain fresh independent "
+                "native review of the entire base..candidate scope and required acceptance checks. "
+                "Use spawn_agent with fork_context=false (or fork_turns=none) for the reviewer; "
+                "reviewer must return JSON {candidate,verdict:ACCEPT|REJECT,unresolved_findings:[]}. "
+                "Wait for review. Do not mutate provider lifecycle. Return JSON "
+                "{item_id,candidate,reviewer_session,request_completion:true}. If blocked, report exact "
+                "evidence rather than claiming acceptance. Allowed source paths and commands: "
+                + json.dumps(workflow)
+                + "\nPreserved recovery evidence: "
+                + json.dumps(recovery["packet"])
+                + "\nWork item:\n"
+                + assignment
+            )
         continuation_path = self._stage_path(item_id, "continuation")
         stage = "produce-review"
         if continuation_path.exists():
@@ -2256,6 +2391,7 @@ class Application:
             produced["session"]["native_session_id"],
             review,
             checks,
+            preserved=recovery is not None,
         )
         await self.enforce_guard(item_id)
         from .delivery import integrate

@@ -15,7 +15,20 @@ def validate_transition(item, target, authority):
         "Observed actor request is required",
     )
     require(authority.get("item_id") == item.item_id, "Authority names another item")
-    if (item.state, target) == ("Ready", "Starting"):
+    if (item.state, target) == ("Running", "Ready"):
+        recovery = authority.get("recovery", {})
+        require(
+            actor == "coordinator"
+            and authority.get("operation") == "redispatch"
+            and recovery.get("previous_owner") == item.owner
+            and recovery.get("ownership_ended") is True
+            and recovery.get("packet_digest")
+            and recovery.get("candidate")
+            and recovery.get("runtime_evidence")
+            and recovery.get("reason"),
+            "Recovery requires Coordinator authority and preserved ownership/candidate evidence",
+        )
+    elif (item.state, target) == ("Ready", "Starting"):
         require(
             actor == "coordinator" and authority.get("operation") == "new",
             "Only a Coordinator new decision authorizes reservation",
@@ -96,10 +109,15 @@ def validate_transition(item, target, authority):
         raise TransitionBlocked(f"Unsupported transition {item.state} -> {target}")
 
 
-def validate_candidate(repository, candidate, base, allowed_paths, producer, review, checks):
+def validate_candidate(
+    repository, candidate, base, allowed_paths, producer, review, checks, *, preserved=False
+):
     require(git(repository, "rev-parse", "HEAD") == candidate, "Candidate HEAD changed")
     require(not git(repository, "status", "--porcelain"), "Candidate is dirty")
-    require(git(repository, "rev-parse", candidate + "^") == base, "Candidate base changed")
+    if preserved:
+        require(git(repository, "merge-base", base, candidate) == base, "Candidate base changed")
+    else:
+        require(git(repository, "rev-parse", candidate + "^") == base, "Candidate base changed")
     changed = git(repository, "diff", "--name-only", base, candidate).splitlines()
     require(
         changed and set(changed) <= set(allowed_paths), "Candidate changes exceed accepted scope"

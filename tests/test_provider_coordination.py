@@ -667,6 +667,7 @@ def test_explicit_unknown_dependencies_are_retained_but_block_execution(
     app.provider = view
     monkeypatch.setattr(app, "reconcile", lambda: None)
     monkeypatch.setattr(view, "policy", dict)
+    monkeypatch.setattr(app, "execution_policy", lambda _: {})
     monkeypatch.setattr(view, "item", lambda _: item)
     monkeypatch.setattr(view, "observation", lambda: value)
     with pytest.raises(TransitionBlocked, match="dependencies are unknown"):

@@ -617,12 +617,12 @@ class AgentProvider:
         raise TransitionBlocked("Live provider mutation requires the responsible agent")
 
     @contextmanager
-    def transaction(self):
+    def transaction(self, *, policy_check=None):
         """Serialize delivery with agent-managed provider operations in the same checkout."""
         with (self.repository / ".git/agentic-provider.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             try:
-                self.policy()
+                (policy_check or self.policy)()
                 yield
             finally:
                 fcntl.flock(lock, fcntl.LOCK_UN)
