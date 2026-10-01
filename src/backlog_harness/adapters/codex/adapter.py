@@ -320,9 +320,12 @@ class CodexAdapter:
                 elif kind == "item.completed":
                     normalized["item_type"] = raw.get("item", {}).get("type")
                     if normalized["item_type"] in ("agent_message", "error"):
-                        normalized["text"] = str(
+                        text = str(
                             raw.get("item", {}).get("text", raw.get("item", {}).get("message", ""))
-                        )[:16000]
+                        )
+                        normalized["text"] = (
+                            text if normalized["item_type"] == "agent_message" else text[:16000]
+                        )
                 event = {
                     "version": 1,
                     "event_id": digest([request.invocation_id, ordinal, raw]),

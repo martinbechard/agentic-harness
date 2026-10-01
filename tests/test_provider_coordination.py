@@ -621,6 +621,7 @@ def test_management_readiness_rejects_readonly_and_missing_skills(config_file, p
 
 def test_helper_discovery_cannot_cross_cli_bindings(config_file, provider, tmp_path):
     import copy
+
     import yaml
 
     from backlog_harness.application import Application
@@ -645,3 +646,28 @@ def test_helper_discovery_cannot_cross_cli_bindings(config_file, provider, tmp_p
     app = Application(config)
     with pytest.raises(TransitionBlocked, match="matching helper discovery binding"):
         app.validate_management_readiness("orchestrator")
+
+
+def test_explicit_unknown_dependencies_are_retained_but_block_execution(
+    config_file, provider, monkeypatch
+):
+    import asyncio
+    from dataclasses import asdict
+
+    from backlog_harness.application import Application
+    from backlog_harness.provider import AgentProvider
+
+    item = provider.item("item-one")
+    view = AgentProvider(provider.repository, provider.evidence_root)
+    value = {"items": [asdict(item)], "dependencies": {}, "dependency_omissions": "unknown"}
+    view.validate_inventory(value)
+    with pytest.raises(TransitionBlocked, match="incomplete"):
+        view.validate_inventory({"items": [asdict(item)], "dependencies": {}})
+    app = Application(config_file[0])
+    app.provider = view
+    monkeypatch.setattr(app, "reconcile", lambda: None)
+    monkeypatch.setattr(view, "policy", dict)
+    monkeypatch.setattr(view, "item", lambda _: item)
+    monkeypatch.setattr(view, "observation", lambda: value)
+    with pytest.raises(TransitionBlocked, match="dependencies are unknown"):
+        asyncio.run(app._run_item(item.item_id))

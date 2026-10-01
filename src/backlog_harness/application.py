@@ -68,10 +68,14 @@ class Application:
                 "Do not mutate or dispatch. Classify groups and historical archive debt; return only "
                 "actual work items, preserving canonical ownership and unknown estimates. "
                 "Return compact JSON {items:[{item_id,path,state,owner,original_high}], "
-                "policy:{eligible,mode,primary_branch,evidence},questions:{},archive_debt:[], "
+                "policy:{eligible:boolean,mode,primary_branch,evidence},questions:{},archive_debt:[], "
                 "non_items:[{path,kind:group/index/archive_debt/supporting_document,reason}], "
                 "dependencies:{item_id:[required_item_ids]}, "
+                "dependency_omissions:unknown, "
                 "transition_paths:{item_id:{Completed:[exact_source_and_archive_paths]}}}. "
+                "Omitted dependency entries are unknown and cannot "
+                "authorize execution; use [] only for explicitly established no dependencies. "
+                "policy.eligible is a boolean for NEW admission, not a list of existing owners. "
                 "Determine mode and eligibility from current Coordinator/crisis authority; do not "
                 "infer expiry. Policy evidence must be [{path,sha256,excerpt,supports:[mode/admission]}], "
                 "citing exact current source bytes and the authority for both mode and admission. "
@@ -84,12 +88,73 @@ class Application:
                 "invoke any claim operation as a probe. Report unavailable when unproven.",
                 purpose="provider",
             )
-            self._accept_provider_observation(result, revision, observer)
+            value = self.result_json(result)
+            identities = {row["item_id"] for row in value.get("items", [])}
+            dependencies = value.get("dependencies", {})
+            ambiguous_dependencies = (
+                isinstance(dependencies, dict)
+                and bool(identities - dependencies.keys())
+                and value.get("dependency_omissions") != "unknown"
+            )
+            if (
+                type(value.get("policy", {}).get("eligible")) is not bool
+                or ambiguous_dependencies
+            ):
+                self.validate_invocation_result(result)
+                self.validate_call_limits(result, current.data["coordinator_limits"])
+                clarification = await self.invoke(
+                    "provider-inventory",
+                    "clarify-" + digest([revision, result["invocation_id"]]),
+                    "coordinator",
+                    "Clarify only your retained provider observation. Do not repeat inventory, "
+                    "mutate, dispatch, or invoke claims. Return JSON "
+                    "{dependency_omissions:unknown|none,admission_open:boolean,reason:string}. "
+                    "Use none only if every omitted dependency entry was established to have "
+                    "no dependencies; otherwise use unknown. admission_open concerns NEW "
+                    "admission under the cited authority, not continuation of existing owners.",
+                    session=self.session(result),
+                    purpose="provider",
+                )
+                self.accept_provider_clarification(result, clarification, revision, observer)
+            else:
+                self._accept_provider_observation(result, revision, observer)
 
-    def _accept_provider_observation(self, result, revision, observer):
+    def accept_provider_clarification(self, original, clarification, revision, observer):
+        """Bind a small same-session schema clarification to the retained full inventory."""
+        for result in (original, clarification):
+            self.validate_invocation_result(result)
+            self.validate_call_limits(result, self.config.data["coordinator_limits"])
+        require(
+            original["session"] == clarification["session"]
+            and original["binding"] == clarification["binding"],
+            "Provider clarification must preserve the originating session and binding",
+        )
+        value = self.result_json(original)
+        answer = self.result_json(clarification)
+        require(
+            answer.get("dependency_omissions") in {"unknown", "none"}
+            and type(answer.get("admission_open")) is bool
+            and isinstance(answer.get("reason"), str)
+            and answer["reason"].strip(),
+            "Provider clarification semantics are incomplete",
+        )
+        if answer["dependency_omissions"] == "none":
+            value.pop("dependency_omissions", None)
+            for row in value["items"]:
+                value["dependencies"].setdefault(row["item_id"], [])
+        else:
+            value["dependency_omissions"] = "unknown"
+        value["policy"]["eligible"] = answer["admission_open"]
+        value["observation_invocations"] = [
+            original["invocation_id"],
+            clarification["invocation_id"],
+        ]
+        self._accept_provider_observation(clarification, revision, observer, value=value)
+
+    def _accept_provider_observation(self, result, revision, observer, *, value=None):
         """Validate and cache one read-only provider inventory result."""
         self.validate_call_limits(result, load_config(self.config_path).data["coordinator_limits"])
-        value = self.result_json(result)
+        value = self.result_json(result) if value is None else value
         self.provider.validate_inventory(value)
         for row in value["items"]:
             path = self.config.repository / row["path"]
@@ -1028,14 +1093,64 @@ class Application:
             / "sessions"
         )
 
-    @staticmethod
-    def result_json(result):
-        try:
-            text = result["text"].strip()
+    def result_json(self, result):
+        def parse(text):
+            text = text.strip()
             if text.startswith("```"):
                 text = "\n".join(text.splitlines()[1:-1])
             return json.loads(text)
+
+        try:
+            return parse(result["text"])
         except (ValueError, TypeError, AttributeError) as exc:
+            if result.get("purpose") == "provider" and len(result.get("text") or "") == 16000:
+                # Older adapters clipped final JSON. Recover only an exact completed native
+                # response bound to this invocation; preserve the clipped historical evidence.
+                from datetime import datetime, timedelta
+
+                from .native_evidence import native_records
+
+                self.validate_invocation_result(result)
+                path = Path(result["evidence_path"])
+                require(
+                    path.resolve().is_relative_to(self.root.resolve()), "Unsafe result evidence"
+                )
+                prior = EvidenceStore.reconcile(path)
+                recorded_session = json.loads((path / "session.json").read_text())
+                require(
+                    prior["invocation_id"] == result["invocation_id"]
+                    and recorded_session["native_session_id"]
+                    == result["session"]["native_session_id"],
+                    "Native result identity differs",
+                )
+                records, native_hash = native_records(
+                    recorded_session["native_session_id"],
+                    self.native_sessions_root(result["binding"]),
+                )
+                start = datetime.fromisoformat(prior["created_at"])
+                end = datetime.fromisoformat(result["events"][-1]["at"]) + timedelta(seconds=5)
+                matches = [
+                    record["payload"]["last_agent_message"]
+                    for record in records
+                    if record.get("payload", {}).get("type") == "task_complete"
+                    and not record["payload"].get("error")
+                    and start <= datetime.fromisoformat(record["timestamp"]) <= end
+                    and isinstance(record["payload"].get("last_agent_message"), str)
+                    and record["payload"]["last_agent_message"].startswith(result["text"])
+                ]
+                require(len(matches) == 1, "Exact completed native response is absent or ambiguous")
+                value = parse(matches[0])
+                atomic_json(
+                    path / "native-response-recovery.json",
+                    {
+                        "invocation_id": result["invocation_id"],
+                        "native_session_id": recorded_session["native_session_id"],
+                        "native_evidence_sha256": native_hash,
+                        "response_sha256": sha256(matches[0].encode()).hexdigest(),
+                        "text": matches[0],
+                    },
+                )
+                return value
             raise TransitionBlocked(
                 "Expected a structured workflow request from the agent"
             ) from exc
@@ -1654,9 +1769,7 @@ class Application:
             binding = replace(snapshot, data=freeze(provider_data)).binding("coordinator")
             require(asdict(binding) == prior["binding"], "Provider observation binding changed")
             revision = self.provider.source_revision()
-            original_observer = digest(
-                [prior["config_digest"], observer_binding.relevant_digest]
-            )
+            original_observer = digest([prior["config_digest"], observer_binding.relevant_digest])
             require(
                 stage == "observe-" + digest([revision, original_observer]),
                 "Provider source changed since the interrupted observation",
@@ -1880,6 +1993,15 @@ class Application:
         item = self.provider.item(item_id)
         if item.state == "Completed":
             return {"item_id": item_id, "state": item.state, "revision": item.revision}
+        if isinstance(self.provider, AgentProvider):
+            dependencies = self.provider.observation().get("dependencies", {})
+            require(item_id in dependencies, "Selected item dependencies are unknown")
+            require(
+                all(
+                    self.provider.item(name).state == "Completed" for name in dependencies[item_id]
+                ),
+                "Selected item dependencies are not completed",
+            )
         require(
             not any(
                 "result" not in json.loads(p.read_text())

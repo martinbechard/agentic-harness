@@ -500,7 +500,11 @@ class AgentProvider:
         )
         identities = {row["item_id"] for row in rows}
         dependencies = value.get("dependencies", {})
-        require(set(dependencies) == identities, "Dependency observations are incomplete")
+        require(
+            set(dependencies) <= identities
+            and (set(dependencies) == identities or value.get("dependency_omissions") == "unknown"),
+            "Dependency observations are incomplete",
+        )
         require(
             all(
                 isinstance(values, list) and all(isinstance(v, str) and v for v in values)
@@ -509,7 +513,8 @@ class AgentProvider:
             "Invalid dependency observations",
         )
         require(
-            all(set(values) <= identities for values in dependencies.values()),
+            all(set(values) <= identities for values in dependencies.values())
+            or value.get("dependency_omissions") == "unknown",
             "Provider dependency names an unobserved item",
         )
         require(

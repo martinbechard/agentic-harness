@@ -16,7 +16,8 @@ from backlog_harness.telemetry import TelemetryReceiver
 
 
 @pytest.mark.parametrize(
-    "mode,outcome", [("normal", "returned"), ("bad", "unresolved"), ("hang", "unresolved")]
+    "mode,outcome",
+    [("normal", "returned"), ("large", "returned"), ("bad", "unresolved"), ("hang", "unresolved")],
 )
 def test_actual_subprocess_boundaries(config_file, tmp_path, mode, outcome):
     config, data = config_file
@@ -34,6 +35,7 @@ if mode=='bad':print('not json');sys.exit(0)
 args=sys.argv
 session=args[args.index('resume')+1] if 'resume' in args else '00000000-0000-4000-8000-000000000001'
 print(json.dumps({'type':'thread.started','thread_id':session}),flush=True)
+if mode=='large':print(json.dumps({'type':'item.completed','item':{'type':'agent_message','text':json.dumps({'inventory':'x'*70000})}}),flush=True)
 sys.stderr.write('x'*200000)
 print(json.dumps({'type':'turn.completed','usage':{'output_tokens':1}}),flush=True)
 """
@@ -66,6 +68,11 @@ print(json.dumps({'type':'turn.completed','usage':{'output_tokens':1}}),flush=Tr
             handle = await adapter.start_session(request)
             assert handle.outcome == outcome
             assert not adapter.processes
+            if mode == "large":
+                message = next(
+                    e["text"] for e in handle.events if e.get("item_type") == "agent_message"
+                )
+                assert json.loads(message) == {"inventory": "x" * 70000}
             outcome_record = json.loads((path / "outcomes.jsonl").read_text().splitlines()[-1])
             if mode == "hang":
                 assert outcome_record["failure_reason"] == "timeout"
