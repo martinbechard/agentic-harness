@@ -81,20 +81,28 @@ def invocation_usage(result, previous_session_output=0, *, child_outputs=0):
     handle_responses gen_ai.usage.output_tokens is per response; native child
     responses share the invocation exporter. Never add both measurements.
     """
+    counters = [e["usage"].get("output_tokens") for e in result["events"] if e.get("usage")]
+    if (
+        not counters
+        or type(counters[-1]) is not int
+        or result["telemetry"]["rejected_exports"]
+        or counters[-1] < previous_session_output
+    ):
+        return None
+    total = observed_invocation_usage(result)
+    expected = counters[-1] - previous_session_output + child_outputs
+    return total if total is not None and total == expected else None
+
+
+def observed_invocation_usage(result):
+    """Deduplicated measured output; unmatched native counters do not make it an exact total."""
     from pathlib import Path
 
     from .evidence import read_jsonl
     from .telemetry import spans
 
     rows, _, partial = read_jsonl(Path(result["telemetry_path"]))
-    counters = [e["usage"].get("output_tokens") for e in result["events"] if e.get("usage")]
-    if (
-        partial
-        or not counters
-        or type(counters[-1]) is not int
-        or result["telemetry"]["rejected_exports"]
-        or counters[-1] < previous_session_output
-    ):
+    if partial or result["telemetry"]["rejected_exports"]:
         return None
     seen, total, found = {}, 0, False
     for payload in rows:
@@ -113,5 +121,4 @@ def invocation_usage(result, previous_session_output=0, *, child_outputs=0):
                     return None
                 total += int(value)
                 found = True
-    expected = counters[-1] - previous_session_output + child_outputs
-    return total if found and total == expected else None
+    return total if found else None

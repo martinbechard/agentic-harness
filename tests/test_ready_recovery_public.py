@@ -1244,3 +1244,60 @@ def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
     monkeypatch.setattr("backlog_harness.delivery.integrate", delivery_boundary)
     with pytest.raises(RuntimeError, match="verified approval reached delivery boundary"):
         asyncio.run(app.run_item(item.item_id))
+
+
+@pytest.mark.parametrize("extra,status", [(3, "unknown"), (60, "crossed")])
+def test_unreconciled_exported_usage_retains_lower_bound_and_generation_fence(
+    config_file, provider, tmp_path, monkeypatch, extra, status
+):
+    app, item, _, supplied, _, _, _, _, _ = _public_case(
+        config_file, provider, tmp_path, monkeypatch
+    )
+    asyncio.run(recover_item(app, item.item_id, supplied))
+    asyncio.run(app.run_item(item.item_id))
+    baseline = app.usage_view(item.item_id)
+    assert baseline["status"] == "below" and baseline["may_generate"]
+    stage = app._stage_path(item.item_id, "produce-review")
+    result = json.loads(stage.read_text())
+    sink = Sink(Path(result["telemetry_path"]), {})
+    export = payload()
+    span = export["resourceSpans"][0]["scopeSpans"][0]["spans"][0]
+    span["spanId"] = "1234567890abcdef"
+    span["attributes"] = [{"key": "gen_ai.usage.output_tokens", "value": {"intValue": str(extra)}}]
+    sink.write(export)
+    sink.write(export)  # Exact duplicate exports cannot increase the lower bound.
+    result["telemetry"].update(span_count=len(sink.seen), evidence_sha256=sink.evidence_digest())
+    atomic_json(stage, result)
+    view = app.usage_view(item.item_id)
+    assert view["status"] == status and not view["may_generate"]
+    assert view["generated_tokens"] is None and view["coverage"] == "incomplete"
+    assert view["generated_tokens_lower_bound"] == baseline["generated_tokens"] + extra
+    assert view["ceiling"] == baseline["ceiling"]
+    # Even a larger reviewed ceiling cannot turn incomplete accounting into permission.
+    atomic_json(
+        app._stage_path(item.item_id, "allowance"),
+        {"original_high": baseline["original_high"], "ceiling": 10000},
+    )
+    raised = app.usage_view(item.item_id)
+    assert raised["status"] == "unknown" and not raised["may_generate"]
+    accepted_path = app._stage_path(item.item_id, "accept")
+    accepted = json.loads(accepted_path.read_text())
+    for usage in ({}, {"output_tokens": None}, {"output_tokens": "bad"}, {"output_tokens": -1}):
+        changed = json.loads(json.dumps(accepted))
+        changed["events"][-1]["usage"] = usage
+        atomic_json(accepted_path, changed)
+        malformed = app.usage_view(item.item_id)
+        assert not malformed["may_generate"] and malformed["generated_tokens"] is None
+        assert malformed["generated_tokens_lower_bound"] == view["generated_tokens_lower_bound"]
+    atomic_json(accepted_path, accepted)
+    from dataclasses import replace
+
+    from backlog_harness.contracts import freeze, plain
+
+    data = plain(app.config.data)
+    data["generation_configuration_error"] = "invalid current configuration"
+    app.config = replace(app.config, data=freeze(data))
+    invalid = app.usage_view(item.item_id)
+    assert invalid["status"] == "configuration_invalid" and not invalid["may_generate"]
+    assert invalid["generated_tokens"] is None and invalid["coverage"] == "incomplete"
+    assert invalid["generated_tokens_lower_bound"] == view["generated_tokens_lower_bound"]

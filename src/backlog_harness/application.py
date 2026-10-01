@@ -1641,7 +1641,7 @@ class Application:
         return receipts
 
     def usage_view(self, item_id, *, observed_item=None):
-        from .analytics import invocation_usage
+        from .analytics import invocation_usage, observed_invocation_usage
         from .native_evidence import child_usage
 
         item = observed_item or self.provider.item(item_id)
@@ -1657,6 +1657,7 @@ class Application:
                 results.append(value)
         results.sort(key=lambda v: v["events"][0]["at"] if v["events"] else "")
         total, previous = 0, {}
+        incomplete = False
         for result in results:
             if result["telemetry"].get("evidence_sha256"):
                 try:
@@ -1677,14 +1678,19 @@ class Application:
                 )
             except TransitionBlocked:
                 return {"status": "unknown", "generated_tokens": None, "may_generate": False}
-            if children is None:
-                return {"status": "unknown", "generated_tokens": None, "may_generate": False}
-            measured = invocation_usage(result, previous.get(session, 0), child_outputs=children)
+            measured = (
+                invocation_usage(result, previous.get(session, 0), child_outputs=children)
+                if children is not None
+                else None
+            )
             if measured is None:
-                return {"status": "unknown", "generated_tokens": None, "may_generate": False}
-            previous[session] = [
-                e["usage"]["output_tokens"] for e in result["events"] if e.get("usage")
-            ][-1]
+                measured = observed_invocation_usage(result)
+                if measured is None:
+                    return {"status": "unknown", "generated_tokens": None, "may_generate": False}
+                incomplete = True
+            counters = [e["usage"].get("output_tokens") for e in result["events"] if e.get("usage")]
+            if counters and type(counters[-1]) is int and counters[-1] >= previous.get(session, 0):
+                previous[session] = counters[-1]
             total += measured
         frozen_path = self._stage_path(item_id, "assignment")
         original = (
@@ -1712,10 +1718,22 @@ class Application:
                 return {"status": "unknown", "generated_tokens": None, "may_generate": False}
         if original is None:
             return {"status": "unknown", "generated_tokens": None, "may_generate": False}
+        accounting = {
+            "generated_tokens": None if incomplete else total,
+            **(
+                {
+                    "coverage": "incomplete",
+                    "generated_tokens_lower_bound": total,
+                    "reason": "Observed exporter usage does not reconcile with native session counters",
+                }
+                if incomplete
+                else {}
+            ),
+        }
         if self.config.data.get("generation_configuration_error"):
             return {
                 "status": "configuration_invalid",
-                "generated_tokens": total,
+                **accounting,
                 "original_high": original,
                 "ceiling": None,
                 "may_generate": False,
@@ -1727,11 +1745,11 @@ class Application:
             require(approved["original_high"] == original, "Allowance baseline changed")
             ceiling = max(ceiling, approved["ceiling"])
         return {
-            "status": "below" if total < ceiling else "crossed",
-            "generated_tokens": total,
+            "status": "crossed" if total >= ceiling else "unknown" if incomplete else "below",
+            **accounting,
             "original_high": original,
             "ceiling": ceiling,
-            "may_generate": total < ceiling,
+            "may_generate": not incomplete and total < ceiling,
             "overshoot": max(0, total - ceiling),
             **(
                 {
