@@ -31,5 +31,17 @@
   "final_preparation_tests": 22,
   "reviewer_final_estimation_configuration_tests": 57,
   "combined_focused_tests": 93,
-  "independent_review": "question_handoff_review ACCEPT"
+  "independent_review": "question_handoff_review ACCEPT",
+  "live_queue": {
+    "mode": "until-terminal",
+    "workflow_mode": "SOLO",
+    "admission_open": true,
+    "selected_item": "correct-dev-code-reviewer-premise-validation",
+    "stage": "prepare",
+    "native_session_id": "01a0f7c0-e5b3-7c31-a07d-2a62826fa7da",
+    "portable_session_id": "936a881c-3bdc-4b71-965e-4ef8db7421f4",
+    "shell_handle": 55241,
+    "completion_verified": false,
+    "log": ".agent-ops/dev-methodology-setup/prepared-queue.log"
+  }
 }
