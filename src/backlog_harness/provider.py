@@ -580,11 +580,20 @@ class AgentProvider:
             )
             facts = reference.get("supports")
             require(
-                isinstance(facts, list) and set(facts) <= {"mode", "admission"},
+                isinstance(facts, list) and set(facts) <= {"mode", "admission", "coordination"},
                 "Policy evidence facts are invalid",
             )
             supported.update(facts)
-        require(supported == {"mode", "admission"}, "Policy mode or admission authority is missing")
+        require({"mode", "admission"} <= supported, "Policy mode or admission authority is missing")
+        if "claims_required" in policy:
+            require(type(policy["claims_required"]) is bool, "Claim applicability must be boolean")
+            require("coordination" in supported, "Claim applicability authority is missing")
+            if not policy["claims_required"]:
+                require(
+                    isinstance(policy.get("claim_exemption"), str)
+                    and policy["claim_exemption"].strip(),
+                    "Explicit claim exemption is missing; SOLO alone is insufficient",
+                )
         project = yaml.safe_load((self.repository / "PROJECT.yaml").read_text())
         route = project.get("workflow_selection", {})
         for key, expected in [("persistence", "file"), ("commit", "main-branch")]:

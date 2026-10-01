@@ -105,8 +105,11 @@ class Application:
                 "policy.eligible is GLOBAL NEW admission, not item-local eligibility or a list of owners. "
                 "An item-local user wait does not establish a global pause; cite global authority. "
                 "Determine mode and eligibility from current Coordinator/crisis authority; do not "
-                "infer expiry. Policy evidence must be [{path,sha256,excerpt,supports:[mode/admission]}], "
+                "infer expiry. Policy evidence must be [{path,sha256,excerpt,supports:[mode/admission/coordination]}], "
                 "citing exact current source bytes and the authority for both mode and admission. "
+                "When an explicit active workflow exempts claims, also return claims_required:false "
+                "and claim_exemption naming that authority, with coordination evidence. SOLO alone "
+                "does not exempt claims. Otherwise omit these fields or return claims_required:true. "
                 "Do not copy document contents: the harness reads the referenced bytes and computes "
                 "revision hashes. Classify every existing backlog Markdown file "
                 "exactly once as an item or non_item with a reason. Omit Future Ideas entirely. "
@@ -163,8 +166,11 @@ class Application:
                 "current crisis rules permit other independent work, preserving serial execution "
                 "and all item-local restrictions. Do not infer permission from this request. "
                 "Return JSON {source_revision,reason,policy:{eligible:boolean,mode,primary_branch,"
-                "evidence:[{path,sha256,excerpt,supports:[mode/admission]}]}}. Cite exact source "
-                "bytes establishing global authority, not merely one item's eligibility.\n"
+                "evidence:[{path,sha256,excerpt,supports:[mode/admission/coordination]}]}}. Cite exact source "
+                "bytes establishing global authority, not merely one item's eligibility. "
+                "Also assess claim applicability: only an explicit active exemption permits "
+                "claims_required:false with claim_exemption naming its authority and coordination "
+                "evidence. SOLO alone does not exempt claims. Otherwise omit these fields.\n"
                 + json.dumps({"source_revision": revision, "prior_policy": observed["policy"]}),
                 purpose="provider",
             )
@@ -400,7 +406,7 @@ class Application:
         atomic_json(self.provider.cache_path, value)
 
     def validate_management_readiness(self, role):
-        """Check selected skills and native helper discovery before a new mutation."""
+        """Check management capabilities and only applicable agent-owned claim capabilities."""
         import yaml
 
         current = load_config(self.config_path)
@@ -412,7 +418,20 @@ class Application:
         )
         required = {"manage-work-items", "manage-work-items-file"}
         project = yaml.safe_load((current.repository / "PROJECT.yaml").read_text())
-        if project.get("resource_coordination", {}).get("selected") == "resource-claim":
+        claims_required = (
+            project.get("resource_coordination", {}).get("selected") == "resource-claim"
+        )
+        if (
+            claims_required
+            and isinstance(self.provider, AgentProvider)
+            and self.provider.cache_path.is_file()
+        ):
+            policy = self.provider.observation().get("policy", {})
+            if policy.get("claims_required") is False:
+                # Validate current cited bytes; neither SOLO nor a stale cached exemption suffices.
+                self.provider.validate_policy(policy)
+                claims_required = False
+        if claims_required:
             required |= {"resource-claim", "resource-claim-helper", "resource-claim-helper-mcp"}
             require(
                 project.get("agent_claim_transport", {}).get("selected") == "mcp",
@@ -725,8 +744,10 @@ class Application:
                     "Status: User Action Required and append the question after all existing content; "
                     "preserve every other original byte, requirement, owner, history and candidate reference. "
                     "Use ready_question_content exactly when supplied; append no other prose or history. "
-                    "mode, primary_branch, and evidence [{path,sha256,excerpt,supports:[mode/admission]}] "
-                    "for current source after your transition. Preserve original_high and dependencies. "
+                    "mode, primary_branch, and evidence [{path,sha256,excerpt,supports:[mode/admission/coordination]}] "
+                    "for current source after your transition. Preserve source-backed claims_required and "
+                    "claim_exemption when still applicable, citing coordination authority; SOLO alone "
+                    "does not exempt claims. Preserve original_high and dependencies. "
                     "For record-estimate, append the dated prospective estimate and exactly "
                     "Prospective Execution High: N using authority.prospective_high for N; keep "
                     "historical original estimate and historical usage explicitly unknown. "

@@ -1038,3 +1038,109 @@ def test_policy_excerpt_allows_wrapping_but_not_different_words(provider, change
         source.write_text(source.read_text() + "Changed authority\n")
         with pytest.raises(TransitionBlocked, match="Stale policy evidence"):
             view.validate_policy(policy)
+
+
+@pytest.mark.parametrize(
+    "fault", [None, "missing-authority", "missing-exemption", "stale", "not-boolean"]
+)
+def test_claim_exemption_requires_current_explicit_authority(provider, fault):
+    from hashlib import sha256
+
+    from backlog_harness.provider import AgentProvider
+
+    source = provider.repository / "crisis.md"
+    source.write_text(
+        "Epoch recovery-one is active. Agents must not use claims during this epoch.\n"
+    )
+    policy = {
+        "eligible": True,
+        "mode": "SOLO",
+        "primary_branch": "main",
+        "claims_required": False,
+        "claim_exemption": "Active recovery-one epoch prohibits claims",
+        "evidence": policy_evidence(provider.repository)
+        + [
+            {
+                "path": "crisis.md",
+                "sha256": sha256(source.read_bytes()).hexdigest(),
+                "excerpt": source.read_text().strip(),
+                "supports": ["coordination"],
+            }
+        ],
+    }
+    view = AgentProvider(provider.repository, provider.evidence_root)
+    if fault == "missing-authority":
+        policy["evidence"] = policy["evidence"][:1]
+    elif fault == "missing-exemption":
+        del policy["claim_exemption"]
+    elif fault == "stale":
+        source.write_text("Epoch recovery-one ended.\n")
+    elif fault == "not-boolean":
+        policy["claims_required"] = "false"
+    if fault:
+        with pytest.raises(TransitionBlocked):
+            view.validate_policy(policy)
+    else:
+        view.validate_policy(policy)
+
+
+def test_claim_free_management_ignores_irrelevant_helper_but_preserves_policy_gate(
+    config_file, provider
+):
+    from hashlib import sha256
+    from pathlib import Path
+
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import atomic_json
+
+    config, data = config_file
+    data.update(repository=str(provider.repository), provider_interaction="agent")
+    data["profiles"]["control"]["permissions"] = ["workspace-write"]
+    config.write_text(yaml.safe_dump(data))
+    for name in ("manage-work-items", "manage-work-items-file"):
+        skill = Path(data["methodology_root"]) / "skills" / name / "SKILL.md"
+        skill.parent.mkdir(parents=True, exist_ok=True)
+        skill.write_text("Management skill fixture\n")
+    project = provider.repository / "PROJECT.yaml"
+    value = yaml.safe_load(project.read_text())
+    value["resource_coordination"] = {"selected": "resource-claim"}
+    project.write_text(yaml.safe_dump(value))
+    source = provider.repository / "crisis.md"
+    source.write_text("Active recovery-one epoch is claim-free.\n")
+    app = Application(config)
+    policy = {
+        "eligible": True,
+        "mode": "SOLO",
+        "primary_branch": "main",
+        "claims_required": False,
+        "claim_exemption": "Active recovery-one epoch",
+        "evidence": policy_evidence(provider.repository)
+        + [
+            {
+                "path": "crisis.md",
+                "sha256": sha256(source.read_bytes()).hexdigest(),
+                "excerpt": source.read_text().strip(),
+                "supports": ["coordination"],
+            }
+        ],
+    }
+    observation = {
+        "source_revision": app.provider.source_revision(),
+        "policy": policy,
+        "observer_digest": "stale-unrelated-helper",
+        "helper": {"available": False},
+    }
+    atomic_json(app.provider.cache_path, observation)
+    app.validate_management_readiness("coordinator")
+    # SOLO by itself retains the default claim capability requirements.
+    del policy["claims_required"]
+    atomic_json(app.provider.cache_path, observation)
+    with pytest.raises(TransitionBlocked, match="Selected claim helper"):
+        app.validate_management_readiness("coordinator")
+    policy["claims_required"] = False
+    policy["evidence"][-1]["sha256"] = "stale"
+    atomic_json(app.provider.cache_path, observation)
+    with pytest.raises(TransitionBlocked, match="Stale policy evidence"):
+        app.validate_management_readiness("coordinator")
