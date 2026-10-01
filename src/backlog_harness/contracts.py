@@ -127,6 +127,7 @@ class AgentBinding:
     profile_digest: str
     relevant_digest: str
     auth_context: str = ""
+    permission_digest: str = ""
 
     @property
     def origin(self):
@@ -228,6 +229,16 @@ class ConfigSnapshot:
             digest({"profile": profile, "skills": skills}),
             relevant,
             auth_context,
+            digest(
+                {
+                    "role": profile["role"],
+                    "load_user_config": cli.get("adapter_options", {}).get(
+                        "load_user_config", False
+                    ),
+                    "permissions": profile["permissions"],
+                    "tools": profile["tools"],
+                }
+            ),
         )
 
 

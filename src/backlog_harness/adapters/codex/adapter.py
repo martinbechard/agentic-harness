@@ -133,8 +133,27 @@ class CodexAdapter:
     async def resume_session(self, session, request):
         if session.binding.origin != request.binding.origin:
             raise ValueError("Resume binding differs from the originating session")
-        if session.binding.profile_digest != request.binding.profile_digest:
-            raise ValueError("Identity-preserving profile reconfiguration has not been proven")
+        if (
+            session.binding.permission_digest
+            and session.binding.permission_digest != request.binding.permission_digest
+        ) or (
+            not session.binding.permission_digest
+            and session.binding.profile_digest != request.binding.profile_digest
+        ):
+            raise ValueError("Resume permission changes require explicit authorization evidence")
+        audit = {
+            "session_id": session.session_id,
+            "native_session_id": session.native_session_id,
+            "previous_binding": asdict(session.binding),
+            "current_binding": asdict(request.binding),
+            "current_config_digest": request.snapshot.file_digest,
+        }
+        audit_path = request.evidence_path / "resume-binding.json"
+        if audit_path.exists():
+            if json.loads(audit_path.read_text()) != audit:
+                raise ValueError("Retained resume configuration evidence differs")
+        else:
+            atomic_json(audit_path, audit, exclusive=True)
         UUID(session.native_session_id)
         return await self._invoke(request, session)
 

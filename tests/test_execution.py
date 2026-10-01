@@ -33,6 +33,9 @@ mode="""
 if mode=='hang':time.sleep(10)
 if mode=='bad':print('not json');sys.exit(0)
 args=sys.argv
+if "resume" in args:
+ assert args[args.index("-m")+1]=="reloaded-model"
+ assert 'model_reasoning_effort="medium"' in args
 session=args[args.index('resume')+1] if 'resume' in args else '00000000-0000-4000-8000-000000000001'
 print(json.dumps({'type':'thread.started','thread_id':session}),flush=True)
 if mode=='large':print(json.dumps({'type':'item.completed','item':{'type':'agent_message','text':json.dumps({'inventory':'x'*70000})}}),flush=True)
@@ -77,6 +80,12 @@ print(json.dumps({'type':'turn.completed','usage':{'output_tokens':1}}),flush=Tr
             if mode == "hang":
                 assert outcome_record["failure_reason"] == "timeout"
             if mode == "normal":
+                data["profiles"]["worker"]["model"] = "reloaded-model"
+                data["profiles"]["worker"]["effort"] = "medium"
+                config.write_text(yaml.safe_dump(data))
+                updated = load_config(config)
+                updated_binding = updated.binding("orchestrator")
+                assert updated_binding.profile_digest != binding.profile_digest
                 next_id = str(uuid4())
                 next_path = store.begin("resume", next_id, snapshot, binding, action="resume")
                 next_dest = receiver.register(
@@ -90,9 +99,27 @@ print(json.dumps({'type':'turn.completed','usage':{'output_tokens':1}}),flush=Tr
                         invocation_id=next_id,
                         evidence_path=next_path,
                         telemetry=next_dest,
+                        snapshot=updated,
+                        binding=updated_binding,
                     ),
                 )
                 assert resumed.session == handle.session
+                audit = json.loads((next_path / "resume-binding.json").read_text())
+                assert audit["previous_binding"]["profile_digest"] == binding.profile_digest
+                assert audit["current_binding"]["profile_digest"] == updated_binding.profile_digest
+                assert audit["current_config_digest"] == updated.file_digest
+                data["profiles"]["worker"]["permissions"] = ["read"]
+                config.write_text(yaml.safe_dump(data))
+                changed_permissions = load_config(config)
+                with pytest.raises(ValueError, match="permission changes"):
+                    await adapter.resume_session(
+                        handle.session,
+                        replace(
+                            request,
+                            snapshot=changed_permissions,
+                            binding=changed_permissions.binding("orchestrator"),
+                        ),
+                    )
 
     asyncio.run(check())
 
@@ -253,3 +280,68 @@ def test_unsubmitted_intent_rejects_later_timeout_configuration(config_file, mon
     with pytest.raises(TransitionBlocked, match="configuration changed"):
         asyncio.run(app.invoke("timeout", "same", "coordinator", "observe"))
     assert calls == [180]
+
+
+def test_resume_configuration_identity_and_unsubmitted_retry(config_file, tmp_path, monkeypatch):
+    from backlog_harness.runtime import SessionHandle
+
+    config, data = config_file
+    original = load_config(config)
+    binding = original.binding("orchestrator")
+    session = SessionHandle("canonical", "00000000-0000-4000-8000-000000000001", binding)
+    data["profiles"]["worker"]["model"] = "new-model"
+    config.write_text(yaml.safe_dump(data))
+    current = load_config(config)
+    request = AgentRequest(
+        "operation",
+        "invocation",
+        current,
+        current.binding("orchestrator"),
+        "prompt",
+        tmp_path / "evidence",
+        None,
+    )
+    adapter = CodexAdapter()
+
+    async def unsubmitted(*_):
+        return "not submitted"
+
+    monkeypatch.setattr(adapter, "_invoke", unsubmitted)
+    assert asyncio.run(adapter.resume_session(session, request)) == "not submitted"
+    assert asyncio.run(adapter.resume_session(session, request)) == "not submitted"
+    data["profiles"]["worker"]["model"] = "other-model"
+    config.write_text(yaml.safe_dump(data))
+    other = load_config(config)
+    with pytest.raises(ValueError, match="evidence differs"):
+        asyncio.run(
+            adapter.resume_session(
+                session, replace(request, snapshot=other, binding=other.binding("orchestrator"))
+            )
+        )
+    data["profiles"]["worker"]["role"] = "different-role"
+    config.write_text(yaml.safe_dump(data))
+    other = load_config(config)
+    with pytest.raises(ValueError, match="permission changes"):
+        asyncio.run(
+            adapter.resume_session(
+                session, replace(request, snapshot=other, binding=other.binding("orchestrator"))
+            )
+        )
+
+
+def test_resume_rejects_enabling_user_config(config_file, tmp_path):
+    from backlog_harness.runtime import SessionHandle
+
+    config, data = config_file
+    original = load_config(config)
+    session = SessionHandle(
+        "canonical", "00000000-0000-4000-8000-000000000001", original.binding("orchestrator")
+    )
+    data["agent_clis"]["primary"]["adapter_options"] = {"load_user_config": True}
+    config.write_text(yaml.safe_dump(data))
+    current = load_config(config)
+    request = AgentRequest(
+        "op", "inv", current, current.binding("orchestrator"), "prompt", tmp_path / "evidence", None
+    )
+    with pytest.raises(ValueError, match="permission changes"):
+        asyncio.run(CodexAdapter().resume_session(session, request))
