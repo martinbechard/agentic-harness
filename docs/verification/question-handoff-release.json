@@ -29,5 +29,9 @@
   "installed_modules_verified": 23,
   "focused_tests": 54,
   "independent_review": "question_handoff_review ACCEPT",
-  "live_workflow_acceptance": "pending"
+  "live_workflow_acceptance": "verified User Action Required transition",
+  "provider_commit": "5b2b0efc44f434ccbf636197e870496611772810",
+  "provider_invocation": "fb72543c-f833-4852-8f8d-c04373183a2b",
+  "candidate": "5e80f0a55eaca02ccf095c3888bfb0bcc3275ac3",
+  "browser_verification": "pending explicit user authorization"
 }
