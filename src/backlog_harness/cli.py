@@ -40,6 +40,9 @@ def main(argv=None):
     stopped = commands.add_parser("reconcile-stopped-owner")
     stopped.add_argument("item_id")
     stopped.add_argument("--evidence", type=Path, required=True)
+    estimate = commands.add_parser("record-estimate")
+    estimate.add_argument("item_id")
+    estimate.add_argument("--decision", type=Path, required=True)
     defer_item = commands.add_parser("defer-item")
     defer_item.add_argument("item_id")
     defer_item.add_argument("--question", type=Path, required=True)
@@ -116,6 +119,10 @@ def main(argv=None):
                 from .recovery_flow import reconcile_stopped_owner
 
                 result = asyncio.run(reconcile_stopped_owner(app, args.item_id, args.evidence))
+            elif args.command == "record-estimate":
+                from .estimation import record_estimate
+
+                result = asyncio.run(record_estimate(app, args.item_id, args.decision))
             elif args.command == "defer-item":
                 from .recovery_flow import defer_item
 

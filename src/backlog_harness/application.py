@@ -592,7 +592,9 @@ class Application:
                 ),
                 "Question handoff canonical outcome differs",
             )
-        if (item.state, target) == ("Ready", "Ready"):
+        if (item.state, target) == ("Ready", "Ready") and authority.get(
+            "operation"
+        ) == "redispatch":
             effects = []
             for path in (self.root / "provider-agent-operations").glob("*/incomplete-effect.json"):
                 effect = json.loads(path.read_text())
@@ -662,6 +664,15 @@ class Application:
                 and decision["session"]["native_session_id"] == authority.get("native_session_id"),
                 "Provider decision owner differs from observed invocation",
             )
+            if authority.get("operation") == "record-estimate":
+                estimated = self.result_json(decision)
+                require(
+                    estimated.get("item_id") == item.item_id
+                    and estimated.get("provider_revision") == item.revision
+                    and estimated.get("estimate") == authority.get("estimate")
+                    and estimated.get("prospective_high") == authority.get("prospective_high"),
+                    "Estimate authority differs from observed Coordinator decision",
+                )
             executing_role = authority["role"]
         stage = "provider-" + digest([asdict(item), target, authority, paths])
         async with async_operation_lock(self.config.repository / ".git/agentic-provider.lock"):
@@ -691,6 +702,9 @@ class Application:
                     "provider record and return question exactly as supplied in authority. "
                     "mode, primary_branch, and evidence [{path,sha256,excerpt,supports:[mode/admission]}] "
                     "for current source after your transition. Preserve original_high and dependencies. "
+                    "For record-estimate, append the dated prospective estimate and exactly "
+                    "Prospective Execution High: N using authority.prospective_high for N; keep "
+                    "historical original estimate and historical usage explicitly unknown. "
                     "The revision is SHA256(path UTF-8 + NUL + content UTF-8).\n"
                     + json.dumps(
                         {
@@ -919,6 +933,12 @@ class Application:
             "Provider resulting revision differs",
         )
         require(after.original_high == record["item"]["original_high"], "Original estimate changed")
+        if record["authority"].get("operation") == "record-estimate":
+            require(
+                "Prospective Execution High: " + str(record["authority"]["prospective_high"])
+                in after.content.splitlines(),
+                "Committed prospective estimate is missing",
+            )
         receipt = {"operation": digest(record), "commit": commit, "after": asdict(after)}
         if record["target"] == "User Action Required":
             question = record["authority"].get("question")
@@ -1669,6 +1689,14 @@ class Application:
                     ],
                 }
                 if self.recovery_record(item_id)
+                else {
+                    "accounting_scope": "prospective_execution",
+                    "historical_usage": "unknown",
+                    "historical_original_high": None,
+                }
+                if frozen_path.exists()
+                and json.loads(frozen_path.read_text()).get("prospective_estimate_operation")
+                and json.loads(frozen_path.read_text()).get("historical_original_high") is None
                 else {}
             ),
         }
@@ -2371,6 +2399,58 @@ class Application:
                             require(not mine & theirs, "Concurrent assignment scopes overlap")
                 return await self._run_item(item_id)
 
+    def assignment_estimate(self, item):
+        if item.original_high is not None:
+            return item.original_high
+        path = self._stage_path(item.item_id, "prospective-estimate")
+        require(path.exists(), "Execution estimate is missing")
+        value = json.loads(path.read_text())
+        require(
+            value["provider_revision"] == item.revision
+            and value["receipt"].get("advancement_verified") is True
+            and value["receipt"]["after"]["revision"] == item.revision,
+            "Prospective estimate evidence is stale or unverified",
+        )
+        receipt = value["receipt"]
+        record = json.loads(
+            (
+                self.root
+                / "provider-agent-operations"
+                / component(receipt["operation"])
+                / "requested.json"
+            ).read_text()
+        )
+        require(
+            record["authority"].get("operation") == "record-estimate"
+            and record["authority"].get("prospective_high") == value["prospective_high"]
+            and receipt["after"] == asdict(item),
+            "Prospective estimate binding differs",
+        )
+        require(receipt["operation"] == digest(record), "Prospective estimate operation differs")
+        validate_transition(Item(**record["item"]), "Ready", record["authority"])
+        decision = json.loads(self._stage_path(item.item_id, "estimate-decision").read_text())
+        self.validate_invocation_result(decision)
+        estimated = self.result_json(decision)
+        require(
+            decision.get("role") == "coordinator"
+            and decision.get("invocation_id") == record["authority"].get("invocation_id")
+            and estimated.get("item_id") == item.item_id
+            and estimated.get("provider_revision") == record["item"]["revision"]
+            and estimated.get("estimate") == record["authority"].get("estimate")
+            and estimated.get("prospective_high") == value["prospective_high"],
+            "Prospective estimate decision differs",
+        )
+        self.verify_provider_receipt(
+            record,
+            {
+                "operation_id": record["stage_operation"],
+                "before_revision": record["item"]["revision"],
+                "commit": receipt["commit"],
+                "after": receipt["after"],
+            },
+        )
+        return value["prospective_high"]
+
     async def _run_item(self, item_id):
         self.reconcile()
         self.execution_policy(item_id)
@@ -2405,7 +2485,15 @@ class Application:
                     "content": item.content,
                     "provider_revision": item.revision,
                     "provider_path": item.path,
-                    "original_high": item.original_high,
+                    "original_high": self.assignment_estimate(item),
+                    "historical_original_high": item.original_high,
+                    "prospective_estimate_operation": (
+                        json.loads(self._stage_path(item_id, "prospective-estimate").read_text())[
+                            "receipt"
+                        ]["operation"]
+                        if item.original_high is None
+                        else None
+                    ),
                     "workflow": self.item_workflow(item_id),
                     "candidate_root": self.config.data.get("candidate_root"),
                     "workspace": self.config.data["workspace"],

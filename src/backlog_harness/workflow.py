@@ -1,11 +1,26 @@
 """Evidence gates for the selected file/main-branch workflow, not an agent task graph."""
 
+import re
+from datetime import datetime
+
 from .provider import TransitionBlocked, git
 
 
 def require(condition, reason):
     if not condition:
         raise TransitionBlocked(reason)
+
+
+def valid_estimate_date(value):
+    if not isinstance(value, str) or not re.fullmatch(
+        r"\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?", value
+    ):
+        return False
+    try:
+        datetime.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
 
 
 def validate_transition(item, target, authority):
@@ -15,7 +30,20 @@ def validate_transition(item, target, authority):
         "Observed actor request is required",
     )
     require(authority.get("item_id") == item.item_id, "Authority names another item")
-    if target == "Ready" and item.state in {"Running", "Ready"}:
+    if (item.state, target) == ("Ready", "Ready") and authority.get(
+        "operation"
+    ) == "record-estimate":
+        require(
+            actor == "coordinator"
+            and item.original_high is None
+            and item.owner == "Unowned"
+            and type(authority.get("prospective_high")) is int
+            and authority["prospective_high"] > 0
+            and authority.get("estimate", {}).get("kind") == "prospective_pre_execution"
+            and valid_estimate_date(authority["estimate"].get("dated_at")),
+            "Prospective estimate requires a dated Coordinator estimate for unowned unestimated work",
+        )
+    elif target == "Ready" and item.state in {"Running", "Ready"}:
         recovery = authority.get("recovery", {})
         require(
             actor == "coordinator"
