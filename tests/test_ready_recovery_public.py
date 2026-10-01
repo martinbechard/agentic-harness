@@ -187,7 +187,7 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                 "operation": "redispatch",
                 "item_id": item_id,
                 "provider_revision": item.revision,
-                "previous_owner": item.owner,
+                "previous_owner": packet["preserved_execution"]["execution_id"],
                 "ownership_ended": True,
                 "continuation_authorized": True,
                 "reason": "Stopped execution has an immutable preserved candidate",
@@ -332,6 +332,9 @@ def test_ready_recovery_public_import_then_separate_reservation(
         "candidate": packet["candidate"]["head"],
     }
     assert app.provider.item(item.item_id) == item
+    recovery_packet = app.recovery_record(item.item_id)["packet"]
+    assert recovery_packet["previous_owner"] == item.owner
+    assert recovery_packet["preserved_execution"] == packet["preserved_execution"]
     assert git(provider.repository, "rev-parse", "HEAD") == provider_head
     assert mutations == [] and len(calls) == 1
     assert asyncio.run(recover_item(app, item.item_id, supplied)) == result
@@ -418,3 +421,23 @@ def test_ready_recovery_replay_rejects_changed_import(config_file, provider, tmp
     with pytest.raises(TransitionBlocked, match="Imported preserved candidate changed"):
         asyncio.run(recover_item(app, item.item_id, supplied))
     assert len(calls) == 1 and mutations == []
+
+
+def test_ready_recovery_rejects_unbound_historical_owner(
+    config_file, provider, tmp_path, monkeypatch
+):
+    app, item, _packet, supplied, _, _, mutations, _, _ = _public_case(
+        config_file, provider, tmp_path, monkeypatch
+    )
+    external = app.invoke
+
+    async def wrong_owner(*args, **kwargs):
+        result = await external(*args, **kwargs)
+        value = json.loads(result["text"])
+        value["previous_owner"] = "unrelated-execution"
+        return {**result, "text": json.dumps(value)}
+
+    monkeypatch.setattr(app, "invoke", wrong_owner)
+    with pytest.raises(TransitionBlocked, match="did not authorize"):
+        asyncio.run(recover_item(app, item.item_id, supplied))
+    assert not mutations and not app._stage_path(item.item_id, "assignment").exists()

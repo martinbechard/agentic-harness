@@ -72,7 +72,15 @@ async def recover_item(app, item_id, evidence_path):
                     answer.get("operation") == "redispatch"
                     and answer.get("item_id") == item_id
                     and answer.get("provider_revision") == original.revision
-                    and answer.get("previous_owner") == original.owner
+                    and (
+                        answer.get("previous_owner") == original.owner
+                        or (
+                            original.state == "Ready"
+                            and supplied.get("preserved_execution", {}).get("execution_id")
+                            and answer.get("previous_owner")
+                            == supplied["preserved_execution"]["execution_id"]
+                        )
+                    )
                     and answer.get("ownership_ended") is True
                     and answer.get("continuation_authorized") is True
                     and isinstance(answer.get("reason"), str)
