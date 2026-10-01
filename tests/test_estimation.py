@@ -728,3 +728,35 @@ def test_preparation_intent_cannot_escape_operational_root(tmp_path):
         validate_preparation_invocation(
             {"evidence_path": str(external)}, "config", tmp_path / "operations"
         )
+
+
+@pytest.mark.parametrize("defect", [None, "unbound", "changed", "canonical"])
+def test_preparation_accepts_only_bound_external_stopped_runtime(tmp_path, defect):
+    from dataclasses import replace
+    from types import SimpleNamespace
+
+    from test_recovery_evidence import _recovery_case
+
+    from backlog_harness.estimation import validate_preparation_sources
+    from backlog_harness.evidence import atomic_json
+
+    packet, item, repository, runtime = _recovery_case(tmp_path)
+    record = packet["runtime_records"][0]
+    item = replace(item, content=record["path"] + "\n" + record["sha256"])
+    saved = tmp_path / "stopped-owner-input.json"
+    atomic_json(saved, {"supplied": {"runtime_records": packet["runtime_records"]}})
+    app = SimpleNamespace(_stage_path=lambda *_: saved)
+    evidence = {"path": str(runtime), "sha256": record["sha256"], "reason": "Verified recovery"}
+    if defect == "unbound":
+        saved.unlink()
+    elif defect == "changed":
+        runtime.write_text(runtime.read_text() + "{}\n")
+    elif defect == "canonical":
+        item = replace(item, content="Another recovery")
+    if defect:
+        with pytest.raises(TransitionBlocked):
+            validate_preparation_sources(
+                app, SimpleNamespace(repository=repository), item, [evidence]
+            )
+    else:
+        validate_preparation_sources(app, SimpleNamespace(repository=repository), item, [evidence])

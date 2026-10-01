@@ -178,8 +178,6 @@ def validate_preparation_invocation(decision, config_digest, root):
 
 async def prepare_item(app, item):
     """Prepare an unreserved Ready item once; caller owns item and SOLO locks."""
-    from hashlib import sha256
-
     from .contracts import digest, load_config, plain
 
     current = load_config(app.config_path)
@@ -248,19 +246,7 @@ async def prepare_item(app, item):
         isinstance(authority, list) and bool(authority),
         "Preparation lacks supporting authority evidence",
     )
-    for evidence in authority:
-        source = current.repository / evidence["path"]
-        require(
-            not Path(evidence["path"]).is_absolute()
-            and source.resolve().is_relative_to(current.repository)
-            and source.is_file()
-            and bool(evidence.get("reason")),
-            "Preparation authority source is invalid",
-        )
-        require(
-            sha256(source.read_bytes()).hexdigest() == evidence.get("sha256"),
-            "Preparation authority source changed",
-        )
+    validate_preparation_sources(app, current, item, authority)
     if not app._stage_path(item.item_id, "estimate-input").exists():
         require(asdict(item) == saved["item"], "Prepared item changed before provider effect")
     if (
@@ -276,3 +262,39 @@ async def prepare_item(app, item):
     else:
         require(asdict(item) == saved["item"], "Prepared item changed before admission")
     return item
+
+
+def validate_preparation_sources(app, config, item, authority):
+    """Check local sources and exact previously bound stopped-runtime evidence."""
+    from hashlib import sha256
+
+    for evidence in authority:
+        source = config.repository / evidence["path"]
+        if Path(evidence["path"]).is_absolute():
+            from .recovery import _validate_runtime_record
+
+            saved = app._stage_path(item.item_id, "stopped-owner-input")
+            request = json.loads(saved.read_text()) if saved.exists() else {}
+            records = request.get("supplied", {}).get("runtime_records", [])
+            matches = [
+                r
+                for r in records
+                if r.get("path") == str(source) and r.get("sha256") == evidence.get("sha256")
+            ]
+            require(
+                len(matches) == 1
+                and str(source) in item.content
+                and evidence.get("sha256") in item.content,
+                "External preparation authority is not bound to stopped-owner evidence",
+            )
+            _validate_runtime_record(matches[0])
+        else:
+            require(
+                source.resolve().is_relative_to(config.repository) and source.is_file(),
+                "Preparation authority source is invalid",
+            )
+        require(bool(evidence.get("reason")), "Preparation authority reason is missing")
+        require(
+            sha256(source.read_bytes()).hexdigest() == evidence.get("sha256"),
+            "Preparation authority source changed",
+        )

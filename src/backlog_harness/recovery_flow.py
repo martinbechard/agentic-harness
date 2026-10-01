@@ -27,7 +27,11 @@ async def recover_item(app, item_id, evidence_path):
             else:
                 await app.refresh_provider()
                 item = app.provider.item(item_id)
-                require(item.state == "Running", "Recovery requires a stopped Running assignment")
+                require(
+                    item.state == "Running"
+                    or (item.state == "Ready" and item.owner in {None, "Unowned"}),
+                    "Recovery requires stopped Running or unowned Ready",
+                )
                 request = {"item": asdict(item), "evidence": supplied}
                 atomic_json(request_path, request, exclusive=True)
             original = Item(**request["item"])
@@ -38,10 +42,12 @@ async def recover_item(app, item_id, evidence_path):
                     item_id,
                     stage,
                     "coordinator",
-                    "You are the Dev Backlog Coordinator. Reconcile this one preserved Running item "
-                    "whose desktop execution has ended. Read supplied runtime, candidate and supporting "
+                    "You are the Dev Backlog Coordinator. Reconcile this one preserved item "
+                    "whose earlier execution has ended. Ready recovery imports the unchanged candidate "
+                    "without another Ready transition; later reservation and native acceptance remain separate. "
+                    "Read supplied runtime, candidate and supporting "
                     "evidence plus selected management/recovery skills. No mutation, claims, dispatch or "
-                    "delegation in this assessment. Claim-free crisis does not prohibit a local HTTP verification server. "
+                    "delegation in this assessment. Preserve existing permission denials. "
                     "Martin authorizes moving backlog execution into the "
                     "harness CLI; the desktop identity remains historical. Decide whether ordinary "
                     "redispatch of this SAME item is safe under the existing serial crisis reservation. "
@@ -52,9 +58,12 @@ async def recover_item(app, item_id, evidence_path):
                     "remaining_high:positive_integer,scope:{allowed_paths:[exact_paths],checks:[[argv]]},"
                     "dependencies:[exact_required_ids]}. Establish all required predecessor states. "
                     "Preserve the entire supplied base..candidate lineage; do not select another item. "
-                    "Choose executable checks that validate the actual work; browser checks remain "
-                    "required through supported HTTP/browser tools, not waived by command-only checks.\n"
-                    + json.dumps(request),
+                    "Choose executable checks for the actual remaining work in the complete canonical item. "
+                    "Preserve its semantic, review, approval and delivery gates; do not inject unrelated "
+                    "browser work. For Ready recovery echo preserved_execution exactly, including "
+                    "remaining_work and candidate_approval_required. Do not authorize new source "
+                    "production, candidate changes or attempt resets.\n"
+                    + json.dumps(request, sort_keys=True),
                     purpose="provider",
                 )
                 app.validate_call_limits(decision, app.config.data["coordinator_limits"])
@@ -81,6 +90,13 @@ async def recover_item(app, item_id, evidence_path):
                     "scope": answer["scope"],
                     "historical_usage": "unknown",
                 }
+                if original.state == "Ready":
+                    require(
+                        answer.get("preserved_execution") == supplied.get("preserved_execution")
+                        and supplied.get("preserved_execution"),
+                        "Coordinator changed preserved execution or remaining gates",
+                    )
+                    packet["preserved_execution"] = supplied["preserved_execution"]
                 packet["candidate"] = {
                     **supplied["candidate"],
                     "allowed_paths": answer["scope"]["allowed_paths"],
@@ -123,25 +139,30 @@ async def recover_item(app, item_id, evidence_path):
             packet = recovery["packet"]
             if not app._stage_path(item_id, "assignment").exists():
                 validate_packet(packet, original, Path(packet["candidate"]["checkout"]))
-                await app.transition(
-                    item_id,
-                    original.revision,
-                    "Ready",
-                    app.authority(
-                        decision,
+                if original.state == "Running":
+                    await app.transition(
                         item_id,
-                        operation="redispatch",
-                        recovery={
-                            "previous_owner": original.owner,
-                            "ownership_ended": True,
-                            "packet_digest": recovery["digest"],
-                            "candidate": packet["candidate"]["head"],
-                            "runtime_evidence": packet["runtime_records"],
-                            "reason": recovery["reason"],
-                        },
-                    ),
-                    validate=validate_transition,
-                )
+                        original.revision,
+                        "Ready",
+                        app.authority(
+                            decision,
+                            item_id,
+                            operation="redispatch",
+                            recovery={
+                                "previous_owner": original.owner,
+                                "ownership_ended": True,
+                                "packet_digest": recovery["digest"],
+                                "candidate": packet["candidate"]["head"],
+                                "runtime_evidence": packet["runtime_records"],
+                                "reason": recovery["reason"],
+                            },
+                        ),
+                        validate=validate_transition,
+                    )
+                else:
+                    require(
+                        app.provider.item(item_id) == original, "Ready recovery revision changed"
+                    )
                 item = app.provider.item(item_id)
                 observation = app.provider.observation()
                 observation["dependencies"][item_id] = recovery["dependencies"]
@@ -197,6 +218,26 @@ async def recover_item(app, item_id, evidence_path):
                     },
                     exclusive=True,
                 )
+    if original.state == "Ready":
+        validate_packet(
+            recovery["packet"], original, Path(recovery["packet"]["candidate"]["checkout"])
+        )
+        imported = Path(app.config.data["candidate_root"]) / component(item_id)
+        require(
+            git(imported, "rev-parse", "HEAD") == recovery["packet"]["candidate"]["head"]
+            and not git(imported, "status", "--porcelain"),
+            "Imported preserved candidate changed",
+        )
+        require(
+            app.provider.item(item_id) == original,
+            "Ready recovery already advanced; use the normal queue",
+        )
+        return {
+            "item_id": item_id,
+            "state": "Ready",
+            "recovery_prepared": True,
+            "candidate": recovery["packet"]["candidate"]["head"],
+        }
     return await app.run_item(item_id)
 
 

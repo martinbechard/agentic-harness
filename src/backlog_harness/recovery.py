@@ -6,6 +6,7 @@ Validate immutable evidence for recovery of an interrupted work-item owner.
 from __future__ import annotations
 
 import json
+import math
 import re
 from hashlib import sha256
 from pathlib import Path, PurePosixPath
@@ -215,6 +216,7 @@ def validate_packet(packet: dict, item: Item, repository: Path) -> dict:
             "scope",
             "historical_usage",
         },
+        {"preserved_execution"},
     )
     require(normalized["version"] == 1, "Unsupported recovery packet version")
     require(normalized["item_id"] == item.item_id, "Recovery packet names another item")
@@ -231,6 +233,92 @@ def validate_packet(packet: dict, item: Item, repository: Path) -> dict:
         isinstance(runtime_records, list) and runtime_records, "Native runtime records are required"
     )
     runtime_files = [_validate_runtime_record(record) for record in runtime_records]
+    if item.state == "Ready":
+        preserved = normalized.get("preserved_execution")
+        require(item.owner in {None, "Unowned"}, "Ready recovery has a conflicting owner")
+        _exact_keys(
+            preserved,
+            {
+                "execution_id",
+                "canonical_sha256",
+                "remaining_work",
+                "receipt",
+                "candidate_approval_required",
+                "snapshot_operation",
+                "runtime_operations",
+            },
+        )
+        require(
+            preserved["candidate_approval_required"] is True,
+            "Ready preserved-candidate recovery requires exact candidate approval",
+        )
+        require(
+            isinstance(preserved["execution_id"], str)
+            and preserved["execution_id"]
+            and preserved["execution_id"] in item.content
+            and normalized["candidate"]["head"] in item.content
+            and preserved["canonical_sha256"] == sha256(item.content.encode()).hexdigest()
+            and isinstance(preserved["remaining_work"], str)
+            and preserved["remaining_work"].strip()
+            and preserved["remaining_work"] in item.content,
+            "Ready recovery canonical execution, candidate or remaining work differs",
+        )
+        _exact_keys(preserved["receipt"], {"path", "sha256"})
+        receipt_path = Path(preserved["receipt"]["path"])
+        receipt_bytes = _read_file(
+            receipt_path, preserved["receipt"]["sha256"], "execution receipt"
+        )
+        try:
+            receipt = json.loads(receipt_bytes)
+        except (ValueError, UnicodeError) as exc:
+            raise TransitionBlocked("Preserved execution receipt is not valid JSON") from exc
+        require(isinstance(receipt, dict), "Preserved execution receipt must be an object")
+        snapshot_op = preserved["snapshot_operation"]
+        snapshot_entry = receipt.get(snapshot_op) if isinstance(snapshot_op, str) else None
+        require(
+            isinstance(snapshot_entry, dict) and isinstance(snapshot_entry.get("receipt"), dict),
+            "Preserved snapshot receipt must be an object",
+        )
+        require(
+            isinstance(snapshot_op, str)
+            and snapshot_op.startswith(preserved["execution_id"] + "/")
+            and snapshot_op.endswith("/snapshot")
+            and snapshot_entry["receipt"].get("candidate_sha") == normalized["candidate"]["head"],
+            "Preserved snapshot does not bind the exact execution and candidate",
+        )
+        operations = preserved["runtime_operations"]
+        require(
+            isinstance(operations, dict)
+            and set(operations) == {r["native_session_id"] for r in runtime_records},
+            "Preserved runtime operation identities differ",
+        )
+        attempt_prefix = snapshot_op.removesuffix("snapshot")
+        for record in runtime_records:
+            operation = operations[record["native_session_id"]]
+            require(
+                isinstance(operation, str) and operation.startswith(attempt_prefix),
+                "Runtime operation is outside the preserved attempt",
+            )
+            entry = receipt.get(operation)
+            require(
+                isinstance(entry, dict) and isinstance(entry.get("receipt"), dict),
+                "Preserved runtime receipt must be an object",
+            )
+            result = entry["receipt"]
+            require(
+                result.get("op_id") == operation
+                and result.get("session_id") == record["native_session_id"]
+                and type(result.get("started_unix")) in {int, float}
+                and math.isfinite(result["started_unix"])
+                and type(result.get("finished_unix")) in {int, float}
+                and math.isfinite(result["finished_unix"])
+                and result["finished_unix"] >= result["started_unix"],
+                "Preserved execution receipt does not bind completed native sessions",
+            )
+        runtime_files.append((receipt_path, receipt_bytes))
+    else:
+        require(item.state == "Running", "Recovery requires Ready or Running")
+        require("preserved_execution" not in normalized, "Ready evidence on another state")
     require(
         len({path for path, _ in runtime_files}) == len(runtime_files),
         "Duplicate runtime record path",

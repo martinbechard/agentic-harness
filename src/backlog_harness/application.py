@@ -2783,9 +2783,10 @@ class Application:
                 "do not restart implementation or create a commit merely to satisfy the workflow. "
                 "Agents own coordination and native delegation. Follow current claim-free crisis authority; "
                 "do not invoke claims. Prior desktop execution is historical and must not resume. "
-                "Finish the outstanding browser verification using legitimate local HTTP serving and "
-                "supported browser tools. Confirm browser tools in the actual native tool catalog; "
-                "configuration alone is not capability evidence. Preserve historical semantic evidence and obtain fresh independent "
+                "Finish only the remaining verification, review, approval and delivery gates bound in "
+                "the recovery evidence and complete canonical item. Use browser tools only when "
+                "those gates require them, preserving actual permission denials. Preserve historical "
+                "semantic evidence and obtain fresh independent "
                 "native review of the entire base..candidate scope and required acceptance checks. "
                 "Use spawn_agent with fork_context=false (or fork_turns=none) for the reviewer; "
                 "reviewer must return JSON {candidate,verdict:ACCEPT|REJECT,unresolved_findings:[]}. "
@@ -2797,6 +2798,16 @@ class Application:
                 + json.dumps(recovery["packet"])
                 + "\nWork item:\n"
                 + assignment
+            )
+        if recovery and recovery["packet"].get("preserved_execution"):
+            prompt += (
+                "\nThe preserved candidate is immutable: no source production, corrections or new "
+                "commit is authorized. Preserve prior attempts. Remaining work: "
+                + recovery["packet"]["preserved_execution"]["remaining_work"]
+                + " If an exact-candidate approval is required and absent, return item_id and "
+                "candidate, reviewer_session, and question {question_id,text,candidate}, after completing "
+                "the exact-candidate review and checks and identifying their evidence. "
+                "Do not integrate or claim completion before approval."
             )
         continuation_path = self._stage_path(item_id, "continuation")
         stage = "produce-review"
@@ -2814,6 +2825,11 @@ class Application:
             read_only=False,
         )
         value = self.result_json(produced)
+        approval_question = bool(
+            recovery
+            and recovery["packet"].get("preserved_execution", {}).get("candidate_approval_required")
+            and value.get("question")
+        )
         if value.get("question"):
             require(
                 value.get("item_id") == item_id and isinstance(value["question"], dict),
@@ -2821,23 +2837,31 @@ class Application:
             )
             require(
                 not git(candidate_repo, "status", "--porcelain")
-                and git(candidate_repo, "rev-parse", "HEAD") == base,
+                and git(candidate_repo, "rev-parse", "HEAD")
+                == (recovery["packet"]["candidate"]["head"] if recovery else base),
                 "Question boundary contains unapproved source work",
             )
-            current = self.provider.item(item_id)
-            return await self.transition(
-                item_id,
-                current.revision,
-                "User Action Required",
-                self.authority(produced, item_id, question=value["question"]),
-                validate=validate_transition,
-            )
+            if not approval_question:
+                current = self.provider.item(item_id)
+                return await self.transition(
+                    item_id,
+                    current.revision,
+                    "User Action Required",
+                    self.authority(produced, item_id, question=value["question"]),
+                    validate=validate_transition,
+                )
         require(
-            value.get("item_id") == item_id and value.get("request_completion") is True,
+            value.get("item_id") == item_id
+            and (value.get("request_completion") is True or approval_question),
             "Canonical completion request missing"
             + (": " + json.dumps(value.get("blockers")) if value.get("blockers") else ""),
         )
         candidate = value.get("candidate")
+        if recovery and recovery["packet"].get("preserved_execution"):
+            require(
+                candidate == recovery["packet"]["candidate"]["head"],
+                "Preserved candidate changed without authority",
+            )
         from .native_evidence import verify_native_review
 
         review = verify_native_review(
@@ -2858,6 +2882,34 @@ class Application:
             checks,
             preserved=recovery is not None,
         )
+        if approval_question:
+            require(
+                value["question"]["candidate"] == candidate, "Approval question candidate differs"
+            )
+            current = self.provider.item(item_id)
+            return await self.transition(
+                item_id,
+                current.revision,
+                "User Action Required",
+                self.authority(produced, item_id, question=value["question"]),
+                validate=validate_transition,
+            )
+        if recovery and recovery["packet"].get("preserved_execution", {}).get(
+            "candidate_approval_required"
+        ):
+            approved = (
+                json.loads(continuation_path.read_text()).get("approval", {})
+                if continuation_path.exists()
+                else {}
+            )
+            require(
+                approved.get("item_id") == item_id
+                and approved.get("disposition") == "approve"
+                and approved.get("question", {}).get("candidate") == candidate
+                and approved.get("answer", {}).get("digest")
+                == digest(approved.get("answer", {}).get("text")),
+                "Exact preserved-candidate approval is required before delivery",
+            )
         await self.enforce_guard(item_id)
         from .delivery import integrate
 

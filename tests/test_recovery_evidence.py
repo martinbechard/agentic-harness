@@ -120,11 +120,14 @@ def test_validate_packet_returns_normalized_immutable_evidence(tmp_path):
     assert packet == original
     assert result["packet"]["candidate"]["checkout"] == str(repository.resolve())
     assert result["packet"]["runtime_records"] == packet["runtime_records"]
-    assert result["digest"] == sha256(
-        json.dumps(
-            result["packet"], sort_keys=True, separators=(",", ":"), allow_nan=False
-        ).encode()
-    ).hexdigest()
+    assert (
+        result["digest"]
+        == sha256(
+            json.dumps(
+                result["packet"], sort_keys=True, separators=(",", ":"), allow_nan=False
+            ).encode()
+        ).hexdigest()
+    )
     assert git(repository, "status", "--porcelain") == ""
     assert git(repository, "rev-parse", "HEAD") == packet["candidate"]["head"]
 
@@ -174,4 +177,137 @@ def test_validate_packet_rejects_later_runtime_lifecycle_event(tmp_path, later_t
     packet["runtime_records"][0]["sha256"] = _write_jsonl(runtime, records)
 
     with pytest.raises(TransitionBlocked, match="later lifecycle event"):
+        validate_packet(packet, item, repository)
+
+
+def _ready_recovery_case(tmp_path):
+    from dataclasses import replace
+
+    packet, item, repository, runtime = _recovery_case(tmp_path)
+    execution_id = "prior-execution/item-one"
+    remaining = "Finish semantic validation, independent review and exact-candidate approval."
+    content = f"Execution: {execution_id}\nCandidate: {packet['candidate']['head']}\n{remaining}\n"
+    item = replace(item, state="Ready", owner="Unowned", content=content)
+    receipt = tmp_path / "preserved-receipt.json"
+    snapshot_op = execution_id + "/3/snapshot"
+    operations = {
+        r["native_session_id"]: execution_id + "/3/code" for r in packet["runtime_records"]
+    }
+    receipts = {snapshot_op: {"receipt": {"candidate_sha": packet["candidate"]["head"]}}}
+    for session, operation in operations.items():
+        receipts[operation] = {
+            "receipt": {
+                "op_id": operation,
+                "session_id": session,
+                "started_unix": 1,
+                "finished_unix": 2,
+            }
+        }
+    receipt.write_text(json.dumps(receipts))
+    packet["previous_owner"] = item.owner
+    packet["preserved_execution"] = {
+        "execution_id": execution_id,
+        "snapshot_operation": snapshot_op,
+        "runtime_operations": operations,
+        "candidate_approval_required": True,
+        "canonical_sha256": sha256(content.encode()).hexdigest(),
+        "remaining_work": remaining,
+        "receipt": {"path": str(receipt), "sha256": sha256(receipt.read_bytes()).hexdigest()},
+    }
+    return packet, item, repository, runtime
+
+
+@pytest.mark.parametrize(
+    "defect",
+    [
+        None,
+        "owner",
+        "revision",
+        "execution",
+        "candidate",
+        "receipt",
+        "gates",
+        "live",
+        "approval",
+        "snapshot",
+        "session",
+    ],
+)
+def test_ready_preserved_execution_validation(tmp_path, defect):
+    from dataclasses import replace
+
+    packet, item, repository, runtime = _ready_recovery_case(tmp_path)
+    if defect == "owner":
+        item = replace(item, owner="live-owner")
+    elif defect == "revision":
+        packet["revision"] = "stale"
+    elif defect == "execution":
+        packet["preserved_execution"]["execution_id"] = "other-execution"
+    elif defect == "candidate":
+        packet["candidate"]["head"] = packet["candidate"]["base"]
+    elif defect == "receipt":
+        Path(packet["preserved_execution"]["receipt"]["path"]).write_text("changed")
+    elif defect == "approval":
+        packet["preserved_execution"]["candidate_approval_required"] = False
+    elif defect in {"snapshot", "session"}:
+        preserved = packet["preserved_execution"]
+        path = Path(preserved["receipt"]["path"])
+        receipt = json.loads(path.read_text())
+        if defect == "snapshot":
+            receipt[preserved["snapshot_operation"]]["receipt"]["candidate_sha"] = packet[
+                "candidate"
+            ]["base"]
+        else:
+            operation = next(iter(preserved["runtime_operations"].values()))
+            receipt[operation]["receipt"]["session_id"] = str(uuid4())
+        path.write_text(json.dumps(receipt))
+        preserved["receipt"]["sha256"] = sha256(path.read_bytes()).hexdigest()
+    elif defect == "gates":
+        packet["preserved_execution"]["remaining_work"] = "Skip approval"
+    elif defect == "live":
+        rows = [json.loads(line) for line in runtime.read_text().splitlines()]
+        rows.append(
+            {"type": "event_msg", "payload": {"type": "task_started", "turn_id": str(uuid4())}}
+        )
+        packet["runtime_records"][0]["sha256"] = _write_jsonl(runtime, rows)
+    if defect:
+        with pytest.raises(TransitionBlocked):
+            validate_packet(packet, item, repository)
+    else:
+        assert validate_packet(packet, item, repository)["packet"] == packet
+
+
+@pytest.mark.parametrize(
+    "defect",
+    [
+        "json",
+        "list",
+        "snapshot-list",
+        "runtime-list",
+        "nested-list",
+        "boolean-time",
+        "infinite-time",
+    ],
+)
+def test_ready_recovery_rejects_malformed_execution_receipt(tmp_path, defect):
+    packet, item, repository, _ = _ready_recovery_case(tmp_path)
+    preserved = packet["preserved_execution"]
+    path = Path(preserved["receipt"]["path"])
+    receipt = json.loads(path.read_text())
+    op = next(iter(preserved["runtime_operations"].values()))
+    if defect == "list":
+        receipt = []
+    elif defect == "snapshot-list":
+        receipt[preserved["snapshot_operation"]] = []
+    elif defect == "runtime-list":
+        receipt[op] = []
+    elif defect == "nested-list":
+        receipt[op]["receipt"] = []
+    elif defect == "boolean-time":
+        receipt[op]["receipt"]["started_unix"] = True
+    elif defect == "infinite-time":
+        receipt[op]["receipt"]["finished_unix"] = float("inf")
+    path.write_text("not-json" if defect == "json" else json.dumps(receipt))
+    preserved["receipt"]["sha256"] = sha256(path.read_bytes()).hexdigest()
+    with pytest.raises(TransitionBlocked):
         validate_packet(packet, item, repository)
