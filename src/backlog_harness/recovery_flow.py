@@ -647,3 +647,115 @@ def reconcile_starting_effect(app, operation_id, evidence_path):
         "receipt": str(saved),
         "commit": observed["commit"],
     }
+
+
+def register_work_continuation(app, item_id, instruction_path):
+    """Keep one blocked result and request bounded work in its retained native session."""
+    instruction = Path(instruction_path).read_text().strip()
+    require(instruction, "Continuation instruction is empty")
+    with operation_lock(app.root / "item-locks" / (component(item_id) + ".lock")):
+        item = app.provider.item(item_id)
+        recovery = app.recovery_record(item_id)
+        require(
+            item.state == "Running" and recovery and recovery["packet"].get("preserved_execution"),
+            "Work continuation requires a Running preserved execution",
+        )
+        previous = json.loads(app._stage_path(item_id, "produce-review").read_text())
+        app.validate_invocation_result(previous)
+        value = app.result_json(previous)
+        require(
+            previous["role"] == "orchestrator"
+            and previous["session"]["session_id"] == item.owner
+            and value.get("item_id") == item_id
+            and value.get("request_completion") is False
+            and value.get("status") == "blocked"
+            and value.get("blockers")
+            and not value.get("question"),
+            "Continuation lacks a retained owned blocked result",
+        )
+        candidate = recovery["packet"]["candidate"]["head"]
+        require(
+            value.get("candidate") == candidate
+            and git(app.candidate_repository(item_id), "rev-parse", "HEAD") == candidate
+            and not git(app.candidate_repository(item_id), "status", "--porcelain"),
+            "Continuation preserved candidate differs",
+        )
+        request = {
+            "item_id": item_id,
+            "revision": item.revision,
+            "owner": item.owner,
+            "candidate": candidate,
+            "previous_invocation_id": previous["invocation_id"],
+            "previous_result_digest": digest(previous),
+            "instruction": instruction,
+        }
+        path = app._stage_path(item_id, "work-continuation")
+        registration = app._stage_path(item_id, "work-continuation-registration")
+        if registration.exists():
+            require(
+                json.loads(registration.read_text()) == request,
+                "Work continuation registration changed",
+            )
+        else:
+            atomic_json(registration, request, exclusive=True)
+        if path.exists():
+            require(json.loads(path.read_text()) == request, "Work continuation request changed")
+        else:
+            atomic_json(path, request, exclusive=True)
+    return {
+        "item_id": item_id,
+        "state": "Running",
+        "continuation_prepared": True,
+        "stage": "continue-work-" + digest(request),
+    }
+
+
+def read_work_continuation(app, item_id):
+    """Validate the exact registered request before scheduling or invocation."""
+    path = app._stage_path(item_id, "work-continuation")
+    if not path.exists():
+        return None
+    request = json.loads(path.read_text())
+    registration = app._stage_path(item_id, "work-continuation-registration")
+    require(
+        isinstance(request, dict)
+        and set(request)
+        == {
+            "item_id",
+            "revision",
+            "owner",
+            "candidate",
+            "previous_invocation_id",
+            "previous_result_digest",
+            "instruction",
+        }
+        and registration.exists()
+        and json.loads(registration.read_text()) == request,
+        "Work continuation registration changed",
+    )
+    return request
+
+
+def work_continuation(app, item_id, acceptance):
+    """Bind the follow-up to the unchanged owner, result, and candidate before invocation."""
+    request = read_work_continuation(app, item_id)
+    if request is None:
+        return None
+    item = app.provider.item(item_id)
+    previous = json.loads(app._stage_path(item_id, "produce-review").read_text())
+    app.validate_invocation_result(previous)
+    recovery = app.recovery_record(item_id)
+    require(
+        request["item_id"] == item_id
+        and request["revision"] == item.revision
+        and item.state == "Running"
+        and request["owner"] == item.owner
+        and previous["session"] == acceptance["session"]
+        and previous["invocation_id"] == request["previous_invocation_id"]
+        and digest(previous) == request["previous_result_digest"]
+        and request["candidate"] == recovery["packet"]["candidate"]["head"]
+        and git(app.candidate_repository(item_id), "rev-parse", "HEAD") == request["candidate"]
+        and not git(app.candidate_repository(item_id), "status", "--porcelain"),
+        "Work continuation identity, result, or candidate changed",
+    )
+    return request

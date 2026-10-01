@@ -37,6 +37,9 @@ def main(argv=None):
     effect = commands.add_parser("reconcile-provider-effect")
     effect.add_argument("operation_id")
     effect.add_argument("--evidence", type=Path, required=True)
+    followup = commands.add_parser("continue-work")
+    followup.add_argument("item_id")
+    followup.add_argument("--instruction", type=Path, required=True)
     recover_item = commands.add_parser("recover-item")
     recover_item.add_argument("item_id")
     recover_item.add_argument("--evidence", type=Path, required=True)
@@ -118,6 +121,10 @@ def main(argv=None):
                 from .recovery_flow import reconcile_starting_effect
 
                 result = reconcile_starting_effect(app, args.operation_id, args.evidence)
+            elif args.command == "continue-work":
+                from .recovery_flow import register_work_continuation
+
+                result = register_work_continuation(app, args.item_id, args.instruction)
             elif args.command == "recover-item":
                 from .recovery_flow import recover_item
 

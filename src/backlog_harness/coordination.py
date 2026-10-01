@@ -122,6 +122,22 @@ class RunController:
             if any(name not in by_id or by_id[name].state != "Completed" for name in required):
                 continue
             premise = digest([item.revision, self.app.config.file_digest])
+            if isinstance(self.app.provider, AgentProvider):
+                continuation = self.app._stage_path(item.item_id, "work-continuation")
+                if continuation.exists():
+                    from .recovery_flow import read_work_continuation
+
+                    try:
+                        request = read_work_continuation(self.app, item.item_id)
+                    except (ValueError, OSError, RuntimeError) as exc:
+                        self.blocked[item.item_id] = {
+                            "premise": premise,
+                            "reason": str(exc),
+                            "at": utcnow(),
+                        }
+                        atomic_json(self.block_path, self.blocked)
+                        continue
+                    premise = digest([premise, request])
             if self.blocked.get(item.item_id, {}).get("premise") == premise:
                 continue
             selected.append((item, premise))

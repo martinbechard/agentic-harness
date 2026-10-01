@@ -216,7 +216,7 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
             }
         elif stage == "accept":
             value = {"item_id": item_id, "accepted": True}
-        elif stage == "produce-review":
+        elif stage == "produce-review" or stage.startswith("continue-work-"):
             assert app.provider.item(item_id).state == "Running"
             producer = kwargs["session"].native_session_id
             reviewer = str(uuid5(NAMESPACE_URL, "unused-before-approval"))
@@ -667,3 +667,97 @@ def test_normal_queue_reconciles_interrupted_committed_reservation(
         == packet["preserved_execution"]
     )
     assert not app._stage_path(item.item_id, "delivery").exists()
+
+
+def test_normal_queue_continues_same_blocked_preserved_execution(
+    config_file, provider, tmp_path, monkeypatch
+):
+    from backlog_harness.coordination import RunController
+    from backlog_harness.recovery_flow import register_work_continuation
+
+    config_file[1]["poll_seconds"] = 0.01
+    app, item, packet, supplied, _, calls, mutations, prompts, _ = _public_case(
+        config_file, provider, tmp_path, monkeypatch
+    )
+    asyncio.run(recover_item(app, item.item_id, supplied))
+    external = app.invoke
+    blocked, settled = asyncio.Event(), asyncio.Event()
+    original = {}
+
+    async def unfinished_proof(*args, **kwargs):
+        result = await external(*args, **kwargs)
+        if args[1] == "produce-review":
+            value = json.loads(result["text"])
+            value.pop("question", None)
+            value.update(
+                request_completion=False,
+                status="blocked",
+                blockers=["Missing exact semantic proof"],
+            )
+            result["text"] = json.dumps(value)
+            atomic_json(app._stage_path(item.item_id, "produce-review"), result)
+            original.update(result)
+        return result
+
+    monkeypatch.setattr(app, "invoke", unfinished_proof)
+    instruction = tmp_path / "followup.txt"
+    instruction.write_text(
+        "Complete only missing semantic proof; reuse valid source review. No broad suite or source changes."
+    )
+
+    async def exercise():
+        def publish(value):
+            if "blocked" in value:
+                blocked.set()
+            if value.get("result", {}).get("state") == "User Action Required":
+                settled.set()
+
+        controller = RunController(app, publish)
+        task = asyncio.create_task(controller.run("until-terminal"))
+        try:
+            await asyncio.wait_for(blocked.wait(), 10)
+            await asyncio.sleep(0.03)
+            request = register_work_continuation(app, item.item_id, instruction)
+            assert register_work_continuation(app, item.item_id, instruction) == request
+            from backlog_harness.recovery_flow import work_continuation
+
+            continuation_path = app._stage_path(item.item_id, "work-continuation")
+            frozen = json.loads(continuation_path.read_text())
+            acceptance = json.loads(app._stage_path(item.item_id, "accept").read_text())
+            for key in (
+                "owner",
+                "revision",
+                "candidate",
+                "previous_result_digest",
+                "instruction",
+                "extra_instruction",
+            ):
+                atomic_json(continuation_path, {**frozen, key: "changed"})
+                with pytest.raises(TransitionBlocked, match="registration changed"):
+                    work_continuation(app, item.item_id, acceptance)
+                assert controller.eligible(app.provider.snapshot()) == []
+            atomic_json(continuation_path, frozen)
+            await asyncio.wait_for(settled.wait(), 10)
+            await controller.stop()
+            await task
+            return request
+        finally:
+            if not task.done():
+                await controller.stop()
+                await task
+
+    request = asyncio.run(exercise())
+    assert calls.count("produce-review") == 1 and calls.count(request["stage"]) == 1
+    assert calls.count("admit") == 1 and calls.count("accept") == 1
+    assert mutations == ["Starting", "Running", "User Action Required"]
+    assert json.loads(app._stage_path(item.item_id, "produce-review").read_text()) == original
+    final = json.loads(app._stage_path(item.item_id, request["stage"]).read_text())
+    assert final["session"] == original["session"]
+    assert instruction.read_text() in prompts[request["stage"]]
+    assert (
+        app.recovery_record(item.item_id)["packet"]["candidate"]["head"]
+        == packet["candidate"]["head"]
+    )
+    assert not app._stage_path(item.item_id, "delivery").exists()
+    with pytest.raises(TransitionBlocked, match="Running preserved"):
+        register_work_continuation(app, item.item_id, instruction)

@@ -2816,6 +2816,19 @@ class Application:
             )
         continuation_path = self._stage_path(item_id, "continuation")
         stage = "produce-review"
+        if not continuation_path.exists():
+            from .recovery_flow import work_continuation
+
+            followup = work_continuation(self, item_id, acceptance)
+            if followup:
+                stage = "continue-work-" + digest(followup)
+                prompt += (
+                    "\nContinue this same execution from its retained blocked result. "
+                    "Preserve valid prior review and checks; do not repeat source production. "
+                    "No source changes, candidate replacement, attempt reset, permission widening, "
+                    "or bypass of required proof, usage limits, review, approval, or delivery gates. "
+                    "Bounded continuation request: " + json.dumps(followup, sort_keys=True)
+                )
         if continuation_path.exists():
             continuation = json.loads(continuation_path.read_text())
             stage = continuation["stage"]
