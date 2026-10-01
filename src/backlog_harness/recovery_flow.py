@@ -245,31 +245,52 @@ async def defer_item(app, item_id, question_path):
             else:
                 item = app.provider.item(item_id)
                 require(
-                    item.state in {"Running", "User Action Required"},
-                    "Only a stopped canonical owner requires this handoff",
+                    item.state in {"Ready", "Running", "User Action Required"},
+                    "Question handoff requires Ready or a stopped canonical owner",
                 )
-                outcome = json.loads(app._stage_path(item_id, "produce-review").read_text())
-                app.validate_invocation_result(outcome)
-                value = app.result_json(outcome)
-                require(
-                    outcome["session"]["session_id"] == item.owner
-                    and value.get("item_id") == item_id
-                    and (
-                        (value.get("request_completion") is False and value.get("blockers"))
-                        or value.get("question") == question
+                if item.state == "Ready":
+                    from .estimation import validate_preparation_invocation
+
+                    prepared = json.loads(app._stage_path(item_id, "preparation").read_text())
+                    outcome = prepared["decision"]
+                    app.validate_invocation_result(outcome)
+                    validate_preparation_invocation(
+                        outcome, prepared["invocation_config_digest"], app.root
                     )
-                    and (
-                        item.state != "User Action Required"
-                        or (
-                            all(
-                                (app.provider.question(item) or {}).get(key) == question.get(key)
-                                for key in ("question_id", "text")
-                            )
-                            and not (app.provider.question(item) or {}).get("answer")
+                    value = app.result_json(outcome)
+                    require(
+                        prepared["item"] == asdict(item)
+                        and item.owner in {None, "Unowned"}
+                        and outcome.get("role") == "coordinator"
+                        and value.get("item_id") == item_id
+                        and value.get("provider_revision") == item.revision
+                        and (value.get("blocked") or value.get("status") == "blocked"),
+                        "Ready question requires current unowned Coordinator preparation evidence",
+                    )
+                else:
+                    outcome = json.loads(app._stage_path(item_id, "produce-review").read_text())
+                    app.validate_invocation_result(outcome)
+                    value = app.result_json(outcome)
+                    require(
+                        outcome["session"]["session_id"] == item.owner
+                        and value.get("item_id") == item_id
+                        and (
+                            (value.get("request_completion") is False and value.get("blockers"))
+                            or value.get("question") == question
                         )
-                    ),
-                    "Canonical declined completion evidence is missing",
-                )
+                        and (
+                            item.state != "User Action Required"
+                            or (
+                                all(
+                                    (app.provider.question(item) or {}).get(key)
+                                    == question.get(key)
+                                    for key in ("question_id", "text")
+                                )
+                                and not (app.provider.question(item) or {}).get("answer")
+                            )
+                        ),
+                        "Canonical declined completion evidence is missing",
+                    )
                 question_handoff_paths(app.config.repository, item, supplied["paths"])
                 request = {
                     "item": asdict(item),
@@ -284,8 +305,13 @@ async def defer_item(app, item_id, question_path):
                 item_id,
                 stage,
                 "coordinator",
-                "Reconcile this stopped canonical execution, including an incomplete question move. "
-                "Preserve all permission boundaries. The exact question below is already recorded; "
+                (
+                    "Record this unowned Ready preparation conflict without reserving or executing work. "
+                    "Preserve the exact requirements, history, and any earlier candidate references. "
+                    if item.state == "Ready"
+                    else "Reconcile this stopped canonical execution, including an incomplete question move. "
+                )
+                + "Preserve all permission boundaries. The exact question below is already recorded; "
                 "do not ask it again, execute implementation, mutate, or delegate. Decide "
                 "whether to record User Action Required with the exact pending question, preserved "
                 "native owner/candidate/evidence, prohibited browser action, and declared provider move "
@@ -315,6 +341,14 @@ async def defer_item(app, item_id, question_path):
                     operation="await-user",
                     stopped_owner=item.owner,
                     outcome_evidence=request["outcome_invocation"],
+                    **(
+                        {
+                            "provider_revision": item.revision,
+                            "preparation_evidence": request["outcome_invocation"],
+                        }
+                        if item.state == "Ready"
+                        else {}
+                    ),
                     question=question,
                 ),
                 validate=validate_transition,

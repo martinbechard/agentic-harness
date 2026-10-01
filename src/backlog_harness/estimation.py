@@ -113,10 +113,21 @@ def prepared_workflow(app, item_id, config):
     )
     require(not refusal, "Preparation blocked: " + json.dumps(refusal))
     parameters = value.get("workflow", {})
+    echoes = {
+        "persistence": config.data["provider"],
+        "completion": selected["completion"],
+        "canonical_primary_branch": selected["primary_branch"],
+    }
     require(
-        set(parameters) == {"allowed_paths", "checks"},
-        "Preparation may only parameterize paths and checks",
+        all(parameters[key] == expected for key, expected in echoes.items() if key in parameters),
+        "Preparation echoed a different workflow authority",
     )
+    unsupported = set(parameters) - {"allowed_paths", "checks", *echoes}
+    require(
+        not unsupported and {"allowed_paths", "checks"} <= set(parameters),
+        "Preparation contains unsupported workflow fields: " + ", ".join(sorted(unsupported)),
+    )
+
     policy = selected.get("preparation", {})
     paths = parameters["allowed_paths"]
     require(
@@ -199,6 +210,7 @@ async def prepare_item(app, item):
             "estimate:{kind:prospective_pre_execution,dated_at:ISO_date,generated_tokens:{low,high},"
             "...estimate-agent-work fields},authority_evidence:[{path,sha256,reason}]}. "
             "Do not infer approval from Ready alone when canonical content contains an explicit hold. "
+            "Provider revision is SHA256(path UTF-8 + NUL + content UTF-8), not raw content SHA256. "
             "Configured bounds: "
             + json.dumps(plain(policy))
             + "\nCanonical item: "

@@ -23,6 +23,30 @@ def valid_estimate_date(value):
     return True
 
 
+def preparation_question_content(content, question):
+    """Preserve Ready bytes and append only the exact authorized question."""
+    require(
+        content.splitlines().count("Status: Ready") == 1,
+        "Ready question requires one exact status header",
+    )
+    require(
+        all(
+            isinstance(question.get(key), str) and question[key].strip()
+            for key in ("question_id", "text")
+        ),
+        "Exact question evidence is required",
+    )
+    prefix = re.sub(r"(?m)^Status: Ready$", "Status: User Action Required", content, count=1)
+    return (
+        prefix
+        + "\n\n## Pending Preparation Question\n\nQuestion ID: "
+        + question["question_id"]
+        + "\n\n"
+        + question["text"]
+        + "\n"
+    )
+
+
 def validate_transition(item, target, authority):
     actor = authority.get("role")
     require(
@@ -80,7 +104,7 @@ def validate_transition(item, target, authority):
             "Holding requires Coordinator guard authority",
         )
     elif target == "User Action Required" and (
-        item.state == "Running"
+        item.state in {"Ready", "Running"}
         or (item.state == "User Action Required" and authority.get("operation") == "await-user")
     ):
         require(
@@ -91,11 +115,21 @@ def validate_transition(item, target, authority):
             )
             or (
                 actor == "coordinator"
+                and item.state in {"Running", "User Action Required"}
                 and authority.get("operation") == "await-user"
                 and authority.get("stopped_owner") == item.owner
                 and authority.get("outcome_evidence")
+            )
+            or (
+                item.state == "Ready"
+                and actor == "coordinator"
+                and item.owner in {None, "Unowned"}
+                and authority.get("operation") == "await-user"
+                and authority.get("provider_revision") == item.revision
+                and authority.get("preparation_evidence")
+                and authority.get("outcome_evidence") == authority.get("preparation_evidence")
             ),
-            "A question requires canonical ownership or Coordinator reconciliation of its stopped result",
+            "A question requires canonical ownership or bound Coordinator preparation/reconciliation",
         )
         question = authority.get("question", {})
         require(

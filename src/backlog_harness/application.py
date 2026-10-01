@@ -28,7 +28,7 @@ from .evidence import (
 from .provider import AgentProvider, FileProvider, Item, TransitionBlocked, blob, git
 from .runtime import AgentRequest, SessionHandle
 from .telemetry import TelemetryReceiver
-from .workflow import require, validate_candidate, validate_transition
+from .workflow import preparation_question_content, require, validate_candidate, validate_transition
 
 
 class Application:
@@ -699,6 +699,10 @@ class Application:
                     "never inferred solely from this item-local wait), "
                     "For User Action Required, record the supplied question_id and text verbatim in the "
                     "provider record and return question exactly as supplied in authority. "
+                    "For a Ready preparation question, replace only the Status: Ready header with "
+                    "Status: User Action Required and append the question after all existing content; "
+                    "preserve every other original byte, requirement, owner, history and candidate reference. "
+                    "Use ready_question_content exactly when supplied; append no other prose or history. "
                     "mode, primary_branch, and evidence [{path,sha256,excerpt,supports:[mode/admission]}] "
                     "for current source after your transition. Preserve original_high and dependencies. "
                     "For record-estimate, append the dated prospective estimate and exactly "
@@ -712,6 +716,11 @@ class Application:
                             "target": target,
                             "authority": authority,
                             "paths": paths,
+                            "ready_question_content": preparation_question_content(
+                                item.content, authority["question"]
+                            )
+                            if item.state == "Ready" and target == "User Action Required"
+                            else None,
                             "target_owner": "Unowned"
                             if target == "Ready"
                             else authority["session_id"]
@@ -960,6 +969,20 @@ class Application:
                 and question.get("text") in after.content,
                 "Committed provider question differs from the authorized question",
             )
+            if record["item"]["state"] == "Ready":
+                require(
+                    after.content
+                    == preparation_question_content(record["item"]["content"], question),
+                    "Ready question changed existing content or appended unauthorized content",
+                )
+            for series_path in record["paths"][2:]:
+                series_content = blob(self.config.repository, commit, series_path).decode()
+                archived_link = os.path.relpath(after.path, str(Path(series_path).parent))
+                require(
+                    "](" + archived_link + ")" in series_content
+                    and "](" + Path(record["item"]["path"]).name + ")" not in series_content,
+                    "Question archive series linkage differs",
+                )
             receipt["question"] = question
         if "policy" in value:
             receipt["policy"] = value["policy"]

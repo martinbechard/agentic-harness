@@ -471,7 +471,18 @@ def test_real_document_without_owner_estimate_to_public_admission(
 
 
 @pytest.mark.parametrize(
-    "defect", ["role", "path", "check", "gate", "blocked", "status", "singular_status", "revision"]
+    "defect",
+    [
+        "role",
+        "path",
+        "check",
+        "gate",
+        "blocked",
+        "status",
+        "singular_status",
+        "unknown_gate",
+        "revision",
+    ],
 )
 def test_preparation_rejects_invalid_authority(config_file, monkeypatch, defect):
     from backlog_harness.estimation import configured_workflow, prepared_workflow
@@ -504,6 +515,8 @@ def test_preparation_rejects_invalid_authority(config_file, monkeypatch, defect)
         value.update(status="blocked", blockers=[{"reason": "Retain prior candidate"}])
     elif defect == "singular_status":
         value.update(status="blocked", blocker={"reason": "Missing verification command"})
+    elif defect == "unknown_gate":
+        value["workflow"]["required_gates"] = ["New authority"]
     elif defect == "revision":
         value["provider_revision"] = "stale"
     decision["text"] = json.dumps(value)
@@ -554,6 +567,9 @@ def test_preparation_config_binding_ignores_other_item(config_file, monkeypatch)
                 "item_id": "one",
                 "provider_revision": "revision",
                 "workflow": {
+                    "persistence": "file",
+                    "completion": "main-branch",
+                    "canonical_primary_branch": "main",
                     "allowed_paths": ["answer.py"],
                     "checks": [["git", "diff", "--check"]],
                 },

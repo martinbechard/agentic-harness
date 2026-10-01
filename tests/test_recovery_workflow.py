@@ -525,7 +525,7 @@ def test_question_move_receipt_and_projection_include_series_link(
         .read_text()
         .replace("Status: Ready", "Status: User Action Required")
         + (
-            "\nq1\nAuthorize browser verification?\n"
+            "\n\n## Pending Preparation Question\n\nQuestion ID: q1\n\nAuthorize browser verification?\n"
             if question_case == "valid"
             else "\nOther question\n"
         )
@@ -758,3 +758,206 @@ def test_normal_question_transition_routes_or_replays(config_file, provider, mon
                 validate=validate_transition,
             )
         )
+
+
+@pytest.mark.parametrize("defect", [None, "actor", "revision", "owner", "evidence"])
+def test_ready_question_transition_requires_bound_preparation(provider, defect):
+    item = provider.item("item-one")
+    authority = {
+        "role": "coordinator",
+        "observed_result": True,
+        "invocation_id": "question-decision",
+        "item_id": item.item_id,
+        "operation": "await-user",
+        "provider_revision": item.revision,
+        "preparation_evidence": "preparation",
+        "outcome_evidence": "preparation",
+        "question": {"question_id": "conflict", "text": "Which requirement governs?"},
+    }
+    if defect == "actor":
+        authority["role"] = "orchestrator"
+    elif defect == "revision":
+        authority["provider_revision"] = "stale"
+    elif defect == "owner":
+        item = replace(item, owner="active")
+    elif defect == "evidence":
+        authority.pop("preparation_evidence")
+    if defect:
+        with pytest.raises(TransitionBlocked):
+            validate_transition(item, "User Action Required", authority)
+    else:
+        validate_transition(item, "User Action Required", authority)
+
+
+@pytest.mark.parametrize("wrong_question", [False, True])
+def test_ready_question_preserves_history_and_replays(
+    config_file, provider, monkeypatch, tmp_path, wrong_question
+):
+    import asyncio
+
+    import yaml
+
+    from backlog_harness.recovery_flow import defer_item
+
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    item = provider.item("item-one")
+    monkeypatch.setattr(app.provider, "item", lambda _: item)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+    evidence = app.root / "native"
+    outcome = {
+        "role": "coordinator",
+        "invocation_id": "preparation",
+        "request_digest": "request",
+        "binding": {},
+        "evidence_path": str(evidence),
+        "text": json.dumps(
+            {
+                "item_id": item.item_id,
+                "provider_revision": item.revision,
+                "blocked": "Conflicting requirements",
+            }
+        ),
+    }
+    atomic_json(
+        evidence / "intent.json",
+        {
+            "invocation_id": "preparation",
+            "request_digest": "request",
+            "binding": {},
+            "config_digest": app.config.file_digest,
+        },
+    )
+    atomic_json(
+        app._stage_path(item.item_id, "preparation"),
+        {
+            "item": asdict(item),
+            "decision": outcome,
+            "invocation_config_digest": app.config.file_digest,
+        },
+    )
+    question = {"question_id": "conflict", "text": "Which requirement governs?"}
+    paths = [item.path, "backlog/user-action-required/item-one.md"]
+    supplied = tmp_path / "question.json"
+    atomic_json(supplied, {"question": question, "paths": paths})
+    effects = []
+
+    async def invoke(*args, **kwargs):
+        assert "without reserving or executing" in args[3]
+        return {
+            "role": "coordinator",
+            "invocation_id": "decision",
+            "outcome": "returned",
+            "session": {"session_id": "coordinator", "native_session_id": "native"},
+            "text": json.dumps(
+                {
+                    "operation": "await-user",
+                    "item_id": item.item_id,
+                    "provider_revision": item.revision,
+                    "question": {"question_id": "different", "text": "Different?"}
+                    if wrong_question
+                    else question,
+                    "paths": paths,
+                    "reason": "Requirements conflict",
+                }
+            ),
+        }
+
+    async def transition(item_id, revision, target, authority, **kwargs):
+        validate_transition(item, target, authority)
+        assert authority["preparation_evidence"] == "preparation"
+        assert kwargs["declared_paths"] == paths
+        effects.append((revision, target, authority))
+        return {"state": target}
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    monkeypatch.setattr(app, "transition", transition)
+    if wrong_question:
+        with pytest.raises(TransitionBlocked, match="exact question handoff"):
+            asyncio.run(defer_item(app, item.item_id, supplied))
+        assert not effects
+        return
+    assert asyncio.run(defer_item(app, item.item_id, supplied))["state"] == "User Action Required"
+    # A changed observation after effect must reuse the original immutable request.
+    monkeypatch.setattr(app.provider, "item", lambda _: replace(item, state="User Action Required"))
+    asyncio.run(defer_item(app, item.item_id, supplied))
+    assert effects[0] == effects[1]
+    assert json.loads(app._stage_path(item.item_id, "defer-input").read_text())["item"] == asdict(
+        item
+    )
+
+
+@pytest.mark.parametrize("defect", [None, "history", "question", "link", "extra"])
+def test_ready_question_committed_receipt_preserves_content_and_link(provider, defect):
+    from hashlib import sha256
+    from types import SimpleNamespace
+
+    repo = provider.repository
+    item = provider.item("item-one")
+    source = repo / item.path
+    source.write_text(item.content + "\nSeries: backlog/feature-backlog/index.md\n")
+    index = repo / "backlog/feature-backlog/index.md"
+    index.write_text("[One](item-one.md)\n")
+    git(repo, "add", "--", "backlog")
+    git(repo, "commit", "-m", "Existing series")
+    item = provider.item(item.item_id)
+    before = git(repo, "rev-parse", "HEAD")
+    destination = "backlog/user-action-required/item-one.md"
+    question = {"question_id": "conflict", "text": "Which requirement governs?"}
+    content = item.content.replace("Status: Ready", "Status: User Action Required")
+    if defect == "history":
+        content = content.replace("One item.", "Rewritten acceptance.")
+    if defect != "question":
+        content += "\n\n## Pending Preparation Question\n\nQuestion ID: conflict\n\nWhich requirement governs?\n"
+    if defect == "extra":
+        content += "\nNew Requirement: skip review.\n"
+    target = repo / destination
+    target.parent.mkdir()
+    target.write_text(content)
+    source.unlink()
+    index.write_text(
+        "[One](item-one.md)\nChanged\n"
+        if defect == "link"
+        else "[One](../user-action-required/item-one.md)\n"
+    )
+    git(repo, "add", "--", "backlog")
+    git(repo, "commit", "-m", "Record exact preparation question")
+    after = replace(
+        item,
+        path=destination,
+        state="User Action Required",
+        content=content,
+        revision=sha256(destination.encode() + b"\0" + content.encode()).hexdigest(),
+    )
+    record = {
+        "stage_operation": "question",
+        "expected_path": destination,
+        "item": asdict(item),
+        "target": "User Action Required",
+        "head": before,
+        "paths": [item.path, destination, "backlog/feature-backlog/index.md"],
+        "authority": {"operation": "await-user", "question": question},
+    }
+    value = {
+        "operation_id": "question",
+        "before_revision": item.revision,
+        "commit": git(repo, "rev-parse", "HEAD"),
+        "after": asdict(after),
+        "question": question,
+    }
+    app = object.__new__(Application)
+    app.config = SimpleNamespace(repository=repo)
+    if defect:
+        with pytest.raises(TransitionBlocked):
+            app.verify_provider_receipt(record, value)
+    else:
+        receipt = app.verify_provider_receipt(record, value)
+        assert receipt["question"] == question
+        assert app.verify_provider_receipt(record, value) == receipt
