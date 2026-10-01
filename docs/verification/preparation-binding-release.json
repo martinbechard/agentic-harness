@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0a20",
+  "installed_modules_verified": 24,
+  "wheel_sha256": "32f8f4d14e6d222bec658a616d5484c44f444b3ad71581924ad34ba677553161",
+  "focused_tests": 33,
+  "independent_review": "question_handoff_review ACCEPT",
+  "stopped_queue": {
+    "shell": 55241,
+    "exit_code": 130,
+    "admission_open": false,
+    "active_items": []
+  },
+  "retained_native_preparations": [
+    "01a0f7c0-e5b3-7c31-a07d-2a62826fa7da",
+    "01a0f7c4-87ca-7281-acc2-92de87c0b08b"
+  ]
+}

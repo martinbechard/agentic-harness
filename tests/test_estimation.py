@@ -321,9 +321,19 @@ def test_real_document_without_owner_estimate_to_public_admission(
 
     def response(stage, value):
         binding = asdict(app.config.binding("coordinator"))
+        evidence = app.root / "fixture-invocations" / stage
+        atomic_json(
+            evidence / "intent.json",
+            {
+                "invocation_id": stage,
+                "request_digest": "fixture-request",
+                "binding": binding,
+                "config_digest": app.config.file_digest,
+            },
+        )
         return {
             "invocation_id": stage,
-            "config_digest": app.config.file_digest,
+            "request_digest": "fixture-request",
             "role": "coordinator",
             "outcome": "returned",
             "session": {
@@ -332,7 +342,7 @@ def test_real_document_without_owner_estimate_to_public_admission(
                 "binding": binding,
             },
             "binding": binding,
-            "evidence_path": str(app.root),
+            "evidence_path": str(evidence),
             "telemetry_path": str(telemetry),
             "telemetry": {
                 "span_count": 1,
@@ -460,7 +470,9 @@ def test_real_document_without_owner_estimate_to_public_admission(
         assert len(preparations) == 1 and len(mutations) == 1
 
 
-@pytest.mark.parametrize("defect", ["role", "path", "check", "gate", "blocked", "revision"])
+@pytest.mark.parametrize(
+    "defect", ["role", "path", "check", "gate", "blocked", "status", "singular_status", "revision"]
+)
 def test_preparation_rejects_invalid_authority(config_file, monkeypatch, defect):
     from backlog_harness.estimation import configured_workflow, prepared_workflow
 
@@ -488,15 +500,35 @@ def test_preparation_rejects_invalid_authority(config_file, monkeypatch, defect)
         value["workflow"]["completion"] = "skip-review"
     elif defect == "blocked":
         value["blocked"] = "Required authority is missing"
+    elif defect == "status":
+        value.update(status="blocked", blockers=[{"reason": "Retain prior candidate"}])
+    elif defect == "singular_status":
+        value.update(status="blocked", blocker={"reason": "Missing verification command"})
     elif defect == "revision":
         value["provider_revision"] = "stale"
     decision["text"] = json.dumps(value)
+    decision.update(
+        invocation_id="fixture",
+        request_digest="request",
+        binding={},
+        evidence_path=str(app.root / "fixture"),
+    )
+    atomic_json(
+        app.root / "fixture/intent.json",
+        {
+            "invocation_id": "fixture",
+            "request_digest": "request",
+            "binding": {},
+            "config_digest": app.config.file_digest,
+        },
+    )
     atomic_json(
         app._stage_path("one", "preparation"),
         {
             "item": {"revision": "revision"},
             "decision": decision,
             "workflow_config_digest": digest(configured_workflow(app.config, "one")),
+            "invocation_config_digest": app.config.file_digest,
         },
     )
     with pytest.raises(TransitionBlocked):
@@ -528,12 +560,28 @@ def test_preparation_config_binding_ignores_other_item(config_file, monkeypatch)
             }
         ),
     }
+    decision.update(
+        invocation_id="fixture",
+        request_digest="request",
+        binding={},
+        evidence_path=str(app.root / "fixture"),
+    )
+    atomic_json(
+        app.root / "fixture/intent.json",
+        {
+            "invocation_id": "fixture",
+            "request_digest": "request",
+            "binding": {},
+            "config_digest": app.config.file_digest,
+        },
+    )
     atomic_json(
         app._stage_path("one", "preparation"),
         {
             "item": {"revision": "revision"},
             "decision": decision,
             "workflow_config_digest": digest(configured_workflow(app.config, "one")),
+            "invocation_config_digest": app.config.file_digest,
         },
     )
     expected = prepared_workflow(app, "one", app.config)
@@ -541,13 +589,21 @@ def test_preparation_config_binding_ignores_other_item(config_file, monkeypatch)
     data["workflow"]["items"] = {"other": {"allowed_paths": ["other.py"]}}
     config.write_text(yaml.safe_dump(data))
     assert prepared_workflow(app, "one", load_config(config)) == expected
+    intent_path = app.root / "fixture/intent.json"
+    original_intent = json.loads(intent_path.read_text())
+    atomic_json(intent_path, {**original_intent, "invocation_id": "changed"})
+    with pytest.raises(TransitionBlocked, match="invocation configuration differs"):
+        prepared_workflow(app, "one", load_config(config))
+    atomic_json(intent_path, original_intent)
     data["workflow"]["items"]["one"] = {"allowed_paths": ["changed.py"]}
     config.write_text(yaml.safe_dump(data))
     with pytest.raises(TransitionBlocked, match="configuration changed"):
         prepared_workflow(app, "one", load_config(config))
 
 
-@pytest.mark.parametrize("racing", [False, True])
+@pytest.mark.parametrize(
+    "racing", [None, "config_digest", "invocation_id", "request_digest", "binding"]
+)
 def test_preparation_uses_fresh_configuration(config_file, monkeypatch, racing):
     import asyncio
 
@@ -578,10 +634,24 @@ def test_preparation_uses_fresh_configuration(config_file, monkeypatch, racing):
                 }
             ),
         }
+        result.update(
+            invocation_id="prepare",
+            request_digest="request",
+            binding={"role": "coordinator"},
+            evidence_path=str(app.root / "native"),
+        )
+        intent = {
+            "invocation_id": result["invocation_id"],
+            "request_digest": result["request_digest"],
+            "binding": result["binding"],
+            "config_digest": app.config.file_digest,
+        }
+        if racing:
+            intent[racing] = "different"
+        atomic_json(app.root / "native/intent.json", intent)
+        result.pop("config_digest")
         # Simulate another run-loop iteration replacing the shared config object.
         app.config = captured
-        if racing:
-            result["config_digest"] = "different-invocation-config"
         return result
 
     monkeypatch.setattr(app, "invoke", invoke)
@@ -605,3 +675,40 @@ def test_preparation_uses_fresh_configuration(config_file, monkeypatch, racing):
             configured_workflow(load_config(config), "one")
         )
     assert not app._stage_path("one", "estimate-input").exists()
+
+
+@pytest.mark.parametrize(
+    "mismatch", [None, "invocation_id", "request_digest", "config_digest", "binding"]
+)
+def test_retained_native_preparation_envelopes(tmp_path, mismatch):
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from backlog_harness.estimation import validate_preparation_invocation
+
+    envelopes = json.loads(
+        (Path(__file__).parent / "fixtures/native-preparation-envelopes.json").read_text()
+    )
+    result, intent = envelopes["result"], envelopes["intent"]
+    assert "config_digest" not in result
+    config = SimpleNamespace(file_digest=intent["config_digest"])
+    result["evidence_path"] = str(tmp_path)
+    if mismatch:
+        intent[mismatch] = "different"
+    atomic_json(tmp_path / "intent.json", intent)
+    if mismatch:
+        with pytest.raises(TransitionBlocked, match="configuration differs"):
+            validate_preparation_invocation(result, config.file_digest, tmp_path)
+    else:
+        validate_preparation_invocation(result, config.file_digest, tmp_path)
+
+
+def test_preparation_intent_cannot_escape_operational_root(tmp_path):
+    from backlog_harness.estimation import validate_preparation_invocation
+
+    external = tmp_path / "outside"
+    atomic_json(external / "intent.json", {"config_digest": "config"})
+    with pytest.raises(TransitionBlocked, match="escapes evidence root"):
+        validate_preparation_invocation(
+            {"evidence_path": str(external)}, "config", tmp_path / "operations"
+        )

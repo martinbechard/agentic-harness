@@ -98,6 +98,7 @@ def prepared_workflow(app, item_id, config):
     )
     decision = saved["decision"]
     app.validate_invocation_result(decision)
+    validate_preparation_invocation(decision, saved["invocation_config_digest"], app.root)
     value = app.result_json(decision)
     require(
         decision.get("role") == "coordinator"
@@ -105,7 +106,12 @@ def prepared_workflow(app, item_id, config):
         and value.get("provider_revision") == saved["item"]["revision"],
         "Preparation identity differs",
     )
-    require(not value.get("blocked"), "Preparation blocked: " + str(value.get("blocked")))
+    refusal = value.get("blocked") or (
+        (value.get("blockers") or value.get("blocker") or "Coordinator reported blocked")
+        if value.get("status") == "blocked"
+        else None
+    )
+    require(not refusal, "Preparation blocked: " + json.dumps(refusal))
     parameters = value.get("workflow", {})
     require(
         set(parameters) == {"allowed_paths", "checks"},
@@ -143,6 +149,20 @@ def prepared_workflow(app, item_id, config):
         argv for argv in checks if argv not in selected["checks"]
     ]
     return selected
+
+
+def validate_preparation_invocation(decision, config_digest, root):
+    """The durable intent, not the result envelope, owns configuration attribution."""
+    evidence = Path(decision["evidence_path"]).resolve()
+    require(evidence.is_relative_to(root.resolve()), "Preparation intent escapes evidence root")
+    intent = json.loads((evidence / "intent.json").read_text())
+    require(
+        intent.get("invocation_id") == decision.get("invocation_id")
+        and intent.get("request_digest") == decision.get("request_digest")
+        and intent.get("binding") == decision.get("binding")
+        and intent.get("config_digest") == config_digest,
+        "Preparation invocation configuration differs",
+    )
 
 
 async def prepare_item(app, item):
@@ -186,10 +206,7 @@ async def prepare_item(app, item):
             purpose="provider",
         )
         app.validate_invocation_result(decision)
-        require(
-            decision.get("config_digest") == current.file_digest,
-            "Preparation invocation configuration differs",
-        )
+        validate_preparation_invocation(decision, current.file_digest, app.root)
         require(
             load_config(app.config_path).file_digest == current.file_digest,
             "Preparation configuration changed during invocation",
@@ -201,6 +218,7 @@ async def prepare_item(app, item):
                 "item": asdict(item),
                 "decision": decision,
                 "workflow_config_digest": digest(configured_workflow(current, item.item_id)),
+                "invocation_config_digest": current.file_digest,
             },
             exclusive=True,
         )
