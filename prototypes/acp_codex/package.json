@@ -1,0 +1,17 @@
+{
+  "name": "acp_codex",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node --test workflow.test.mjs",
+    "demo": "node demo.mjs"
+  },
+  "license": "ISC",
+  "description": "Isolated maintained Codex ACP stdio and LangGraph prototype",
+  "dependencies": {
+    "@agentclientprotocol/codex-acp": "2.1.1",
+    "@agentclientprotocol/sdk": "1.6.0",
+    "@langchain/langgraph": "1.4.18"
+  },
+  "private": true,
+  "type": "module"
+}
