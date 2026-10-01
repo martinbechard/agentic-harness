@@ -4,7 +4,7 @@
 
 Use an explicit absolute repository, candidate workspace, methodology installation, and evidence root. The application never imports arbitrary configured adapters. Configuration reload happens before each harness-issued CLI invocation. The complete snapshot and resolved dependency digests govern that invocation. Accepted item scopes, checks and candidate storage remain frozen; incompatible edits fence the next invocation. The effective Codex home is recorded in the session binding and applied to both capability validation and launch; changing it cannot silently resume another authentication context. Changes to the originating CLI, authentication context, or profile cannot silently replace a retained native session.
 
-Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a1-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
+Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a2-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
 
 The fixture generator is a concrete configuration example:
 
@@ -16,7 +16,15 @@ uv run python scripts/acceptance_fixtures.py \
 
 It creates separate SOLO and MULTITASK provider repositories, each with three dummy items and unchanged authoritative tests. It refuses to replace an existing fixture. Creating fixtures makes no model call. Run their generated config through `validate`, then `run --until-terminal` or `app`.
 
+A setup example is [dev-methodology-observation.yaml](examples/dev-methodology-observation.yaml). It requires the project setup owner to create the named independent workspace and storage directories. Its example scope/checks are for schema validation only and must be replaced with the selected item’s accepted requirements before dispatch.
+
 ## Workflow And Authority
+
+The dev-methodology integration selects `provider_interaction: agent`. It is under verification; historical release acceptance covers the earlier direct fixture route. `validate` checks configuration without a model call. `refresh-provider` performs a bounded, read-only Coordinator observation when the provider source changes and otherwise returns the cached observation. Neither command dispatches a Work Item. Dashboard and status use the cache and report stale observations rather than launching agents.
+
+The configured Coordinator and Orchestrator must be able to read the applicable provider-management skills from the methodology installation. They may load them by reference; literal profile duplication is unnecessary. Management invocations execute in the authoritative repository; implementation invocations stay in the separate candidate workspace. A writable management operation additionally requires the configured role's `workspace-write` permission and the recorded actor, revision, transition, prompt, and exact provider paths. Agents use their configured claim helper. The harness does not acquire claims. A separate executor never becomes the canonical owner. Management usage is retained separately and checked against `administrative_review_limits`.
+
+The default is `provider_interaction: agent`. Explicit `provider_interaction: direct` preserves the earlier fixture route. When replaying an older fixture configuration, add that explicit selection; its retained evidence is not migrated to the agent route. The byte-oriented `recover-provider` command below belongs to that route; it must not be used to adopt or replace an existing desktop task. Agent-mediated operation recovery reuses the recorded operation and invocation evidence. A desktop task ID alone is not a CLI resume identity.
 
 The Coordinator requests admission against the current provider revision. Ready becomes Starting before a canonical Orchestrator starts. That Orchestrator accepts ownership while read-only; the provider records Running for its portable session before writable source work. The agent may use native specialists and arrange a native independent review.
 

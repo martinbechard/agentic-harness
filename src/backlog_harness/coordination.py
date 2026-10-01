@@ -9,7 +9,7 @@ from collections import Counter
 
 from .contracts import ConfigError, digest, load_config, utcnow
 from .evidence import EvidenceError, atomic_json, operation_lock
-from .provider import TERMINAL, TransitionBlocked
+from .provider import TERMINAL, AgentProvider, TransitionBlocked
 
 
 def dependencies(item):
@@ -112,7 +112,13 @@ class RunController:
         for item in items:
             if item.state not in {"Ready", "Starting", "Running"} or item.item_id in self.tasks:
                 continue
-            required = dependencies(item)
+            if isinstance(self.app.provider, AgentProvider):
+                observed = self.app.provider.observation().get("dependencies", {})
+                if item.item_id not in observed:
+                    continue
+                required = observed[item.item_id]
+            else:
+                required = dependencies(item)
             if any(name not in by_id or by_id[name].state != "Completed" for name in required):
                 continue
             premise = digest([item.revision, self.app.config.file_digest])
@@ -183,6 +189,8 @@ class RunController:
                         await asyncio.sleep(min(self.app.config.data["poll_seconds"], 1))
                         continue
                     self.app.config = current
+                    if isinstance(self.app.provider, AgentProvider):
+                        await self.app.refresh_provider()
                     items = self.app.provider.snapshot()
                     limit = (
                         1

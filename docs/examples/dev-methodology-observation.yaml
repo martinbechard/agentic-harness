@@ -1,0 +1,51 @@
+# Northstar: setup example for validate and refresh-provider, never a dispatch authorization.
+# The project setup owner creates the separate clone and evidence directories below.
+# Before any run, replace allowed_paths/checks with the Coordinator-selected item's requirements.
+version: 1
+repository: /Users/martinbechard/dev/dev-methodology
+workspace: /Users/martinbechard/dev/agentic-harness/.agent-ops/dev-methodology-workspace
+candidate_root: /Users/martinbechard/dev/agentic-harness/.agent-ops/dev-methodology-candidates
+operational_root: /Users/martinbechard/dev/agentic-harness/.agent-ops/dev-methodology-evidence
+methodology_root: /Users/martinbechard/dev/dev-methodology
+provider: file
+provider_interaction: agent
+poll_seconds: 10
+runtime_observation_stale_seconds: 60
+max_active_invocations: 1
+coordinator_limits: {turns: 1, generated_tokens: 32768}
+administrative_review_limits: {turns: 1, generated_tokens: 8192}
+agent_clis:
+  codex:
+    adapter: codex
+    executable: /Users/martinbechard/.nvm/versions/node/v22.2.0/bin/codex
+    auth_profile: chatgpt
+    adapter_options:
+      codex_home: /Users/martinbechard/.codex
+      load_user_config: true
+      native_max_threads: 2
+profiles:
+  coordinator:
+    role: dev_backlog_coordinator
+    model: gpt-6-astra
+    effort: low
+    skills: [] # Applicable management/claim skills are loaded by reference.
+    tools: [native]
+    permissions: [workspace-write]
+  orchestrator:
+    role: dev_orchestrator
+    model: gpt-6-astra
+    effort: low
+    skills: []
+    tools: [native]
+    permissions: [workspace-write]
+agents:
+  coordinator: {cli: codex, profile: coordinator}
+  orchestrator: {cli: codex, profile: orchestrator}
+workflow:
+  completion: main-branch
+  mode: SOLO # Must match the current cited Coordinator authority; this does not set project mode.
+  primary_branch: main
+  # Required by the current configuration schema even for read-only observation.
+  # These are example fields, not acceptance criteria for any selected backlog item.
+  allowed_paths: [README.md]
+  checks: [[git, diff, --check]]

@@ -1,0 +1,11 @@
+{
+  "source_fingerprint": "88275595f6e022e27990ba76369c32933eb420c3998e737593e1b1737be82734",
+  "wheel_sha256": "5a79de82658f6ed8719c39a50f117d88a800cd0e3af365a7093604c2582fe53c",
+  "version": "0.1.0a2",
+  "source_files_verified": 21,
+  "review": "ACCEPT",
+  "reviewer": "/root/agent_provider_final_corrections",
+  "installed_executable": "/Users/martinbechard/dev/agentic-harness/.agent-ops/provider-agent-install/bin/agentic-harness",
+  "installed_source_verified": true,
+  "live_workflow_acceptance": "pending"
+}

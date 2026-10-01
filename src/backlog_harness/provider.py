@@ -1,8 +1,8 @@
-"""Narrow file/main-branch provider transactions for explicitly claim-free SOLO projects.
+"""Narrow file/main-branch provider transactions with agent-owned resource claims.
 
 The revision, exact-path Git transaction and immutable blob checks adapt the
 existing ProjectBridge._transition operation. Its LangGraph/claims controller is
-not reused. Projects selecting another coordination policy are rejected.
+not reused. Agents apply their configured resource-claim workflow independently.
 """
 
 from __future__ import annotations
@@ -161,12 +161,8 @@ class FileProvider:
     def policy(self):
         project = yaml.safe_load((self.repository / "PROJECT.yaml").read_text())
         route = project.get("workflow_selection", {})
-        if project.get("resource_coordination", {}).get("selected") != "none" or project.get(
-            "execution_mode"
-        ) not in {"SOLO", "MULTITASK"}:
-            raise TransitionBlocked(
-                "This route requires an explicit execution mode and resource coordination none"
-            )
+        if project.get("execution_mode") not in {"SOLO", "MULTITASK"}:
+            raise TransitionBlocked("This route requires an explicit execution mode")
         concurrent = project.get("project_setup", {}).get("concurrent_tasking", False)
         if type(concurrent) is not bool or concurrent != (project["execution_mode"] == "MULTITASK"):
             raise TransitionBlocked(
@@ -444,3 +440,184 @@ class FileProvider:
         atomic_json(receipts, receipt, exclusive=True)
         self.receipt_cache[record] = digest([head, request, receipt])
         return receipt
+
+
+class AgentProvider:
+    """Read-only projection of provider observations produced by the responsible agent."""
+
+    def __init__(self, repository: Path, evidence_root: Path):
+        self.repository = repository.resolve()
+        self.evidence_root = evidence_root.resolve()
+        self.cache_path = self.evidence_root / "provider-observation.json"
+
+    def source_manifest(self):
+        # Detect committed and pending provider changes without interpreting document headers.
+        files = git(
+            self.repository,
+            "ls-files",
+            "-co",
+            "--exclude-standard",
+            "--",
+            "PROJECT.yaml",
+            "backlog",
+        ).splitlines()
+        values = []
+        for name in sorted(set(files)):
+            if "future-ideas" in Path(name).parts:
+                continue
+            path = self.repository / name
+            if path.is_symlink() or not path.resolve().is_relative_to(self.repository):
+                raise TransitionBlocked("Unsafe provider observation path")
+            values.append([name, sha256(path.read_bytes()).hexdigest() if path.is_file() else None])
+        return dict(values)
+
+    def source_revision(self):
+        return digest([git(self.repository, "rev-parse", "HEAD"), self.source_manifest()])
+
+    def validate_inventory(self, value):
+        """Require complete classification while leaving document interpretation to the agent."""
+        from .workflow import require
+
+        expected = {
+            name
+            for name, content in self.source_manifest().items()
+            if name.startswith("backlog/") and name.endswith(".md") and content is not None
+        }
+        rows = value["items"]
+        classified = value.get("non_items", [])
+        paths = [row["path"] for row in rows]
+        for row in classified:
+            require(
+                row.get("kind") in {"group", "index", "archive_debt", "supporting_document"}
+                and isinstance(row.get("reason"), str)
+                and row["reason"].strip(),
+                "Non-item classification evidence is missing",
+            )
+            paths.append(row["path"])
+        require(
+            len(paths) == len(set(paths)) and set(paths) == expected,
+            "Provider inventory classification is incomplete or duplicated",
+        )
+        identities = {row["item_id"] for row in rows}
+        dependencies = value.get("dependencies", {})
+        require(set(dependencies) == identities, "Dependency observations are incomplete")
+        require(
+            all(
+                isinstance(values, list) and all(isinstance(v, str) and v for v in values)
+                for values in dependencies.values()
+            ),
+            "Invalid dependency observations",
+        )
+        require(
+            all(set(values) <= identities for values in dependencies.values()),
+            "Provider dependency names an unobserved item",
+        )
+        require(
+            set(value.get("questions", {})) <= identities
+            and set(value.get("transition_paths", {})) <= identities,
+            "Provider metadata names an unobserved item",
+        )
+
+    def observation(self):
+        if not self.cache_path.exists():
+            raise TransitionBlocked("Provider agent observation is required")
+        value = json.loads(self.cache_path.read_text())
+        if value["source_revision"] != self.source_revision():
+            raise TransitionBlocked("Provider observation is stale; refresh through the agent")
+        return value
+
+    def snapshot(self):
+        return [Item(**value) for value in self.observation()["items"]]
+
+    def item(self, item_id):
+        matches = [item for item in self.snapshot() if item.item_id == item_id]
+        if len(matches) != 1:
+            raise TransitionBlocked("Item is absent or ambiguous")
+        return matches[0]
+
+    def policy(self):
+        policy = self.observation()["policy"]
+        self.validate_policy(policy)
+        if policy["eligible"] is not True:
+            raise TransitionBlocked("Provider agent did not establish eligible execution policy")
+        return policy
+
+    def validate_policy(self, policy):
+        """Validate cited source bytes and deterministic route invariants, not agent interpretation."""
+        from .workflow import require
+
+        require(
+            type(policy.get("eligible")) is bool and policy.get("mode") in {"SOLO", "MULTITASK"},
+            "Provider eligibility or execution mode is invalid",
+        )
+        evidence = policy.get("evidence")
+        require(isinstance(evidence, list) and evidence, "Structured policy evidence is required")
+        supported = set()
+        for reference in evidence:
+            name = reference.get("path", "")
+            path = self.repository / name
+            require(
+                name
+                and not Path(name).is_absolute()
+                and ".." not in Path(name).parts
+                and not path.is_symlink()
+                and path.resolve().is_relative_to(self.repository),
+                "Unsafe policy evidence path",
+            )
+            content = path.read_bytes()
+            require(sha256(content).hexdigest() == reference.get("sha256"), "Stale policy evidence")
+            excerpt = reference.get("excerpt")
+            require(
+                isinstance(excerpt, str) and excerpt and excerpt.encode() in content,
+                "Policy evidence excerpt is absent",
+            )
+            facts = reference.get("supports")
+            require(
+                isinstance(facts, list) and set(facts) <= {"mode", "admission"},
+                "Policy evidence facts are invalid",
+            )
+            supported.update(facts)
+        require(supported == {"mode", "admission"}, "Policy mode or admission authority is missing")
+        project = yaml.safe_load((self.repository / "PROJECT.yaml").read_text())
+        route = project.get("workflow_selection", {})
+        for key, expected in [("persistence", "file"), ("commit", "main-branch")]:
+            require(
+                route.get(key, {}).get("default") == expected
+                and not route[key].get("folder_overrides"),
+                "Unsupported selected provider route",
+            )
+        require(
+            route.get("canonical_primary_branch") == policy.get("primary_branch"),
+            "Observed primary branch differs from project",
+        )
+        if "execution_mode" in project:
+            require(project["execution_mode"] == policy["mode"], "Observed execution mode differs")
+        if policy["mode"] == "MULTITASK":
+            require(
+                project.get("project_setup", {}).get("concurrent_tasking") is True,
+                "MULTITASK has no project concurrency authority",
+            )
+        if git(self.repository, "symbolic-ref", "--short", "HEAD") != policy["primary_branch"]:
+            raise TransitionBlocked("Provider primary branch differs")
+        gitdir = Path(git(self.repository, "rev-parse", "--absolute-git-dir")).resolve()
+        common = Path(git(self.repository, "rev-parse", "--git-common-dir"))
+        require(
+            gitdir == (self.repository / common).resolve(), "Provider requires primary checkout"
+        )
+
+    def question(self, item):
+        return self.observation().get("questions", {}).get(item.item_id)
+
+    def transition(self, *args, **kwargs):
+        raise TransitionBlocked("Live provider mutation requires the responsible agent")
+
+    @contextmanager
+    def transaction(self):
+        """Serialize delivery with agent-managed provider operations in the same checkout."""
+        with (self.repository / ".git/agentic-provider.lock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                self.policy()
+                yield
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)

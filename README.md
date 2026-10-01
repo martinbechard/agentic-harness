@@ -2,7 +2,7 @@
 
 A foreground Python application that lets agents organize delivery with their CLI's native delegation while enforcing provider transitions, independent review, exact candidate identity, checks, delivery, and usage holds.
 
-The first adapter supports Codex CLI 0.159.2. The selected workflow uses a file backlog, main-branch delivery, explicit resource coordination `none`, and either SOLO or MULTITASK. MULTITASK requires `project_setup.concurrent_tasking: true`, independent candidate clones, explicit item scopes, and serialized provider and integration transactions. Projects selecting a resource-claim helper need their existing helper boundary integrated before this route can execute them.
+The first adapter supports Codex CLI 0.159.2. The selected workflow uses a file backlog, main-branch delivery, and either SOLO or MULTITASK. Agents use their configured resource-claim helper. The agent-mediated provider route is selected with `provider_interaction: agent`; it is under verification for dev-methodology and is not covered by the historical six-item release acceptance. The explicitly selected `direct` fixture route retains the earlier file-fixture transactions. MULTITASK requires project authority, independent candidate clones, explicit item scopes, and serialized provider and integration transactions.
 
 Install Python 3.12 or newer and Codex CLI, then use:
 

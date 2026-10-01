@@ -175,6 +175,22 @@ class ConfigSnapshot:
                 raise ConfigError(f"Configured methodology skill is missing: {name}")
             skills[name] = sha256(path.read_bytes()).hexdigest()
         executable_digest = sha256(executable.read_bytes()).hexdigest()
+        management_skills = {}
+        if self.data.get("provider_interaction", "agent") == "agent" and role in {
+            "coordinator",
+            "orchestrator",
+        }:
+            for name in (
+                "manage-work-items",
+                "manage-work-items-file",
+                "resource-claim",
+                "resource-claim-helper",
+                "resource-claim-helper-mcp",
+            ):
+                path = root / "skills" / name / "SKILL.md"
+                management_skills[name] = (
+                    sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+                )
         auth_context = str(
             Path(
                 cli.get("adapter_options", {}).get(
@@ -188,8 +204,14 @@ class ConfigSnapshot:
                 "cli": cli,
                 "profile": profile,
                 "skills": skills,
+                "management_skills": management_skills,
                 "executable": executable_digest,
                 "auth_context": auth_context,
+                "user_config_digest": (
+                    sha256((Path(auth_context) / "config.toml").read_bytes()).hexdigest()
+                    if cli.get("adapter_options", {}).get("load_user_config", False)
+                    else None
+                ),
                 "repository": self.data["repository"],
                 "workspace": self.data["workspace"],
                 "methodology_root": self.data["methodology_root"],
@@ -224,6 +246,8 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
         workspace = _path(data.get("workspace"), "workspace")
         if data.get("provider") != "file":
             raise ConfigError("Only the file provider is implemented")
+        if data.get("provider_interaction", "agent") not in {"direct", "agent"}:
+            raise ConfigError("provider_interaction must be direct or agent")
         if (
             "operational_root" in data
             and not Path(_text(data["operational_root"], "operational_root")).is_absolute()
@@ -321,8 +345,10 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
             if not isinstance(cli.get("adapter_options", {}), dict):
                 raise ConfigError("adapter_options must be a mapping")
             options = cli.get("adapter_options", {})
-            if set(options) - {"native_max_threads", "codex_home"}:
+            if set(options) - {"native_max_threads", "codex_home", "load_user_config"}:
                 raise ConfigError("Unsupported Codex adapter option")
+            if type(options.get("load_user_config", False)) is not bool:
+                raise ConfigError("load_user_config must be a boolean")
             if (
                 type(options.get("native_max_threads", 2)) is not int
                 or not 1 <= options.get("native_max_threads", 2) <= 10
@@ -353,7 +379,14 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
             _object(agent, "agent")
             if agent.get("cli") not in clis or agent.get("profile") not in profiles:
                 raise ConfigError("Agent references unknown CLI or profile")
-            if role != "orchestrator" and profiles[agent["profile"]]["permissions"] != ["read"]:
+            management_role = (
+                role == "coordinator" and data.get("provider_interaction", "agent") == "agent"
+            )
+            if (
+                role != "orchestrator"
+                and not management_role
+                and profiles[agent["profile"]]["permissions"] != ["read"]
+            ):
                 raise ConfigError("Harness control roles require read permissions")
         snapshot = ConfigSnapshot(path, sha256(first).hexdigest(), utcnow(), freeze(data))
         for role in agents:

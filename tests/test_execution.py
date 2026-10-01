@@ -83,3 +83,111 @@ print(json.dumps({'type':'turn.completed','usage':{'output_tokens':1}}),flush=Tr
                 assert resumed.session == handle.session
 
     asyncio.run(check())
+
+
+def test_provider_invocation_uses_authoritative_workspace(config_file, monkeypatch):
+    from pathlib import Path
+
+    from backlog_harness.adapters.registry import AdapterRegistry
+    from backlog_harness.application import Application
+
+    config, data = config_file
+    app = Application(config)
+    observed = []
+
+    class Inspected(Exception):
+        pass
+
+    class Adapter:
+        def validate_profile(self, request):
+            observed.append(request.snapshot.data["workspace"])
+            raise Inspected
+
+    monkeypatch.setattr(AdapterRegistry, "resolve", lambda *_: Adapter())
+    for purpose, expected in [
+        ("provider", data["repository"]),
+        ("implementation", data["workspace"]),
+    ]:
+        with pytest.raises(Inspected):
+            asyncio.run(app.invoke("one", purpose, "coordinator", "observe", purpose=purpose))
+        assert Path(observed[-1]) == Path(expected)
+
+
+def test_saved_implementation_is_not_a_provider_result(config_file):
+    from backlog_harness.application import Application
+    from backlog_harness.contracts import digest
+    from backlog_harness.evidence import atomic_json
+    from backlog_harness.provider import TransitionBlocked
+
+    config, _ = config_file
+    app = Application(config)
+    atomic_json(
+        app._stage_path("one", "observe"),
+        {"request_digest": digest("observe"), "outcome": "returned"},
+    )
+    with pytest.raises(TransitionBlocked, match="Stage request changed"):
+        asyncio.run(app.invoke("one", "observe", "coordinator", "observe", purpose="provider"))
+    assert not list((app.root / "runs").glob("*/operations/*/invocations/*/intent.json"))
+
+
+def test_provider_write_requires_bound_transition(config_file, provider):
+    from dataclasses import asdict
+    from types import SimpleNamespace
+
+    from backlog_harness.contracts import digest
+    from backlog_harness.evidence import atomic_json, component
+    from backlog_harness.provider import TransitionBlocked
+
+    config, _ = config_file
+    snapshot = load_config(config)
+    item = provider.item("item-one")
+    prompt = "Recheck revision and perform the authorized reservation using management skills."
+    record = {
+        "repository": str(snapshot.repository),
+        "stage_operation": "item-one:provider-reserve",
+        "prompt_digest": digest(prompt),
+        "item": asdict(item),
+        "target": "Starting",
+        "authority": {
+            "role": "coordinator",
+            "operation": "new",
+            "item_id": item.item_id,
+            "invocation_id": "decision",
+            "observed_result": True,
+        },
+        "paths": [item.path],
+    }
+
+    def request(value):
+        identity = digest(value)
+        atomic_json(
+            snapshot.operational_root
+            / "provider-agent-operations"
+            / component(identity)
+            / "requested.json",
+            value,
+        )
+        return SimpleNamespace(
+            snapshot=snapshot,
+            read_only=False,
+            provider_operation=identity,
+            binding=snapshot.binding("coordinator"),
+            operation_id=record["stage_operation"],
+            prompt=prompt,
+        )
+
+    bound = request(record)
+    assert CodexAdapter.validate_provider_request(bound, snapshot.repository) == [item.path]
+    for changed, message in [
+        ({"authority": {**record["authority"], "observed_result": False}}, "Observed actor"),
+        ({"authority": {**record["authority"], "role": "orchestrator"}}, "actor differs"),
+        ({"prompt_digest": digest("other")}, "prompt differs"),
+        ({"paths": ["src/implementation.py"]}, "escapes backlog"),
+    ]:
+        with pytest.raises(TransitionBlocked, match=message):
+            CodexAdapter.validate_provider_request(
+                request({**record, **changed}), snapshot.repository
+            )
+    bound.provider_operation = None
+    with pytest.raises(TransitionBlocked, match="operation is required"):
+        CodexAdapter.validate_provider_request(bound, snapshot.repository)

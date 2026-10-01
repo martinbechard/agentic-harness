@@ -97,6 +97,7 @@ def create(root, mode, codex, methodology):
         "candidate_root": str(clones),
         "methodology_root": str(methodology),
         "provider": "file",
+        "provider_interaction": "direct",
         "operational_root": str(destination / "evidence"),
         "poll_seconds": 0.5,
         "runtime_observation_stale_seconds": 30,

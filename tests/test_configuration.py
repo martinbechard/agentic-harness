@@ -157,3 +157,37 @@ def test_accepted_workflow_remains_frozen_and_changed_scope_blocks_invocation(co
     with pytest.raises(TransitionBlocked, match="Accepted workflow changed"):
         asyncio.run(app.invoke("one", "accept", "orchestrator", "prompt"))
     assert not list((app.root / "runs").glob("*/operations/*/invocations/*/intent.json"))
+
+
+def test_agent_management_permissions_and_user_config_reload(config_file, tmp_path):
+    path, data = config_file
+    home = tmp_path / "native-home"
+    home.mkdir()
+    native_config = home / "config.toml"
+    native_config.write_text('[mcp_servers.claims]\ncommand="claim-helper"\n')
+    data["provider_interaction"] = "agent"
+    data["profiles"]["control"]["permissions"] = ["workspace-write"]
+    data["agent_clis"]["primary"]["adapter_options"] = {
+        "codex_home": str(home),
+        "load_user_config": True,
+    }
+    path.write_text(yaml.safe_dump(data))
+    first = load_config(path).binding("coordinator")
+    native_config.write_text('[mcp_servers.claims]\ncommand="updated-helper"\n')
+    second = load_config(path).binding("coordinator")
+    assert first.relevant_digest != second.relevant_digest
+    assert first.auth_context == str(home.resolve())
+    data["provider_interaction"] = "direct"
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match="control roles"):
+        load_config(path)
+
+
+def test_provider_defaults_to_agent_without_silent_fixture_fallback(config_file):
+    from backlog_harness.application import Application
+    from backlog_harness.provider import AgentProvider
+
+    path, data = config_file
+    data.pop("provider_interaction")
+    path.write_text(yaml.safe_dump(data))
+    assert isinstance(Application(path).provider, AgentProvider)

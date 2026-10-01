@@ -25,6 +25,7 @@ def config_file(tmp_path):
         },
         "methodology_root": str(root),
         "provider": "file",
+        "provider_interaction": "direct",
         "poll_seconds": 1,
         "runtime_observation_stale_seconds": 30,
         "max_active_invocations": 1,

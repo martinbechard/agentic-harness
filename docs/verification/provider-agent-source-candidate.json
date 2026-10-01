@@ -1,0 +1,28 @@
+{
+  "fingerprint": "88275595f6e022e27990ba76369c32933eb420c3998e737593e1b1737be82734",
+  "files": {
+    "pyproject.toml": "37c70f4f83b82417fb5aa591e912ff6cf65d3d8df3fce418077f90e23eb6d5c8",
+    "src/backlog_harness/__init__.py": "b5e85a96b00aea1ead16e620f7c6b0db7f016760de4f5bcc4e4cf1bd610b9cd7",
+    "src/backlog_harness/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+    "src/backlog_harness/adapters/__init__.py": "1378a6cb98d3dc5dc3eb00265a04a7d4c3205860532b00187473d33f9e571d17",
+    "src/backlog_harness/adapters/codex/__init__.py": "fe364cbe41f5044aa99c1ae734c838fdeb92736bcf74b79575b7830da0c133d1",
+    "src/backlog_harness/adapters/codex/adapter.py": "8bcd65c97900bddacbe99535da38975d9517024922ba609cb736df4fa4ae232c",
+    "src/backlog_harness/adapters/registry.py": "ef8c76257d7cfaaa83fb20b50ef160c7aba1df533ff97e5321aacf55aa25e07e",
+    "src/backlog_harness/analytics.py": "e471e7959fb4f8420a9693daa01e7499b6f936e0a7dd3e6a81a22d40895e2100",
+    "src/backlog_harness/application.py": "cfb519bfa46814dc6893b0f4217f8c06ef1b289fff702d95608c5431a77216ea",
+    "src/backlog_harness/cli.py": "d8c6b39e3e958c15ac1197a9a0e8fab9f6f09907d958fda9140c35cb0713fc11",
+    "src/backlog_harness/contracts.py": "de38780ae21c62a45249e5e376f0ad91732e0d821f87c44ebc3454438fe0a969",
+    "src/backlog_harness/coordination.py": "3d52fc62c3d0203f3b9e64fc4a3c82d8f24b3cc27d8afdc3a921b77e061e6824",
+    "src/backlog_harness/dashboard.py": "b35ca912ed9b4e6822a75bf2352691ce4e7bdee3901b26e73718cf72f9fca582",
+    "src/backlog_harness/delivery.py": "23813febd7ee262191298090e6c83fc4314a8182c1ff360930319540dcaecb9e",
+    "src/backlog_harness/evidence.py": "46221a62bf0bd70736bec4f6459bb75ba17643491beb2386576f7f9f2d334b6a",
+    "src/backlog_harness/native_evidence.py": "c2a6fdaa376bbae831651e7624528c8ebd586c8b969bacfa55875572dcb6c2d3",
+    "src/backlog_harness/projections.py": "d52dc748aa1bba4e1e80e7b16a53baf1d3ef21ca601ae2b7d90ccca92f24cd23",
+    "src/backlog_harness/provider.py": "8aaa25de3488130634228bfc216eca82a65c44c8cb2535a95f4ba80517b2309e",
+    "src/backlog_harness/runtime.py": "db2cdaab13a6c4868d30cf87463ae2ed7b7c115379295134ac75a9ab0e09e5d0",
+    "src/backlog_harness/telemetry.py": "daa372ba339599d3b3c3589f16ce271373b2eef88a90068f2a738ecad119f98a",
+    "src/backlog_harness/terminal.py": "596c7b25cf161cf9d20243eb7c34b5c9d79ee77032231768adb7471d2c4b8943",
+    "src/backlog_harness/workflow.py": "46d14b3d81c7b6e7b8a1daf6564fd902a61d1571e394facbd408f0c3cec957ef",
+    "uv.lock": "1c2722687c0ca32e86b09e906350afbee0e2536ce9bf7697b6ff2c687b242786"
+  }
+}

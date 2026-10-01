@@ -30,6 +30,8 @@ class AgentRequest:
     timeout_seconds: float = 90
     capability_probe: bool = False
     read_only: bool = True
+    purpose: str = "implementation"
+    provider_operation: str | None = None
 
 
 @dataclass

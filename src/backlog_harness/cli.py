@@ -20,6 +20,7 @@ def main(argv=None):
     commands.add_parser("status")
     commands.add_parser("app")
     commands.add_parser("reconcile")
+    commands.add_parser("refresh-provider")
     batch = commands.add_parser("run")
     modes = batch.add_mutually_exclusive_group(required=True)
     modes.add_argument("--until-terminal", action="store_true")
@@ -75,6 +76,19 @@ def main(argv=None):
             app = Application(args.config, control_only=control_only)
             if args.command == "reconcile":
                 result = app.reconcile()
+            elif args.command == "refresh-provider":
+                from .provider import AgentProvider, TransitionBlocked
+
+                if not isinstance(app.provider, AgentProvider):
+                    raise TransitionBlocked("refresh-provider requires provider_interaction: agent")
+                asyncio.run(app.refresh_provider())
+                observed = app.provider.observation()
+                result = {
+                    "source_revision": observed["source_revision"],
+                    "invocation_id": observed["invocation_id"],
+                    "item_count": len(observed["items"]),
+                    "policy": observed["policy"],
+                }
             elif args.command == "resume-answer":
                 result = asyncio.run(app.resume_answer(args.item_id))
             elif args.command == "recover-provider":

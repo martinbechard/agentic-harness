@@ -22,6 +22,46 @@ class CodexAdapter:
     def __init__(self):
         self.processes = {}
 
+    @staticmethod
+    def validate_provider_request(request, cwd):
+        """Provider purpose alone never authorizes a write to the primary checkout."""
+        from ...provider import Item
+        from ...workflow import require, validate_transition
+
+        require(cwd == request.snapshot.repository, "Provider workspace must be authoritative")
+        if request.read_only:
+            return
+        operation = request.provider_operation
+        require(isinstance(operation, str) and bool(operation), "Provider operation is required")
+        from ...evidence import component
+
+        path = (
+            request.snapshot.operational_root / "provider-agent-operations" / component(operation)
+        )
+        record = json.loads((path / "requested.json").read_text())
+        require(digest(record) == operation, "Provider operation identity differs")
+        require(record["repository"] == str(cwd), "Provider operation repository differs")
+        require(
+            record.get("executing_role", record["authority"]["role"]) == request.binding.role,
+            "Provider actor differs",
+        )
+        require(record["stage_operation"] == request.operation_id, "Provider invocation differs")
+        require(record["prompt_digest"] == digest(request.prompt), "Provider prompt differs")
+        validate_transition(Item(**record["item"]), record["target"], record["authority"])
+        paths = record.get("paths")
+        require(isinstance(paths, list) and bool(paths), "Provider mutation paths are required")
+        for name in paths:
+            relative = Path(name)
+            require(
+                not relative.is_absolute()
+                and ".." not in relative.parts
+                and relative.parts
+                and relative.parts[0] == "backlog"
+                and (cwd / relative).resolve().is_relative_to(cwd / "backlog"),
+                "Provider mutation path escapes backlog",
+            )
+        return paths
+
     def validate_profile(self, request):
         env = dict(os.environ)
         env["CODEX_HOME"] = request.binding.auth_context
@@ -104,16 +144,27 @@ class CodexAdapter:
         cwd = Path(
             request.snapshot.data.get("workspace", str(request.snapshot.repository))
         ).resolve()
-        validate_workspace(cwd, request.snapshot.repository, request.snapshot.operational_root)
+        if request.purpose == "provider":
+            provider_paths = self.validate_provider_request(request, cwd)
+        elif request.purpose == "implementation":
+            validate_workspace(cwd, request.snapshot.repository, request.snapshot.operational_root)
+        else:
+            raise ValueError("Unknown invocation purpose")
         if not request.read_only and tuple(profile["permissions"]) != ("workspace-write",):
             raise ValueError("Current role profile does not authorize candidate writes")
-        if not request.read_only and (
-            cwd == request.snapshot.repository or not (cwd / ".git").is_dir()
+        if (
+            request.purpose == "implementation"
+            and not request.read_only
+            and (cwd == request.snapshot.repository or not (cwd / ".git").is_dir())
         ):
             raise ValueError("Writable invocation requires a separate candidate repository")
         filesystem = {":root": "read"}
         if not request.read_only:
-            filesystem[str(cwd)] = "write"
+            if request.purpose == "provider":
+                for name in provider_paths:
+                    filesystem[str(cwd / name)] = "write"
+            else:
+                filesystem[str(cwd)] = "write"
             filesystem[str(cwd / ".git")] = "write"
             filesystem[str(cwd / ".codex")] = "read"
         permissions = (
@@ -123,7 +174,6 @@ class CodexAdapter:
             request.binding.executable,
             "exec",
             "--json",
-            "--ignore-user-config",
             "-m",
             profile["model"],
             "-c",
@@ -144,6 +194,12 @@ class CodexAdapter:
                 .get("native_max_threads", 2)
             ),
         ]
+        if (
+            not request.snapshot.data["agent_clis"][request.binding.cli_name]
+            .get("adapter_options", {})
+            .get("load_user_config", False)
+        ):
+            args.insert(3, "--ignore-user-config")
         for override in prepared["overrides"]:
             args.extend(["-c", override])
         if session:
@@ -156,6 +212,24 @@ class CodexAdapter:
         for name in profile["skills"]:
             skill = Path(request.snapshot.data["methodology_root"]) / "skills" / name / "SKILL.md"
             skills.append("\nConfigured skill " + name + ":\n" + skill.read_text())
+        if request.purpose == "provider":
+            root = Path(request.snapshot.data["methodology_root"]) / "skills"
+            references = [
+                str(root / name / "SKILL.md")
+                for name in (
+                    "manage-work-items",
+                    "manage-work-items-file",
+                    "resource-claim",
+                    "resource-claim-helper",
+                    "resource-claim-helper-mcp",
+                )
+                if (root / name / "SKILL.md").is_file()
+            ]
+            skills.append(
+                "\nApplicable provider skills are available by reference. Read those required "
+                "by the selected project policy; their availability does not authorize claim "
+                "operations forbidden by active crisis authority:\n" + "\n".join(references)
+            )
         if (
             request.snapshot.binding(request.binding.role).relevant_digest
             != request.binding.relevant_digest

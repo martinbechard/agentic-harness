@@ -12,7 +12,21 @@ Runtime: Codex
 
 This module applies agent decisions to one selected file-provider, main-branch workflow. Its primary responsibility is to gate lifecycle transitions, schedule eligible items, serialize provider and integration transactions, and deliver reviewed candidates without creating shadow lifecycle authority.
 
-Design mode: **EXISTING_IMPLEMENTATION**. Agents organize implementation and native specialist review. The harness validates every protected transition and candidate receipt. The supported route requires resource coordination `none` and either SOLO or approved MULTITASK.
+Design mode: **EXISTING_IMPLEMENTATION**, with the agent-mediated source implemented and real-project acceptance still pending. Agents organize implementation, native specialist review, and configured resource claims. The harness validates every protected transition and candidate receipt. Resource-claim policy selection is supported; execution mode remains explicit SOLO or approved MULTITASK.
+
+### Agent-mediated provider integration contract
+
+The clarified integration uses the existing Coordinator and canonical Orchestrator to interact with the selected provider through their management skills. It does not add a provider role, delegation transport, or provider framework. The direct Markdown mutation path described later remains the explicit historical fixture implementation, not the default live-project route.
+
+1. The responsible agent observes the authoritative provider and returns exact item identity, current revision, lifecycle state, owner, content, dependencies, and available estimate evidence. Missing historical estimates remain unknown. Group records and archive debt are classified by the selected management procedure.
+2. The harness validates the requesting actor and evidence required for the particular transition. Admission and acceptance do not require completion review; completion requires independently verified review of the exact candidate and delivery evidence.
+3. Before a mutation invocation, the harness durably records a stable operation identity, expected provider revision, requested transition, actor identity, and evidence references. The responsible agent rechecks the revision through the selected management operation at its write boundary and manages any required claims itself.
+4. The operation result binds that identity to the observed before/after revisions, state, owner, and supporting provider receipt. A CLI exit or an agent saying done is insufficient. Missing or invalid evidence prevents advancement. An uncertain mutation is reconciled under the same operation identity; it is never automatically submitted again.
+5. Provider observations are cached for deterministic status and dashboard reads. Agent refresh occurs at startup, material changes, explicit refresh, or bounded configured discovery, never on every UI poll.
+
+Reuse the configured CLI invocation/result mechanism, per-invocation reload, attribution, limits, and durable recovery. Provider operations must run against the authoritative project workspace rather than being redirected to a candidate clone. Candidate implementation remains confined to its declared paths.
+
+An existing desktop task ID is not a proven resumable CLI session ID. Preserve its canonical ownership and recover through its actual supported runtime mechanism. Existing-runtime recovery must not be reported as harness CLI delivery. A new harness execution requires lawful Coordinator selection after capacity is available.
 
 ## Authoritative Sources
 
@@ -42,7 +56,7 @@ The project has no wiki. See [ARC-002](../../architecture/ARC-002-codex-work-ite
 
 ## Open Questions
 
-No question blocks the selected route. Projects that select a resource-claim helper or another provider/completion route need a separate integration decision. This module does not generalize those routes.
+The agent-mediated provider route is implemented; installation and real-project verification remain incomplete. Agents use the configured resource-claim helper. Existing canonical runtime recovery and lawful next-item selection remain with the project Coordinator.
 
 ## Maintenance Notes
 
@@ -54,7 +68,7 @@ Recheck this design when provider headers, lifecycle states, `PROJECT.yaml` work
 | --- | --- | --- | --- | --- | --- | --- |
 | Plan: authority split | CURRENT_BEHAVIOR | Provider owns lifecycle and assignment; Coordinator owns admission and guard decisions; canonical Orchestrator owns acceptance, questions, and delivery requests. | `validate_transition` and `FileProvider.transition` | DEFINED | Agent task organization remains inside the CLI. | `test_valid_admission_and_reject_missing_actor_stale_revision`; question and hold tests |
 | Plan: workflow gates | CURRENT_BEHAVIOR | Missing review, wrong candidate, stale evidence, or unauthorized actor blocks only the affected transition. | `validate_candidate` and `validate_transition` | DEFINED | No universal delivery graph is introduced. | `test_candidate_bound_independent_review`; six-item acceptance |
-| Plan: run modes | CURRENT_BEHAVIOR | Until-terminal settles; watch discovers later work without idle model calls. | `RunController.run` | DEFINED | Resource coordination other than `none` is outside this route. | `test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work`; selected-mode tests |
+| Plan: run modes | CURRENT_BEHAVIOR | Until-terminal settles; watch discovers later work without idle model calls. | `RunController.run` | DEFINED | Agents manage configured resource claims. | `test_watch_unchanged_scope_does_not_dispatch_and_pause_stop_work`; selected-mode tests |
 | Plan: concurrent work | CURRENT_BEHAVIOR | SOLO admits one item. MULTITASK admits up to configured capacity with disjoint explicit item scopes. | `RunController.run`, `Application.run_item`, `FileProvider.policy` | DEFINED | MULTITASK requires project approval and independent candidate clones. | Unit overlap 1/2; real acceptance overlap 1/2 |
 | Plan: main-branch delivery | CURRENT_BEHAVIOR | Integrate only exact reviewed candidate bytes, run source and integrated checks, then request provider completion. | `integrate` and Running-to-Completed gate | DEFINED | Publication is not required by this route. | delivery crash-boundary tests; six completed real items |
 
@@ -136,7 +150,7 @@ flowchart LR
 
 `FileProvider.policy()` requires:
 
-- `resource_coordination.selected: none`;
+- resource coordination policy is preserved; agents manage any configured claims;
 - `execution_mode: SOLO` or `MULTITASK`;
 - `project_setup.concurrent_tasking` equal to whether the mode is MULTITASK;
 - file persistence and main-branch completion with no folder overrides;
@@ -247,7 +261,7 @@ sequenceDiagram
 
 ## Configuration
 
-Harness configuration selects file provider, main-branch completion, primary branch, mode, allowed paths, checks, capacity, and optional item overrides. `PROJECT.yaml` independently confirms file/main defaults, resource coordination `none`, execution mode, and concurrent-tasking approval.
+Harness configuration selects file provider, main-branch completion, primary branch, mode, allowed paths, checks, capacity, and optional item overrides. `PROJECT.yaml` independently confirms file/main defaults, execution mode, and concurrent-tasking approval. Resource-claim policy is preserved and managed by agents.
 
 ## External Interfaces
 

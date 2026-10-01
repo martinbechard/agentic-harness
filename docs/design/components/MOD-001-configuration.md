@@ -54,7 +54,7 @@ Recheck this design when configuration keys, supported adapters, role permission
 | Plan: configuration and adapter contracts | CURRENT_BEHAVIOR | Reload applicable configuration before each CLI invocation and keep in-flight values immutable. | `load_config`, `ConfigSnapshot`, and `Application._invoke` | DEFINED | Not applicable | `test_reload_is_deeply_immutable`; `test_accepted_workflow_remains_frozen_and_changed_scope_blocks_invocation` |
 | Plan: configurable bindings | CURRENT_BEHAVIOR | Bind every role through a common interface; support Codex first. | `AgentBinding`, `AgentCliAdapter`, and `AdapterRegistry.resolve` | DEFINED | Additional production adapters are outside version 1. | `test_duplicate_keys_and_unsupported_adapter`; `test_effective_authentication_context_is_bound_to_session` |
 | Plan: read-only inspection | CURRENT_BEHAVIOR | Keep provider and evidence inspection available when generation configuration is invalid. | `load_control_config` and `Application(config_path, control_only=True)` | DEFINED | Control loading cannot authorize generation. | `test_control_storage_remains_inspectable_when_generation_profile_is_missing`; `test_long_lived_view_observes_invalid_configuration_without_reusing_generation_settings` |
-| Selected file/main route | CURRENT_BEHAVIOR | Require file persistence, main-branch completion, resource coordination `none`, and SOLO or approved MULTITASK. | `load_config` validates the harness route; `FileProvider.policy` validates `PROJECT.yaml`. | DEFINED | Resource-claim integration and broad provider frameworks are outside this route. | `test_real_claim_policy_is_not_bypassed`; selected-mode tests |
+| Selected file/main route | CURRENT_BEHAVIOR | Require file persistence, main-branch completion, agent-owned resource coordination, and SOLO or approved MULTITASK. | `load_config` validates the harness route; `FileProvider.policy` validates `PROJECT.yaml`. | DEFINED | Agents use the configured claim helper; no provider framework or claim transport is added. | `test_agent_owned_claim_policy_is_preserved`; selected-mode tests |
 
 ## Runtime Path
 
@@ -89,7 +89,7 @@ Symbol and placement ledger:
 
 ## Parent Context
 
-[HLD-003](../high-level/HLD-003-codex-work-item-dispatch-service.md) requires explicit per-role bindings and immutable per-invocation snapshots. The current implementation narrows the route to Codex CLI 0.159.2, file persistence, main-branch completion, resource coordination `none`, and SOLO or approved MULTITASK.
+[HLD-003](../high-level/HLD-003-codex-work-item-dispatch-service.md) requires explicit per-role bindings and immutable per-invocation snapshots. The current implementation narrows the route to Codex CLI 0.159.2, file persistence, main-branch completion, agent-owned resource coordination, and SOLO or approved MULTITASK.
 
 ```mermaid
 flowchart LR
@@ -189,7 +189,7 @@ flowchart TD
 - The application never launches an affected CLI from invalid or unstable generation configuration.
 - In-flight snapshots remain immutable.
 - Writable candidate storage is disjoint from provider and operational evidence.
-- Resource coordination must be `none`; execution mode must be SOLO or MULTITASK with matching project approval.
+- Agents apply configured resource coordination. Execution mode is validated against project fields when present and source-bound Coordinator authority; MULTITASK requires project concurrency approval.
 - Unknown adapters and unsupported tool filtering fail closed.
 - A control-only snapshot cannot authorize generation.
 
@@ -220,3 +220,9 @@ READY for bounded maintenance of the implemented configuration and adapter-contr
 ## Verification
 
 The durable [recovery and control receipt](../../verification/recovery-control-evidence.json) records a 63-test baseline, but current source changed after that receipt. Current focused test identities are listed above and in the [requirements matrix](../../verification/requirements-matrix.md). The [current release receipt](../../verification/release-acceptance.json) records 78 passing tests, lint, accepted source review, matching rebuilt installation, installed controls, and retained workflow replay. These completed checks do not require repetition for documentation changes; independent documentation review remains pending.
+
+## Agent-mediated provider configuration
+
+`provider_interaction` defaults to `agent`; `direct` must be selected explicitly for historical fixture replay. Agent management requires workspace-write for the executing Coordinator or Orchestrator, while observation invocations remain read-only. Applicable management and claim skills can be loaded by reference from `methodology_root`; their file digests participate in binding identity.
+
+`adapter_options.load_user_config` defaults to false. Opting in loads native Codex configuration from the effective `codex_home`; the harness records a digest, not its contents. Explicit model, permissions and telemetry overrides remain applied. Native tool availability is separately observed, and active project policy still governs permission to use those tools. See the [operator guide](../../operator-guide.md) for the validation/observation handoff.
