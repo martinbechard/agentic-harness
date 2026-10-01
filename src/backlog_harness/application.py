@@ -828,7 +828,7 @@ class Application:
                     result, load_config(self.config_path).data["administrative_review_limits"]
                 )
                 if "policy" in receipt:
-                    self.provider.validate_policy(receipt["policy"])
+                    self.validate_receipt_policy(evidence, receipt)
                 receipt["advancement_verified"] = True
                 atomic_json(evidence / "receipt.json", receipt)
                 return receipt
@@ -838,6 +838,54 @@ class Application:
         )
         atomic_json(evidence / "resolution.json", {"corrected_by": corrected_receipt["operation"]})
         return corrected_receipt
+
+    def validate_receipt_policy(self, evidence, receipt):
+        """Reuse current source authority when only a repeated policy citation is defective."""
+        try:
+            self.provider.validate_policy(receipt["policy"])
+            return
+        except TransitionBlocked:
+            # A committed item update does not invalidate unrelated, still-current authority.
+            # Never infer replacement policy or silently accept changed control decisions.
+            previous = json.loads(self.provider.cache_path.read_text())["policy"]
+            self.provider.validate_policy(previous)
+
+            def controls(policy):
+                return {
+                    key: value
+                    for key, value in policy.items()
+                    if key not in {"evidence", "claim_exemption"}
+                }
+
+            require(
+                controls(previous) == controls(receipt["policy"]),
+                "Changed policy requires valid new source evidence",
+            )
+            original = evidence / "receipt-original-policy.json"
+            if not original.exists():
+                atomic_json(original, receipt, exclusive=True)
+            require(
+                json.loads(original.read_text()) == receipt,
+                "Original policy receipt changed",
+            )
+            reconciliation = {
+                "original_receipt_digest": digest(json.loads(original.read_text())),
+                "operation": receipt["operation"],
+                "commit": receipt["commit"],
+                "policy": previous,
+                "policy_digest": digest(previous),
+                "basis": "unchanged control decisions and current validated source authority",
+            }
+            path = evidence / "policy-reconciliation.json"
+            if path.exists():
+                require(
+                    json.loads(path.read_text()) == reconciliation,
+                    "Policy reconciliation evidence changed",
+                )
+            else:
+                atomic_json(path, reconciliation, exclusive=True)
+            receipt["policy"] = previous
+            receipt["policy_reconciliation_digest"] = digest(reconciliation)
 
     def reconcile_agent_provider(self, request_path):
         """Record an immutable effect even when invocation policy evidence cannot permit advancement."""

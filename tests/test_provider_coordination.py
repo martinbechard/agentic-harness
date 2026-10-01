@@ -1144,3 +1144,56 @@ def test_claim_free_management_ignores_irrelevant_helper_but_preserves_policy_ga
     atomic_json(app.provider.cache_path, observation)
     with pytest.raises(TransitionBlocked, match="Stale policy evidence"):
         app.validate_management_readiness("coordinator")
+
+
+@pytest.mark.parametrize("fault", [None, "changed-decision", "stale-authority", "missing-field"])
+def test_repeated_policy_citation_reuses_only_current_matching_authority(
+    config_file, provider, tmp_path, fault
+):
+    import copy
+
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import atomic_json
+
+    config, data = config_file
+    data.update(repository=str(provider.repository), provider_interaction="agent")
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    previous = {
+        "eligible": True,
+        "mode": "SOLO",
+        "primary_branch": "main",
+        "evidence": policy_evidence(provider.repository),
+    }
+    atomic_json(app.provider.cache_path, {"policy": previous})
+    returned = copy.deepcopy(previous)
+    returned["evidence"][0]["excerpt"] = "Invented concatenation of separated lines"
+    receipt = {"operation": "original-operation", "commit": "original-commit", "policy": returned}
+    if fault == "changed-decision":
+        returned["eligible"] = False
+    elif fault == "missing-field":
+        del returned["eligible"]
+    elif fault == "stale-authority":
+        project = provider.repository / "PROJECT.yaml"
+        project.write_text(project.read_text() + "# changed source\n")
+    evidence = tmp_path / "original-effect"
+    if fault:
+        with pytest.raises(TransitionBlocked):
+            app.validate_receipt_policy(evidence, receipt)
+        assert not (evidence / "policy-reconciliation.json").exists()
+    else:
+        original = copy.deepcopy(receipt)
+        app.validate_receipt_policy(evidence, receipt)
+        assert receipt["policy"] == previous
+        import json
+
+        assert json.loads((evidence / "receipt-original-policy.json").read_text()) == original
+        proof = (evidence / "policy-reconciliation.json").read_bytes()
+        app.validate_receipt_policy(evidence, original)
+        assert (evidence / "policy-reconciliation.json").read_bytes() == proof
+        altered = copy.deepcopy(receipt)
+        altered["policy"]["evidence"][0]["excerpt"] = "Different invalid receipt"
+        with pytest.raises(TransitionBlocked, match="Original policy receipt changed"):
+            app.validate_receipt_policy(evidence, altered)
