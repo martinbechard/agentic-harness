@@ -12,5 +12,8 @@
   "preserved_question_item": "align-skills-modularization-with-documentation-design-system",
   "question_provider_commit": "5b2b0efc44f434ccbf636197e870496611772810",
   "stopped_owner_reconciliation_commit": "8c490b53c578302fc4b0effb18ae9ff92df31242",
-  "claim_operations_permitted": false
+  "claim_operations_permitted": false,
+  "current_state": "User Action Required",
+  "current_provider_commit": "1daad6ecb0e7c88cf49107fd28728392ef29ae22",
+  "current_provider_path": "backlog/user-action-required/prove-read-only-inspect-ai-execution.md"
 }

@@ -29,5 +29,8 @@
   "installed_modules_verified": 23,
   "focused_tests": 41,
   "independent_review": "question_handoff_review ACCEPT",
-  "live_reconciliation": "pending"
+  "live_reconciliation": "verified User Action Required destination and series repair",
+  "provider_commit": "1daad6ecb0e7c88cf49107fd28728392ef29ae22",
+  "provider_invocation": "a9c73a1d-012a-4963-af58-7ba224883a93",
+  "advancement_verified": true
 }
