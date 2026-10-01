@@ -36,6 +36,11 @@
     "question_handoff_review absent owner correction ACCEPT",
     "question_handoff_review unowned receipt normalization ACCEPT"
   ],
-  "live_estimate_recording": "pending",
-  "final_estimation_tests": 11
+  "live_estimate_recording": "verified through exact retained invocation replay",
+  "final_estimation_tests": 11,
+  "provider_commit": "cd6257cfe5a5dee582bd9b71827f5dc34641321a",
+  "provider_invocation": "44f868ad-64a0-401f-b463-3af5f1eef240",
+  "prospective_high": 180000,
+  "historical_original_high": null,
+  "historical_usage": "unknown"
 }
