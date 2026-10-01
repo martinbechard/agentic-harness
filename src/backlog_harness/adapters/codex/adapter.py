@@ -343,6 +343,7 @@ class CodexAdapter:
                 group.create_task(stdout())
                 group.create_task(process.wait())
 
+        failure_reason = None
         try:
             await asyncio.wait_for(run(), request.timeout_seconds)
             failed = any(e["type"] in ("error", "turn.failed") for e in handle.events)
@@ -354,7 +355,8 @@ class CodexAdapter:
                 and not failed
                 else "runtime_failed"
             )
-        except (TimeoutError, ExceptionGroup, ValueError, OSError, asyncio.CancelledError):
+        except (TimeoutError, ExceptionGroup, ValueError, OSError, asyncio.CancelledError) as exc:
+            failure_reason = "timeout" if isinstance(exc, TimeoutError) else type(exc).__name__
             if process.returncode is None:
                 os.killpg(process.pid, signal.SIGTERM)
                 try:
@@ -370,6 +372,7 @@ class CodexAdapter:
             handle.outcome,
             returncode=process.returncode,
             stderr_bytes=stderr_bytes,
+            failure_reason=failure_reason,
         )
         return handle
 

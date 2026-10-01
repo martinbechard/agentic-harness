@@ -33,6 +33,9 @@ def main(argv=None):
     answer.add_argument("item_id")
     recover = commands.add_parser("recover-provider")
     recover.add_argument("operation_id")
+    resume_observation = commands.add_parser("resume-provider-observation")
+    resume_observation.add_argument("operation_id")
+    resume_observation.add_argument("native_session_id")
     dashboard = commands.add_parser("dashboard")
     dashboard.add_argument("--port", type=int, default=8767)
     run = commands.add_parser("run-item")
@@ -93,6 +96,10 @@ def main(argv=None):
                 result = asyncio.run(app.resume_answer(args.item_id))
             elif args.command == "recover-provider":
                 result = app.recover_provider(args.operation_id)
+            elif args.command == "resume-provider-observation":
+                result = asyncio.run(
+                    app.resume_provider_observation(args.operation_id, args.native_session_id)
+                )
             elif args.command == "review-hold":
                 result = asyncio.run(
                     app.review_hold(

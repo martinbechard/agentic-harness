@@ -191,3 +191,12 @@ def test_provider_defaults_to_agent_without_silent_fixture_fallback(config_file)
     data.pop("provider_interaction")
     path.write_text(yaml.safe_dump(data))
     assert isinstance(Application(path).provider, AgentProvider)
+
+
+@pytest.mark.parametrize("value", [0, -1, True, "900", float("inf"), float("nan")])
+def test_invalid_invocation_timeout(config_file, value):
+    path, data = config_file
+    data["invocation_timeout_seconds"] = value
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match="invocation_timeout_seconds"):
+        load_config(path)

@@ -317,6 +317,9 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
             value = data.get(name)
             if type(value) not in (float, int) or not math.isfinite(value) or value <= 0:
                 raise ConfigError(f"{name} must be positive and finite")
+        timeout = data.get("invocation_timeout_seconds", 180)
+        if type(timeout) not in (float, int) or not math.isfinite(timeout) or timeout <= 0:
+            raise ConfigError("invocation_timeout_seconds must be positive and finite")
         capacity = data.get("max_active_invocations")
         if type(capacity) is not int or not 1 <= capacity <= 10:
             raise ConfigError("max_active_invocations must be an integer from 1 to 10")

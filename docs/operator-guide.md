@@ -4,7 +4,7 @@
 
 Use an explicit absolute repository, candidate workspace, methodology installation, and evidence root. The application never imports arbitrary configured adapters. Configuration reload happens before each harness-issued CLI invocation. The complete snapshot and resolved dependency digests govern that invocation. Accepted item scopes, checks and candidate storage remain frozen; incompatible edits fence the next invocation. The effective Codex home is recorded in the session binding and applied to both capability validation and launch; changing it cannot silently resume another authentication context. Changes to the originating CLI, authentication context, or profile cannot silently replace a retained native session.
 
-Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a2-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
+Build with `uv build`. Install the wheel using `uv tool install /absolute/path/to/agentic_harness-0.1.0a3-py3-none-any.whl`, or use `uv sync` and `uv run` from the source checkout. `agentic-harness --version` identifies the package. Codex authentication stays in its own CLI context; authenticate there with `codex login`. A named alternate context uses `agent_clis.NAME.adapter_options.codex_home`; the harness stores its reference and digests, never credentials.
 
 The fixture generator is a concrete configuration example:
 
@@ -31,6 +31,17 @@ The Coordinator requests admission against the current provider revision. Ready 
 A completion request must identify the exact candidate. The harness independently reads native producer and reviewer records, verifies fresh context and distinct identity, verifies the candidate and passing checks, merges it into the configured primary branch, runs integrated checks, and closes and archives the provider record in a separate exact-path Git commit. Neither a successful launch nor a report of done permits closure.
 
 Provider and delivery effects have durable requested records. If a commit completed but its receipt was lost, reconciliation proves its unique parent, paths and bytes and rebuilds the receipt. A merge is recovered by its exact parents. Unproven mutations stay unresolved. For a request that is proven uncommitted, `recover-provider OPERATION_ID` explicitly finishes the recorded bytes under the provider transaction lock. It requires the original main HEAD, exact original/intended checkout and index bytes, the recorded actor gate, and no unrelated changes. A committed operation recovers its receipt without another commit. The application does not reset a checkout or repeat an unknown paid launch.
+
+An interrupted read-only inventory observation has a separate recovery command:
+
+```sh
+agentic-harness --config /absolute/path/config.yaml \
+  resume-provider-observation OPERATION_ID NATIVE_SESSION_ID
+```
+
+The command resumes the exact native session under the original provider operation. It creates one attributed continuation invocation and reuses that invocation on command retry. It rejects a live or unknown process, a changed binding, a different native session, writable evidence, changed provider source, or incomplete usage evidence. A timeout or call-limit change can apply to the continuation when the CLI binding and provider source still match. Configure those values before the first continuation attempt. A later configuration change cannot alter an unsubmitted continuation intent.
+
+The preflight reconciles the interrupted native cumulative output with content-bound telemetry and completed native-child usage. New model output after the last covered usage span makes usage unknown and blocks the continuation. The returned continuation counter remains cumulative for the same native session. The configured Coordinator token limit applies to that cumulative count, while the one returned continuation turn satisfies the existing one-turn call limit. After return, the normal inventory and policy validators run against the current source before the cache advances.
 
 ## Modes And Capacity
 

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sys
 from dataclasses import replace
 from uuid import uuid4
@@ -9,6 +10,7 @@ import yaml
 from backlog_harness.adapters.codex.adapter import CodexAdapter
 from backlog_harness.contracts import load_config
 from backlog_harness.evidence import EvidenceStore
+from backlog_harness.provider import TransitionBlocked
 from backlog_harness.runtime import AgentRequest
 from backlog_harness.telemetry import TelemetryReceiver
 
@@ -64,6 +66,9 @@ print(json.dumps({'type':'turn.completed','usage':{'output_tokens':1}}),flush=Tr
             handle = await adapter.start_session(request)
             assert handle.outcome == outcome
             assert not adapter.processes
+            outcome_record = json.loads((path / "outcomes.jsonl").read_text().splitlines()[-1])
+            if mode == "hang":
+                assert outcome_record["failure_reason"] == "timeout"
             if mode == "normal":
                 next_id = str(uuid4())
                 next_path = store.begin("resume", next_id, snapshot, binding, action="resume")
@@ -191,3 +196,53 @@ def test_provider_write_requires_bound_transition(config_file, provider):
     bound.provider_operation = None
     with pytest.raises(TransitionBlocked, match="operation is required"):
         CodexAdapter.validate_provider_request(bound, snapshot.repository)
+
+
+def test_invocation_reloads_timeout_before_launch(config_file, monkeypatch):
+    from backlog_harness.application import Application
+
+    config, data = config_file
+    app = Application(config)
+    observed = []
+
+    class Inspected(Exception):
+        pass
+
+    class Adapter:
+        def validate_profile(self, request):
+            observed.append(request.timeout_seconds)
+            raise Inspected
+
+    monkeypatch.setattr("backlog_harness.application.AdapterRegistry.resolve", lambda *_: Adapter())
+    for index, timeout in enumerate([180, 900]):
+        if index:
+            data["invocation_timeout_seconds"] = timeout
+            config.write_text(yaml.safe_dump(data))
+        with pytest.raises(Inspected):
+            asyncio.run(app.invoke("timeout", str(index), "coordinator", "observe"))
+        assert observed[-1] == timeout
+
+
+def test_unsubmitted_intent_rejects_later_timeout_configuration(config_file, monkeypatch):
+    from backlog_harness.application import Application
+
+    config, data = config_file
+    app = Application(config)
+    calls = []
+
+    class Inspected(Exception):
+        pass
+
+    class Adapter:
+        def validate_profile(self, request):
+            calls.append(request.timeout_seconds)
+            raise Inspected
+
+    monkeypatch.setattr("backlog_harness.application.AdapterRegistry.resolve", lambda *_: Adapter())
+    with pytest.raises(Inspected):
+        asyncio.run(app.invoke("timeout", "same", "coordinator", "observe"))
+    data["invocation_timeout_seconds"] = 900
+    config.write_text(yaml.safe_dump(data))
+    with pytest.raises(TransitionBlocked, match="configuration changed"):
+        asyncio.run(app.invoke("timeout", "same", "coordinator", "observe"))
+    assert calls == [180]

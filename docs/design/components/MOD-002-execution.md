@@ -229,7 +229,7 @@ sequenceDiagram
 
 ## Configuration
 
-The adapter consumes configured executable, model, effort, skills, permissions, authentication context, and optional `native_max_threads`. The application supplies a 180-second invocation timeout. The adapter forces ignored user configuration and explicit harness permissions.
+The adapter consumes configured executable, model, effort, skills, permissions, authentication context, and optional `native_max_threads`. The application reloads `invocation_timeout_seconds` before each invocation (positive finite seconds, default 180). The adapter records `failure_reason: timeout` when this deadline expires and preserves the unresolved outcome even if termination returns exit code zero. Increasing the deadline affects future authorized invocations; it does not restart an unresolved invocation. The adapter uses explicit harness permissions and ignores user configuration unless `load_user_config` is enabled.
 
 ## External Interfaces
 

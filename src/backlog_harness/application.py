@@ -84,57 +84,54 @@ class Application:
                 "invoke any claim operation as a probe. Report unavailable when unproven.",
                 purpose="provider",
             )
-            self.validate_call_limits(
-                result, load_config(self.config_path).data["coordinator_limits"]
-            )
-            value = self.result_json(result)
-            self.provider.validate_inventory(value)
-            for row in value["items"]:
-                path = self.config.repository / row["path"]
-                require(
-                    not Path(row["path"]).is_absolute()
-                    and ".." not in Path(row["path"]).parts
-                    and path.resolve().is_relative_to(self.config.repository / "backlog")
-                    and not path.is_symlink(),
-                    "Unsafe observed item path",
-                )
-                content = path.read_bytes()
-                row.setdefault("content", content.decode("utf-8"))
-                row.setdefault(
-                    "revision", sha256(row["path"].encode() + b"\0" + content).hexdigest()
-                )
-            items = [Item(**row) for row in value["items"]]
+            self._accept_provider_observation(result, revision, observer)
+
+    def _accept_provider_observation(self, result, revision, observer):
+        """Validate and cache one read-only provider inventory result."""
+        self.validate_call_limits(result, load_config(self.config_path).data["coordinator_limits"])
+        value = self.result_json(result)
+        self.provider.validate_inventory(value)
+        for row in value["items"]:
+            path = self.config.repository / row["path"]
             require(
-                len({item.item_id for item in items}) == len(items), "Duplicate provider identity"
+                not Path(row["path"]).is_absolute()
+                and ".." not in Path(row["path"]).parts
+                and path.resolve().is_relative_to(self.config.repository / "backlog")
+                and not path.is_symlink(),
+                "Unsafe observed item path",
             )
-            for item in items:
-                path = self.config.repository / item.path
-                require(
-                    not Path(item.path).is_absolute()
-                    and ".." not in Path(item.path).parts
-                    and path.resolve().is_relative_to(self.config.repository / "backlog")
-                    and "future-ideas" not in Path(item.path).parts,
-                    "Unsafe observed item path",
-                )
-                require(path.read_bytes() == item.content.encode(), "Observed item content differs")
-                require(
-                    sha256(item.path.encode() + b"\0" + item.content.encode()).hexdigest()
-                    == item.revision,
-                    "Observed item revision differs",
-                )
-            self.provider.validate_policy(value["policy"])
+            content = path.read_bytes()
+            row.setdefault("content", content.decode("utf-8"))
+            row.setdefault("revision", sha256(row["path"].encode() + b"\0" + content).hexdigest())
+        items = [Item(**row) for row in value["items"]]
+        require(len({item.item_id for item in items}) == len(items), "Duplicate provider identity")
+        for item in items:
+            path = self.config.repository / item.path
             require(
-                self.provider.source_revision() == revision, "Provider changed during observation"
+                not Path(item.path).is_absolute()
+                and ".." not in Path(item.path).parts
+                and path.resolve().is_relative_to(self.config.repository / "backlog")
+                and "future-ideas" not in Path(item.path).parts,
+                "Unsafe observed item path",
             )
-            atomic_json(
-                self.provider.cache_path,
-                {
-                    **value,
-                    "source_revision": revision,
-                    "observer_digest": observer,
-                    "invocation_id": result["invocation_id"],
-                },
+            require(path.read_bytes() == item.content.encode(), "Observed item content differs")
+            require(
+                sha256(item.path.encode() + b"\0" + item.content.encode()).hexdigest()
+                == item.revision,
+                "Observed item revision differs",
             )
+        self.provider.validate_policy(value["policy"])
+        require(self.provider.source_revision() == revision, "Provider changed during observation")
+        atomic_json(
+            self.provider.cache_path,
+            {
+                **value,
+                "source_revision": revision,
+                "observer_digest": observer,
+                "invocation_id": result["invocation_id"],
+            },
+        )
+        return value
 
     def _stage_path(self, item_id, stage):
         return self.root / "workflow-evidence" / component(item_id) / (stage + ".json")
@@ -538,6 +535,8 @@ class Application:
         read_only=True,
         purpose="implementation",
         provider_operation=None,
+        operation_id=None,
+        continuation=None,
     ):
         with operation_lock(self.root / "locks" / (component(item_id + ":" + stage) + ".lock")):
             async with self.capacity_slot() as reservation:
@@ -551,6 +550,8 @@ class Application:
                     reservation=reservation,
                     purpose=purpose,
                     provider_operation=provider_operation,
+                    operation_id=operation_id,
+                    continuation=continuation,
                 )
 
     @staticmethod
@@ -634,6 +635,8 @@ class Application:
         reservation=None,
         purpose="implementation",
         provider_operation=None,
+        operation_id=None,
+        continuation=None,
     ):
         # Re-read immediately before every harness invocation. The resolved storage identity
         # cannot move mid-run; such edits require explicit reconciliation.
@@ -680,7 +683,7 @@ class Application:
             if purpose == "provider"
             else digest(prompt)
         )
-        if saved.exists():
+        if saved.exists() and continuation is None:
             result = json.loads(saved.read_text())
             require(
                 result["request_digest"] == request_hash,
@@ -691,9 +694,82 @@ class Application:
             return result
         run_id = "item:" + item_id
         store = EvidenceStore(self.root, run_id)
-        operation = item_id + ":" + stage
+        operation = operation_id or item_id + ":" + stage
         operation_path = store.run / "operations" / component(operation)
-        if operation_path.exists():
+        if continuation is not None:
+            require(operation_id is not None, "Continuation operation identity is required")
+            original = [
+                path.parent
+                for path in operation_path.glob("invocations/*/intent.json")
+                if json.loads(path.read_text()).get("action") != "resume-provider-observation"
+            ]
+            require(len(original) == 1, "Original invocation evidence is absent or ambiguous")
+            require(
+                EvidenceStore.reconcile(original[0])["invocation_id"]
+                == continuation["original_invocation_id"],
+                "Continuation original invocation differs",
+            )
+            continuation_id = "provider-observation-continuation-" + digest(continuation)
+            candidates = []
+            for intent_path in operation_path.glob("invocations/*/intent.json"):
+                intent = json.loads(intent_path.read_text())
+                if intent.get("action") != "resume-provider-observation":
+                    continue
+                require(
+                    intent.get("invocation_id") == continuation_id,
+                    "Provider observation continuation identity differs",
+                )
+                continuation_path = intent_path.parent / "continuation.json"
+                if continuation_path.exists():
+                    require(
+                        json.loads(continuation_path.read_text()) == continuation,
+                        "Provider observation continuation evidence differs",
+                    )
+                else:
+                    require(
+                        intent.get("request_digest") == request_hash
+                        and intent.get("binding") == asdict(binding),
+                        "Incomplete provider continuation intent differs",
+                    )
+                    atomic_json(continuation_path, continuation, exclusive=True)
+                candidates.append(intent_path.parent)
+            require(len(candidates) <= 1, "Provider observation continuation is ambiguous")
+            if candidates:
+                path = candidates[0]
+                prior = EvidenceStore.reconcile(path)
+                require(prior["request_digest"] == request_hash, "Continuation request differs")
+                invocation_id = prior["invocation_id"]
+                if prior["outcome"] != "not_submitted":
+                    recovered = self.recover_invocation(path)
+                    require(
+                        recovered is not None,
+                        "Provider observation continuation is unresolved; replacement is prohibited",
+                    )
+                    recovered["request_digest"] = continuation["semantic_request_digest"]
+                    recovered["continuation"] = continuation
+                    atomic_json(saved, recovered)
+                    self.validate_invocation_result(recovered)
+                    return recovered
+                require(
+                    prior["config_digest"] == snapshot.file_digest,
+                    "Unsubmitted continuation configuration changed",
+                )
+                require(
+                    prior["binding"] == asdict(binding),
+                    "Unsubmitted continuation binding changed",
+                )
+            else:
+                invocation_id = continuation_id
+                path = store.begin(
+                    operation,
+                    invocation_id,
+                    snapshot,
+                    binding,
+                    action="resume-provider-observation",
+                    request_digest=request_hash,
+                )
+                atomic_json(path / "continuation.json", continuation, exclusive=True)
+        elif operation_path.exists():
             candidates = list(operation_path.glob("invocations/*/intent.json"))
             require(
                 len(candidates) == 1, "Invocation intent is absent or ambiguous; reconcile storage"
@@ -715,6 +791,10 @@ class Application:
                 prior["binding"] == asdict(binding),
                 "Unsubmitted intent binding changed; explicit reconciliation required",
             )
+            require(
+                prior["config_digest"] == snapshot.file_digest,
+                "Unsubmitted intent configuration changed; explicit reconciliation required",
+            )
         else:
             invocation_id = str(uuid4())
             path = store.begin(
@@ -728,7 +808,11 @@ class Application:
             )
         with TelemetryReceiver(self.root) as receiver:
             context_path = path / "execution-context.json"
-            context = {"purpose": purpose, "provider_operation": provider_operation}
+            context = {
+                "purpose": purpose,
+                "provider_operation": provider_operation,
+                "read_only": read_only,
+            }
             if context_path.exists():
                 require(
                     json.loads(context_path.read_text()) == context, "Invocation purpose changed"
@@ -760,7 +844,7 @@ class Application:
                 prompt,
                 path,
                 dest,
-                timeout_seconds=180,
+                timeout_seconds=snapshot.data.get("invocation_timeout_seconds", 180),
                 read_only=read_only,
                 purpose=purpose,
                 provider_operation=provider_operation,
@@ -796,7 +880,13 @@ class Application:
             "telemetry_path": str(dest.path),
             "evidence_path": str(path),
         }
-        atomic_json(saved, result, exclusive=True)
+        if continuation is not None:
+            result["continuation_request_digest"] = result["request_digest"]
+            result["request_digest"] = continuation["semantic_request_digest"]
+            result["continuation"] = continuation
+            atomic_json(saved, result)
+        else:
+            atomic_json(saved, result, exclusive=True)
         self.validate_invocation_result(result)
         return result
 
@@ -1340,6 +1430,333 @@ class Application:
             operation["before_revision"],
             operation["answer"]["text"],
         )
+
+    def _interrupted_provider_usage(self, path, prior, session):
+        """Return complete interrupted usage or reject evidence with uncovered output."""
+        from datetime import datetime
+
+        from .native_evidence import child_usage, native_records
+        from .telemetry import Sink, spans
+
+        report_path = path / "telemetry-report.json"
+        telemetry_record = path / "telemetry.json"
+        require(
+            report_path.exists() and telemetry_record.exists(),
+            "Interrupted provider usage evidence is missing",
+        )
+        report = json.loads(report_path.read_text())
+        telemetry_path = Path(json.loads(telemetry_record.read_text())["path"])
+        require(
+            telemetry_path.resolve().is_relative_to(self.root.resolve()),
+            "Interrupted telemetry escaped evidence root",
+        )
+        sink = Sink(telemetry_path, {})
+        require(
+            report.get("span_count") == len(sink.seen)
+            and report.get("rejected_exports") == 0
+            and report.get("evidence_sha256") == sink.evidence_digest(),
+            "Interrupted provider telemetry is incomplete or changed",
+        )
+        rows, _, partial = read_jsonl(telemetry_path)
+        require(not partial, "Interrupted provider telemetry is partial")
+        total = 0
+        latest_usage_end = None
+        seen = {}
+        for payload in rows:
+            for _, _, span in spans(payload):
+                identity = span.get("traceId"), span.get("spanId")
+                fingerprint = digest(span)
+                require(
+                    identity not in seen or seen[identity] == fingerprint,
+                    "Interrupted provider telemetry has conflicting duplicate spans",
+                )
+                if identity in seen:
+                    continue
+                seen[identity] = fingerprint
+                attributes = {value["key"]: value["value"] for value in span.get("attributes", [])}
+                if "gen_ai.usage.output_tokens" not in attributes:
+                    continue
+                output = attributes["gen_ai.usage.output_tokens"].get("intValue")
+                end = span.get("endTimeUnixNano")
+                require(
+                    isinstance(output, (int, str))
+                    and str(output).isdigit()
+                    and isinstance(end, (int, str))
+                    and str(end).isdigit(),
+                    "Interrupted provider telemetry usage is invalid",
+                )
+                total += int(output)
+                latest_usage_end = max(latest_usage_end or 0, int(end))
+        require(latest_usage_end is not None, "Interrupted provider usage is unknown")
+
+        records, native_digest = native_records(
+            session["native_session_id"], self.native_sessions_root(prior["binding"])
+        )
+        native_paths = list(
+            self.native_sessions_root(prior["binding"]).glob(
+                f"*/*/*/*{session['native_session_id']}.jsonl"
+            )
+        )
+        require(len(native_paths) == 1, "Exact native session evidence is absent or ambiguous")
+        counters = [
+            record["payload"]["thread_token_usage"].get("output_tokens")
+            for record in records
+            if record.get("type") == "token_usage_record"
+            and record.get("payload", {}).get("session_id") == session["native_session_id"]
+            and isinstance(record.get("payload", {}).get("thread_token_usage"), dict)
+        ]
+        visible = [
+            record["payload"]["info"]["total_token_usage"].get("output_tokens")
+            for record in records
+            if record.get("type") == "event_msg"
+            and record.get("payload", {}).get("type") == "token_count"
+            and isinstance(record.get("payload", {}).get("info"), dict)
+        ]
+        require(
+            counters
+            and visible
+            and type(counters[-1]) is int
+            and counters[-1] >= 0
+            and counters[-1] == visible[-1],
+            "Interrupted native usage is unknown",
+        )
+        # Child response spans cannot establish coverage for the parent's later output.
+        parent_usage_records = [
+            record
+            for record in records
+            if record.get("type") == "token_usage_record"
+            and record.get("payload", {}).get("session_id") == session["native_session_id"]
+            and isinstance(record.get("payload", {}).get("thread_token_usage"), dict)
+        ]
+        parent_usage_end = int(
+            datetime.fromisoformat(parent_usage_records[-1]["timestamp"]).timestamp()
+            * 1_000_000_000
+        )
+        for record in records:
+            payload = record.get("payload", {})
+            item = payload.get("item", {})
+            started = payload.get("started_at_ms")
+            if (
+                record.get("type") == "event_msg"
+                and payload.get("type") in {"item_started", "item_completed"}
+                and item.get("type") in {"Reasoning", "AgentMessage"}
+                and isinstance(started, int)
+                and started * 1_000_000 > parent_usage_end
+            ):
+                require(False, "Interrupted native usage has uncovered model output")
+        outcomes, _, outcomes_partial = read_jsonl(path / "outcomes.jsonl")
+        require(outcomes and not outcomes_partial, "Interrupted invocation outcome is incomplete")
+        children, child_sessions = child_usage(
+            session["native_session_id"],
+            prior["created_at"],
+            outcomes[-1]["at"],
+            self.native_sessions_root(prior["binding"]),
+        )
+        require(children is not None, "Interrupted child usage is unknown")
+        require(total == counters[-1] + children, "Interrupted native and telemetry usage differ")
+        return {
+            "output_tokens": counters[-1],
+            "child_output_tokens": children,
+            "child_sessions": child_sessions,
+            "native_evidence_sha256": native_digest,
+            "native_evidence_bytes": native_paths[0].stat().st_size,
+            "telemetry_evidence_sha256": report["evidence_sha256"],
+        }
+
+    def _validate_interrupted_usage_receipt(self, path, prior, session, usage):
+        """Validate the immutable evidence prefixes bound before a continuation launch."""
+        from .telemetry import Sink
+
+        telemetry_path = Path(json.loads((path / "telemetry.json").read_text())["path"])
+        require(
+            Sink(telemetry_path, {}).evidence_digest() == usage["telemetry_evidence_sha256"],
+            "Interrupted provider telemetry changed after recovery preflight",
+        )
+        native_paths = list(
+            self.native_sessions_root(prior["binding"]).glob(
+                f"*/*/*/*{session['native_session_id']}.jsonl"
+            )
+        )
+        require(len(native_paths) == 1, "Exact native session evidence is absent or ambiguous")
+        length = usage.get("native_evidence_bytes")
+        data = native_paths[0].read_bytes()
+        require(
+            type(length) is int
+            and len(data) >= length
+            and sha256(data[:length]).hexdigest() == usage["native_evidence_sha256"],
+            "Interrupted native evidence changed after recovery preflight",
+        )
+
+    async def resume_provider_observation(self, operation_id, native_session_id):
+        """Resume one stopped read-only provider observation in its exact native session."""
+        require(
+            isinstance(self.provider, AgentProvider),
+            "Provider observation recovery needs agent interaction",
+        )
+        require(
+            operation_id.startswith("provider-inventory:observe-") and operation_id.count(":") == 1,
+            "Provider observation operation identity is invalid",
+        )
+        stage = operation_id.split(":", 1)[1]
+        lock_path = self.root / "locks" / (component(operation_id) + ".lock")
+        with operation_lock(lock_path):
+            snapshot = load_config(self.config_path)
+            require(
+                snapshot.repository == self.config.repository
+                and snapshot.operational_root == self.root,
+                "Repository or evidence root changed during recovery",
+            )
+            operation_path = (
+                self.root
+                / "runs"
+                / component("item:provider-inventory")
+                / "operations"
+                / component(operation_id)
+            )
+            originals = [
+                value.parent
+                for value in operation_path.glob("invocations/*/intent.json")
+                if json.loads(value.read_text()).get("action") != "resume-provider-observation"
+            ]
+            require(len(originals) == 1, "Original provider observation is absent or ambiguous")
+            path = originals[0]
+            prior = EvidenceStore.reconcile(path)
+            require(
+                prior["operation_id"] == operation_id
+                and prior["action"] == stage
+                and prior["binding"]["role"] == "coordinator",
+                "Provider observation identity or role differs",
+            )
+            require(
+                prior["outcome"] == "unresolved" and not prior["partial"],
+                "Provider observation is not an unresolved complete record",
+            )
+            require(
+                self.process_stopped(path),
+                "Provider observation process is still live or unknown",
+            )
+            context = json.loads((path / "execution-context.json").read_text())
+            require(
+                context.get("purpose") == "provider"
+                and context.get("provider_operation") is None
+                and context.get("read_only", True) is True,
+                "Provider observation was not read-only",
+            )
+            session = json.loads((path / "session.json").read_text())
+            require(
+                session.get("native_session_id") == native_session_id
+                and session.get("binding") == prior["binding"],
+                "Provider observation native session identity differs",
+            )
+            binding = snapshot.binding("coordinator")
+            require(asdict(binding) == prior["binding"], "Provider observation binding changed")
+            revision = self.provider.source_revision()
+            original_observer = digest(
+                [prior["config_digest"], prior["binding"]["relevant_digest"]]
+            )
+            require(
+                stage == "observe-" + digest([revision, original_observer]),
+                "Provider source changed since the interrupted observation",
+            )
+            continuations = list(operation_path.glob("invocations/*/continuation.json"))
+            require(len(continuations) <= 1, "Provider observation continuation is ambiguous")
+            if continuations:
+                retained = json.loads(continuations[0].read_text())
+                require(
+                    retained.get("original_invocation_id") == prior["invocation_id"]
+                    and retained.get("native_session_id") == native_session_id
+                    and retained.get("semantic_request_digest") == prior["request_digest"],
+                    "Provider observation continuation receipt differs",
+                )
+                usage = retained["interrupted_usage"]
+                self._validate_interrupted_usage_receipt(path, prior, session, usage)
+            else:
+                usage = self._interrupted_provider_usage(path, prior, session)
+            limits = snapshot.data["coordinator_limits"]
+            require(
+                usage["output_tokens"] < limits["generated_tokens"],
+                "Interrupted provider usage exhausted the call budget",
+            )
+            saved = self._stage_path("provider-inventory", stage)
+            require(saved.exists(), "Interrupted provider stage receipt is missing")
+            original_result = json.loads(saved.read_text())
+            if original_result.get("continuation"):
+                require(
+                    original_result["continuation"].get("original_invocation_id")
+                    == prior["invocation_id"]
+                    and original_result.get("request_digest") == prior["request_digest"],
+                    "Recovered provider stage receipt differs",
+                )
+            else:
+                require(
+                    original_result.get("invocation_id") == prior["invocation_id"]
+                    and original_result.get("request_digest") == prior["request_digest"],
+                    "Interrupted provider stage receipt differs",
+                )
+            continuation = {
+                "version": 1,
+                "original_invocation_id": prior["invocation_id"],
+                "native_session_id": native_session_id,
+                "semantic_request_digest": prior["request_digest"],
+                "interrupted_usage": usage,
+            }
+            prompt = (
+                "Continue the interrupted read-only provider observation in this exact native "
+                "session. Do not mutate, dispatch, or perform claim operations. Finish the "
+                "original request and return only its requested JSON object."
+            )
+            async with self.capacity_slot() as reservation:
+                result = await self._invoke(
+                    "provider-inventory",
+                    stage,
+                    "coordinator",
+                    prompt,
+                    session=SessionHandle(
+                        session["session_id"], session["native_session_id"], binding
+                    ),
+                    read_only=True,
+                    reservation=reservation,
+                    purpose="provider",
+                    operation_id=operation_id,
+                    continuation=continuation,
+                )
+            self.validate_call_limits(result, limits)
+            completed = [
+                event["usage"]["output_tokens"]
+                for event in result["events"]
+                if event.get("type") == "turn.completed" and isinstance(event.get("usage"), dict)
+            ]
+            require(
+                completed and completed[-1] >= usage["output_tokens"],
+                "Resumed provider cumulative usage is invalid",
+            )
+            from .analytics import invocation_usage
+            from .native_evidence import child_usage
+
+            children, _ = child_usage(
+                native_session_id,
+                result["events"][0]["at"],
+                result["events"][-1]["at"],
+                self.native_sessions_root(result["binding"]),
+            )
+            require(
+                children is not None
+                and invocation_usage(result, usage["output_tokens"], child_outputs=children)
+                is not None,
+                "Resumed provider usage is unknown or conflicting",
+            )
+            observer = digest([snapshot.file_digest, binding.relevant_digest])
+            value = self._accept_provider_observation(result, revision, observer)
+            return {
+                "operation_id": operation_id,
+                "original_invocation_id": prior["invocation_id"],
+                "continuation_invocation_id": result["invocation_id"],
+                "native_session_id": native_session_id,
+                "source_revision": revision,
+                "item_count": len(value["items"]),
+                "policy": value["policy"],
+                "output_tokens": completed[-1],
+            }
 
     def recover_provider(self, operation_id):
         matches = [
