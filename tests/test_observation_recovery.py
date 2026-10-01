@@ -3,7 +3,7 @@
 import asyncio
 import json
 import urllib.request
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
@@ -13,7 +13,7 @@ import yaml
 from test_provider_coordination import policy_evidence
 
 from backlog_harness.application import Application
-from backlog_harness.contracts import digest, load_config, utcnow
+from backlog_harness.contracts import digest, freeze, load_config, plain, utcnow
 from backlog_harness.evidence import EvidenceStore, JsonlWriter, atomic_json, component
 from backlog_harness.provider import TransitionBlocked
 from backlog_harness.runtime import InvocationHandle
@@ -67,6 +67,10 @@ def prepare_interrupted_observation(config_file, provider, *, uncovered=False):
     observer = digest([snapshot.file_digest, binding.relevant_digest])
     stage = "observe-" + digest([revision, observer])
     operation = "provider-inventory:" + stage
+    provider_data = plain(snapshot.data)
+    provider_data["workspace"] = str(snapshot.repository)
+    snapshot = replace(snapshot, data=freeze(provider_data))
+    binding = snapshot.binding("coordinator")
     store = EvidenceStore(app.root, "item:provider-inventory")
     path = store.begin(
         operation,

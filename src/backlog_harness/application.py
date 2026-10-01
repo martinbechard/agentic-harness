@@ -1648,11 +1648,14 @@ class Application:
                 and session.get("binding") == prior["binding"],
                 "Provider observation native session identity differs",
             )
-            binding = snapshot.binding("coordinator")
+            observer_binding = snapshot.binding("coordinator")
+            provider_data = plain(snapshot.data)
+            provider_data["workspace"] = str(snapshot.repository)
+            binding = replace(snapshot, data=freeze(provider_data)).binding("coordinator")
             require(asdict(binding) == prior["binding"], "Provider observation binding changed")
             revision = self.provider.source_revision()
             original_observer = digest(
-                [prior["config_digest"], prior["binding"]["relevant_digest"]]
+                [prior["config_digest"], observer_binding.relevant_digest]
             )
             require(
                 stage == "observe-" + digest([revision, original_observer]),
@@ -1745,7 +1748,7 @@ class Application:
                 is not None,
                 "Resumed provider usage is unknown or conflicting",
             )
-            observer = digest([snapshot.file_digest, binding.relevant_digest])
+            observer = digest([snapshot.file_digest, observer_binding.relevant_digest])
             value = self._accept_provider_observation(result, revision, observer)
             return {
                 "operation_id": operation_id,
