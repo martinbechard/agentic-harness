@@ -1,10 +1,47 @@
 """Main-branch delivery and recovery are separate from provider closure."""
 
 import json
+import os
+import stat
+import subprocess
+from hashlib import file_digest, sha256
 
 from .evidence import atomic_json
-from .provider import AgentProvider, git
+from .provider import AgentProvider, TransitionBlocked, git
 from .workflow import require, validate_candidate
+
+
+def preserved_untracked(repository):
+    """Snapshot unrelated user files without staging, moving, or claiming them."""
+    require(
+        not git(repository, "status", "--porcelain", "--untracked-files=no"),
+        "Primary tracked files or index are dirty; reconcile without resetting",
+    )
+    env = {**os.environ, "GIT_NO_REPLACE_OBJECTS": "1"}
+    for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+        env.pop(key, None)
+    inventory = subprocess.run(
+        ["git", "-C", str(repository), "ls-files", "--others", "--exclude-standard", "-z"],
+        capture_output=True,
+        check=False,
+        env=env,
+    )
+    if inventory.returncode:
+        raise TransitionBlocked(inventory.stderr.decode(errors="replace")[:2000])
+    names = inventory.stdout.split(b"\0")
+    result = {}
+    for raw in filter(None, names):
+        name = os.fsdecode(raw)
+        path = repository / name
+        mode = path.lstat().st_mode
+        require(stat.S_ISREG(mode) or stat.S_ISLNK(mode), "Unsupported untracked file type")
+        if stat.S_ISLNK(mode):
+            content_digest = sha256(os.fsencode(os.readlink(path))).hexdigest()
+        else:
+            with path.open("rb") as stream:
+                content_digest = file_digest(stream, "sha256").hexdigest()
+        result[name] = {"mode": mode, "sha256": content_digest}
+    return result
 
 
 def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
@@ -18,10 +55,7 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
     )
     with transaction:
         policy_check() if isinstance(app.provider, AgentProvider) else app.provider.policy()
-        require(
-            not git(primary, "status", "--porcelain"),
-            "Primary checkout is dirty; reconcile without resetting",
-        )
+        untracked = preserved_untracked(primary)
         changed = validate_candidate(
             candidate_repo,
             candidate,
@@ -38,8 +72,22 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
             if hasattr(app, "recovery_record")
             else False,
         )
+        require(
+            not any(
+                loose == changed_path
+                or loose.startswith(changed_path + "/")
+                or changed_path.startswith(loose + "/")
+                for loose in untracked
+                for changed_path in changed
+            ),
+            "Untracked paths overlap reviewed source paths",
+        )
         prior = json.loads(path.read_text()) if path.exists() else None
         if prior:
+            require(
+                prior.get("preserved_untracked", {}) == untracked,
+                "Preserved untracked files changed during delivery",
+            )
             require(
                 prior.get("candidate") == candidate and prior.get("base", base) == base,
                 "Delivery is bound to another candidate",
@@ -54,6 +102,7 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
                 "base": base,
                 "main_before": git(primary, "rev-parse", "HEAD"),
                 "disposition": "REQUESTED",
+                "preserved_untracked": untracked,
             }
             atomic_json(path, prior, exclusive=True)
         if prior["disposition"] == "READY":
@@ -81,7 +130,7 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
                 "Primary source changed",
             )
             git(primary, "fetch", "--no-tags", str(candidate_repo), candidate)
-            git(primary, "merge", "--no-ff", "--no-edit", candidate)
+            git(primary, "merge", "--no-ff", "--no-edit", "--no-overwrite-ignore", candidate)
             head = git(primary, "rev-parse", "HEAD")
         matches = []
         for commit in git(primary, "rev-list", "--first-parent", before + ".." + head).splitlines():
@@ -104,7 +153,10 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
         ):
             require(head == integrated, "Cannot rerun integrated checks after main advanced")
             integrated_checks = app.checks(primary, item_id, integrated, "integrated-checks")
-        require(not git(primary, "status", "--porcelain"), "Integrated verification left changes")
+        require(
+            preserved_untracked(primary) == untracked,
+            "Integrated verification changed preserved untracked files",
+        )
         git(primary, "merge-base", "--is-ancestor", candidate, "HEAD")
         result = {
             "disposition": "READY",
@@ -120,6 +172,7 @@ def integrate(app, item_id, candidate_repo, candidate, base, review, checks):
             "item_id": item_id,
             "completion_provider": "main-branch",
             "publication_required": False,
+            "preserved_untracked": untracked,
         }
         atomic_json(path, result)
         return result

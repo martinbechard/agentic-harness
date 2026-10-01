@@ -97,8 +97,21 @@ def test_returned_observations_rebuild_missing_stage(config_file, tmp_path):
     assert recovered["invocation_id"] == "observed-invocation"
 
 
-@pytest.mark.parametrize("crash", ["before_merge", "after_merge", "after_checks"])
-def test_delivery_crash_boundaries_reconcile_once(provider, tmp_path, monkeypatch, crash):
+@pytest.mark.parametrize("untracked", [False, True])
+@pytest.mark.parametrize(
+    "crash",
+    [
+        "before_merge",
+        "after_merge",
+        "after_checks",
+        "collision",
+        "exact_collision",
+        "ancestor_collision",
+    ],
+)
+def test_delivery_crash_boundaries_reconcile_once(
+    provider, tmp_path, monkeypatch, crash, untracked
+):
     primary = provider.repository
     candidate_repo = tmp_path / "candidate"
     subprocess.run(
@@ -109,8 +122,10 @@ def test_delivery_crash_boundaries_reconcile_once(provider, tmp_path, monkeypatc
     git(candidate_repo, "config", "user.name", "Test")
     git(candidate_repo, "config", "user.email", "test@example.invalid")
     base = git(candidate_repo, "rev-parse", "HEAD")
-    (candidate_repo / "answer.txt").write_text("42\n")
-    git(candidate_repo, "add", "answer.txt")
+    candidate_path = "parent/answer.txt" if crash == "ancestor_collision" else "answer.txt"
+    (candidate_repo / candidate_path).parent.mkdir(parents=True, exist_ok=True)
+    (candidate_repo / candidate_path).write_text("42\n")
+    git(candidate_repo, "add", candidate_path)
     git(candidate_repo, "commit", "-m", "Candidate")
     candidate = git(candidate_repo, "rev-parse", "HEAD")
     review = {
@@ -142,7 +157,7 @@ def test_delivery_crash_boundaries_reconcile_once(provider, tmp_path, monkeypatc
     app = SimpleNamespace(
         provider=provider,
         config=SimpleNamespace(
-            repository=primary, data={"workflow": {"allowed_paths": ["answer.txt"]}}
+            repository=primary, data={"workflow": {"allowed_paths": [candidate_path]}}
         ),
         _stage_path=stage,
         checks=check,
@@ -162,13 +177,36 @@ def test_delivery_crash_boundaries_reconcile_once(provider, tmp_path, monkeypatc
         return native_git(repo, *argv)
 
     monkeypatch.setattr(delivery, "git", fault_git)
+    if untracked:
+        (primary / "existing-plan.md").write_text("preserve this user plan\n")
+        (primary / "existing-link").symlink_to("existing-plan.md")
+    if crash in {"collision", "exact_collision", "ancestor_collision"}:
+        if crash == "collision":
+            (primary / "answer.txt").mkdir()
+            (primary / "answer.txt/user.md").write_text("user work")
+        elif crash == "exact_collision":
+            (primary / "answer.txt").write_text("user work")
+        else:
+            (primary / "parent").write_text("user work")
+        with pytest.raises(TransitionBlocked, match="overlap"):
+            integrate(app, "item-one", candidate_repo, candidate, base, review, checks)
+        assert git(primary, "rev-parse", "HEAD") == base
+        return
     with pytest.raises(RuntimeError, match="crash"):
         integrate(app, "item-one", candidate_repo, candidate, base, review, checks)
     result = integrate(app, "item-one", candidate_repo, candidate, base, review, checks)
     assert result["disposition"] == "READY"
+    if untracked:
+        assert (primary / "existing-plan.md").read_text() == "preserve this user plan\n"
+        assert (primary / "existing-link").is_symlink()
+        assert set(result["preserved_untracked"]) == {"existing-plan.md", "existing-link"}
     commits = git(primary, "rev-list", "--first-parent", base + "..HEAD").splitlines()
     assert commits == [result["main_commit"]]
     assert integrate(app, "item-one", candidate_repo, candidate, base, review, checks) == result
+    if untracked:
+        (primary / "existing-plan.md").write_text("changed externally\n")
+        with pytest.raises(TransitionBlocked, match="untracked files changed"):
+            integrate(app, "item-one", candidate_repo, candidate, base, review, checks)
 
 
 @pytest.mark.parametrize(
@@ -729,3 +767,36 @@ def test_starting_continuation_requires_content_bound_provider_admission(
             asyncio.run(app.run_item(item.item_id))
         assert len(calls) == 1 and calls[0][1] == "accept"
         assert item.content in calls[0][3]
+
+
+@pytest.mark.parametrize("staged", [False, True])
+def test_delivery_preservation_rejects_tracked_changes(provider, staged):
+    from backlog_harness.delivery import preserved_untracked
+
+    path = provider.repository / "PROJECT.yaml"
+    path.write_text(path.read_text() + "# user edit\n")
+    if staged:
+        git(provider.repository, "add", "--", "PROJECT.yaml")
+    with pytest.raises(TransitionBlocked, match="tracked files or index"):
+        preserved_untracked(provider.repository)
+
+
+def test_delivery_preservation_ignores_ambient_git_overrides(provider, tmp_path, monkeypatch):
+    from backlog_harness.delivery import preserved_untracked
+
+    other = tmp_path / "other"
+    other.mkdir()
+    git(other, "init")
+    (other / "wrong.txt").write_text("wrong repository")
+    real = provider.repository / "preserve.txt"
+    real.write_text("original")
+    expected = preserved_untracked(provider.repository)
+    for key, value in {
+        "GIT_DIR": str(other / ".git"),
+        "GIT_WORK_TREE": str(other),
+        "GIT_INDEX_FILE": str(other / ".git/index"),
+    }.items():
+        monkeypatch.setenv(key, value)
+    assert preserved_untracked(provider.repository) == expected
+    real.write_text("changed")
+    assert preserved_untracked(provider.repository) != expected
