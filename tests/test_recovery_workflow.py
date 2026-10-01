@@ -849,10 +849,16 @@ def test_ready_question_preserves_history_and_replays(
     supplied = tmp_path / "question.json"
     atomic_json(supplied, {"question": question, "paths": paths})
     effects = []
+    calls = []
 
     async def invoke(*args, **kwargs):
         assert "without reserving or executing" in args[3]
-        return {
+        calls.append(args[1])
+        result = {
+            "purpose": "provider",
+            "request_digest": "decision-request",
+            "binding": {},
+            "evidence_path": str(app.root / "decision-native"),
             "role": "coordinator",
             "invocation_id": "decision",
             "outcome": "returned",
@@ -877,6 +883,20 @@ def test_ready_question_preserves_history_and_replays(
                 }
             ),
         }
+        atomic_json(
+            app.root / "decision-native" / "intent.json",
+            {
+                "invocation_id": "decision",
+                "request_digest": "decision-request",
+                "binding": {},
+                "config_digest": app.config.file_digest,
+                "item_id": None,
+                "action": args[1],
+                "operation_id": item.item_id + ":" + args[1],
+            },
+        )
+        atomic_json(app._stage_path(item.item_id, args[1]), result)
+        return result
 
     async def transition(item_id, revision, target, authority, **kwargs):
         validate_transition(item, target, authority)
@@ -897,6 +917,14 @@ def test_ready_question_preserves_history_and_replays(
     monkeypatch.setattr(app.provider, "item", lambda _: replace(item, state="User Action Required"))
     asyncio.run(defer_item(app, item.item_id, supplied))
     assert effects[0] == effects[1]
+    assert len(calls) == 1
+    native_intent = app.root / "decision-native" / "intent.json"
+    wrong_intent = json.loads(native_intent.read_text())
+    wrong_intent["operation_id"] = "other-item:other-request"
+    atomic_json(native_intent, wrong_intent)
+    with pytest.raises(TransitionBlocked, match="immutable request"):
+        asyncio.run(defer_item(app, item.item_id, supplied))
+    assert len(effects) == 2 and len(calls) == 1
     assert json.loads(app._stage_path(item.item_id, "defer-input").read_text())["item"] == asdict(
         item
     )

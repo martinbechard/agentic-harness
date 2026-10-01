@@ -301,25 +301,43 @@ async def defer_item(app, item_id, question_path):
                 atomic_json(request_path, request, exclusive=True)
             item = Item(**request["item"])
             stage = "defer-decision-" + digest(request)
-            decision = await app.invoke(
-                item_id,
-                stage,
-                "coordinator",
-                (
-                    "Record this unowned Ready preparation conflict without reserving or executing work. "
-                    "Preserve the exact requirements, history, and any earlier candidate references. "
-                    if item.state == "Ready"
-                    else "Reconcile this stopped canonical execution, including an incomplete question move. "
+            saved_decision = app._stage_path(item_id, stage)
+            if saved_decision.exists():
+                from .estimation import validate_preparation_invocation
+
+                # The stage digest binds the immutable request regardless of JSON key order.
+                decision = json.loads(saved_decision.read_text())
+                app.validate_invocation_result(decision)
+                validate_preparation_invocation(decision, app.config.file_digest, app.root)
+                intent = json.loads((Path(decision["evidence_path"]) / "intent.json").read_text())
+                require(
+                    intent.get("item_id") is None
+                    and intent.get("action") == stage
+                    and decision.get("purpose") == "provider"
+                    and intent.get("operation_id") == item_id + ":" + stage
+                    and decision.get("role") == "coordinator",
+                    "Question decision is not bound to the immutable request",
                 )
-                + "Preserve all permission boundaries. The exact question below is already recorded; "
-                "do not ask it again, execute implementation, mutate, or delegate. Decide "
-                "whether to record User Action Required with the exact pending question, preserved "
-                "native owner/candidate/evidence, prohibited browser action, and declared provider move "
-                "and series membership paths. Return JSON {operation:await-user|assess,item_id,"
-                "provider_revision,question,paths,reason}. No new admission is authorized by this call.\n"
-                + json.dumps(request),
-                purpose="provider",
-            )
+            else:
+                decision = await app.invoke(
+                    item_id,
+                    stage,
+                    "coordinator",
+                    (
+                        "Record this unowned Ready preparation conflict without reserving or executing work. "
+                        "Preserve the exact requirements, history, and any earlier candidate references. "
+                        if item.state == "Ready"
+                        else "Reconcile this stopped canonical execution, including an incomplete question move. "
+                    )
+                    + "Preserve all permission boundaries. The exact question below is already recorded; "
+                    "do not ask it again, execute implementation, mutate, or delegate. Decide "
+                    "whether to record User Action Required with the exact pending question, preserved "
+                    "native owner/candidate/evidence, prohibited browser action, and declared provider move "
+                    "and series membership paths. Return JSON {operation:await-user|assess,item_id,"
+                    "provider_revision,question,paths,reason}. No new admission is authorized by this call.\n"
+                    + json.dumps(request),
+                    purpose="provider",
+                )
             app.validate_call_limits(decision, app.config.data["coordinator_limits"])
             value = app.result_json(decision)
             require(
