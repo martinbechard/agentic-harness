@@ -1,0 +1,16 @@
+{
+  "installed_version": "0.1.0a13",
+  "item_id": "prove-read-only-inspect-ai-execution",
+  "state": "Running",
+  "selection_invocation": "1f1f296a-908f-4dbc-b2c8-e25042f1b8ae",
+  "starting_commit": "fb8bb5e35165c34ac6681310672344570c65c185",
+  "running_commit": "eff5ad56",
+  "canonical_owner": "e9f95cf8-d385-4f03-9b08-e2ba539db2af",
+  "native_session_id": "01a0f76c-5541-7f41-b81d-6f0b40e87e05",
+  "implementation_invocation": "da50fc23-24e8-4a6a-92bb-c36b25ed2dec",
+  "completion_verified": false,
+  "preserved_question_item": "align-skills-modularization-with-documentation-design-system",
+  "question_provider_commit": "5b2b0efc44f434ccbf636197e870496611772810",
+  "stopped_owner_reconciliation_commit": "8c490b53c578302fc4b0effb18ae9ff92df31242",
+  "claim_operations_permitted": false
+}
