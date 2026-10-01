@@ -327,7 +327,15 @@ async def defer_item(app, item_id, question_path):
                 and value.get("item_id") == item_id
                 and value.get("provider_revision") == item.revision
                 and value.get("question") == question
-                and value.get("paths") == supplied["paths"]
+                and value.get("paths")
+                in (
+                    supplied["paths"],
+                    {
+                        "source": supplied["paths"][0],
+                        "destination": supplied["paths"][1],
+                        "series_membership": supplied["paths"][2:],
+                    },
+                )
                 and value.get("reason"),
                 "Coordinator did not authorize the exact question handoff",
             )

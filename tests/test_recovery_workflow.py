@@ -789,9 +789,10 @@ def test_ready_question_transition_requires_bound_preparation(provider, defect):
         validate_transition(item, "User Action Required", authority)
 
 
+@pytest.mark.parametrize("path_form", ["list", "named", "wrong-destination", "extra-field"])
 @pytest.mark.parametrize("wrong_question", [False, True])
 def test_ready_question_preserves_history_and_replays(
-    config_file, provider, monkeypatch, tmp_path, wrong_question
+    config_file, provider, monkeypatch, tmp_path, wrong_question, path_form
 ):
     import asyncio
 
@@ -864,7 +865,14 @@ def test_ready_question_preserves_history_and_replays(
                     "question": {"question_id": "different", "text": "Different?"}
                     if wrong_question
                     else question,
-                    "paths": paths,
+                    "paths": paths
+                    if path_form == "list"
+                    else {
+                        "source": paths[0],
+                        "destination": "wrong.md" if path_form == "wrong-destination" else paths[1],
+                        "series_membership": [],
+                        **({"unknown": True} if path_form == "extra-field" else {}),
+                    },
                     "reason": "Requirements conflict",
                 }
             ),
@@ -879,7 +887,7 @@ def test_ready_question_preserves_history_and_replays(
 
     monkeypatch.setattr(app, "invoke", invoke)
     monkeypatch.setattr(app, "transition", transition)
-    if wrong_question:
+    if wrong_question or path_form in {"wrong-destination", "extra-field"}:
         with pytest.raises(TransitionBlocked, match="exact question handoff"):
             asyncio.run(defer_item(app, item.item_id, supplied))
         assert not effects
