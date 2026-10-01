@@ -382,8 +382,9 @@ def test_agent_observation_refresh_is_cached_and_never_parses_headers(
     assert app.provider.item(item.item_id).content.endswith("changed\n")
 
 
+@pytest.mark.parametrize("invalid_policy", [False, True])
 def test_agent_transition_recovers_committed_operation_without_second_mutation(
-    config_file, provider, monkeypatch
+    config_file, provider, monkeypatch, invalid_policy
 ):
     import asyncio
     import json
@@ -447,6 +448,13 @@ def test_agent_transition_recovers_committed_operation_without_second_mutation(
                 "commit": mutations[-1],
                 "after": asdict(provider.item(before.item_id)),
             }
+            if invalid_policy:
+                payload["policy"] = {
+                    "eligible": True,
+                    "mode": "SOLO",
+                    "primary_branch": "main",
+                    "evidence": [],
+                }
         else:
             payload = {
                 "items": [asdict(provider.item(before.item_id))],
@@ -492,6 +500,20 @@ def test_agent_transition_recovers_committed_operation_without_second_mutation(
     observed_effect = app.reconcile_agent_provider(request_path)
     assert observed_effect["advancement_verified"] is False
     assert len(mutations) == 1
+    if invalid_policy:
+        historical = json.loads((request_path.parent / "receipt.json").read_text())
+        historical["advancement_verified"] = True
+        native_json(request_path.parent / "receipt.json", historical)
+        with pytest.raises(TransitionBlocked, match="Structured policy evidence"):
+            asyncio.run(
+                app.transition(
+                    before.item_id, before.revision, "Starting", actor, validate=validate_transition
+                )
+            )
+        receipt = json.loads((request_path.parent / "receipt.json").read_text())
+        assert receipt["advancement_verified"] is False
+        assert len(mutations) == 1
+        return
     receipt = asyncio.run(
         app.transition(
             before.item_id, before.revision, "Starting", actor, validate=validate_transition
@@ -982,3 +1004,37 @@ def test_helper_discovery_uses_provider_fingerprint_after_workflow_change(
     config.write_text(yaml.safe_dump(data))
     with pytest.raises(TransitionBlocked, match="discovery configuration is stale"):
         app.validate_management_readiness("coordinator")
+
+
+@pytest.mark.parametrize("changed_word", [False, True])
+def test_policy_excerpt_allows_wrapping_but_not_different_words(provider, changed_word):
+    from hashlib import sha256
+
+    from backlog_harness.provider import AgentProvider
+
+    source = provider.repository / "policy.md"
+    source.write_text("Independent Ready work is permitted\nunder SOLO execution.\n")
+    policy = {
+        "eligible": True,
+        "mode": "SOLO",
+        "primary_branch": "main",
+        "evidence": [
+            {
+                "path": "policy.md",
+                "sha256": sha256(source.read_bytes()).hexdigest(),
+                "excerpt": "Independent Ready work is "
+                + ("prohibited" if changed_word else "permitted")
+                + " under SOLO execution.",
+                "supports": ["mode", "admission"],
+            }
+        ],
+    }
+    view = AgentProvider(provider.repository, provider.evidence_root)
+    if changed_word:
+        with pytest.raises(TransitionBlocked, match="excerpt is absent"):
+            view.validate_policy(policy)
+    else:
+        view.validate_policy(policy)
+        source.write_text(source.read_text() + "Changed authority\n")
+        with pytest.raises(TransitionBlocked, match="Stale policy evidence"):
+            view.validate_policy(policy)

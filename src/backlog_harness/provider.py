@@ -573,7 +573,9 @@ class AgentProvider:
             require(sha256(content).hexdigest() == reference.get("sha256"), "Stale policy evidence")
             excerpt = reference.get("excerpt")
             require(
-                isinstance(excerpt, str) and excerpt and excerpt.encode() in content,
+                isinstance(excerpt, str)
+                and excerpt.strip()
+                and " ".join(excerpt.split()) in " ".join(content.decode("utf-8").split()),
                 "Policy evidence excerpt is absent",
             )
             facts = reference.get("supports")

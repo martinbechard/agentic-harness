@@ -737,11 +737,12 @@ class Application:
                 receipt["executing_session"] = result["session"]
                 receipt["usage_evidence"] = result["evidence_path"]
                 receipt["advancement_verified"] = False
-                if not (evidence / "receipt.json").exists():
-                    atomic_json(evidence / "receipt.json", receipt, exclusive=True)
+                atomic_json(evidence / "receipt.json", receipt)
                 self.validate_call_limits(
                     result, load_config(self.config_path).data["administrative_review_limits"]
                 )
+                if "policy" in receipt:
+                    self.provider.validate_policy(receipt["policy"])
                 receipt["advancement_verified"] = True
                 atomic_json(evidence / "receipt.json", receipt)
                 return receipt
