@@ -351,11 +351,12 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
                 "checks",
                 "engine",
                 "proof_requirements",
+                "review_requirements",
                 "design_review",
                 "candidate_approval_required",
             }:
                 raise ConfigError(
-                    "Item workflow may only override allowed_paths, checks, engine, proof_requirements, design_review and candidate_approval_required"
+                    "Item workflow may only override allowed_paths, checks, engine, proof_requirements, review_requirements, design_review and candidate_approval_required"
                 )
             if (
                 "candidate_approval_required" in selected
@@ -415,6 +416,51 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
                             "Proof requirement id must be unique and evidence_kind browser or print"
                         )
                     identifiers.add(requirement["id"])
+            if "review_requirements" in selected:
+                review = _object(selected["review_requirements"], "review_requirements")
+                required = {
+                    "provider_revision",
+                    "preparation_digest",
+                    "requirements",
+                }
+                correction = {
+                    "original_preparation_digest",
+                    "correction_resolution_digest",
+                }
+                if set(review) - required - correction or not required <= set(review):
+                    raise ConfigError(
+                        "Review requirements need exact preparation binding and requirements"
+                    )
+                present_correction = set(review) & correction
+                if present_correction and present_correction != correction:
+                    raise ConfigError(
+                        "Corrected review requirements need the complete preparation lineage"
+                    )
+                for field in required - {"requirements"}:
+                    _text(review.get(field), "review_requirements." + field)
+                for field in correction:
+                    if field in review:
+                        _text(review[field], "review_requirements." + field)
+                requirements = review["requirements"]
+                if not isinstance(requirements, list) or not requirements:
+                    raise ConfigError("Review requirements must be nonempty")
+                identifiers, gates = set(), set()
+                for requirement in requirements:
+                    if not isinstance(requirement, dict) or set(requirement) != {
+                        "id",
+                        "canonical_reference",
+                        "acceptance_text",
+                        "required_gate",
+                    }:
+                        raise ConfigError("Invalid explicit review requirement")
+                    for field, value in requirement.items():
+                        _text(value, "review requirement " + field)
+                    if requirement["id"] in identifiers or requirement["required_gate"] in gates:
+                        raise ConfigError(
+                            "Review requirement ids and required gates must be unique"
+                        )
+                    identifiers.add(requirement["id"])
+                    gates.add(requirement["required_gate"])
             if selected.get("engine", "legacy") not in {"legacy", "langgraph"}:
                 raise ConfigError("Item workflow engine must be legacy or langgraph")
             if not isinstance(selected.get("allowed_paths"), list) or not selected["allowed_paths"]:

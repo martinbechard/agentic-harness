@@ -1298,3 +1298,136 @@ def test_explicit_selection_preserves_frozen_preparation(
             "Independently review the selected acceptance evidence"
         ]
     assert path.read_bytes() == original
+
+
+@pytest.mark.parametrize(
+    "fault", [None, "revision", "effective", "original", "resolution", "gate", "uncovered"]
+)
+def test_source_review_selection_binds_corrected_preparation_lineage(
+    config_file, monkeypatch, fault
+):
+    from copy import deepcopy
+
+    from backlog_harness.contracts import load_config
+    from backlog_harness.estimation import configured_workflow, prepared_workflow
+
+    config, data = config_file
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": [["git", "diff", "--check"]],
+    }
+    data["workflow"]["checks"] = [["git", "diff", "--check"]]
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(
+        "backlog_harness.estimation.validate_preparation_invocation", lambda *a: None
+    )
+    gate = "Verify role-suite agreement without weakening evaluation"
+    original_value = {
+        "item_id": "one",
+        "provider_revision": "revision",
+        "workflow": {
+            "allowed_paths": ["answer.py"],
+            "checks": [["git", "diff", "--check"]],
+            "gates": [gate],
+        },
+    }
+    original_decision = {
+        "role": "coordinator",
+        "invocation_id": "original",
+        "binding": {},
+        "text": json.dumps(original_value),
+    }
+    corrected_value = deepcopy(original_value)
+    corrected_value["workflow"].pop("gates")
+    corrected_value["workflow"]["required_gates"] = [gate]
+    corrected_value["preparation_correction"] = {
+        "original_decision_digest": digest(original_decision),
+        "schema_error": "Preparation contains unsupported workflow fields: gates",
+        "classifications": [
+            {
+                "index": 0,
+                "text": gate,
+                "destination": "required_gates",
+                "runtime_obligation": None,
+                "no_additional_proof": False,
+                "rationale": "Passing commands alone does not prove preserved evaluation strength.",
+            }
+        ],
+    }
+    corrected_decision = {
+        "role": "coordinator",
+        "invocation_id": "corrected",
+        "binding": {},
+        "text": json.dumps(corrected_value),
+    }
+    atomic_json(
+        app._stage_path("one", "preparation"),
+        {
+            "item": {"revision": "revision"},
+            "decision": original_decision,
+            "workflow_config_digest": digest(configured_workflow(app.config, "one")),
+            "invocation_config_digest": app.config.file_digest,
+        },
+    )
+    atomic_json(app._stage_path("one", "preparation-contract-correction"), corrected_decision)
+    resolution = {
+        "original_decision_digest": digest(original_decision),
+        "corrected_decision_digest": digest(corrected_decision),
+        "original_invocation_id": "original",
+        "corrected_invocation_id": "corrected",
+        "schema_error": "Preparation contains unsupported workflow fields: gates",
+    }
+    atomic_json(app._stage_path("one", "preparation-contract-resolution"), resolution)
+    contract = {
+        "provider_revision": "revision",
+        "preparation_digest": digest(corrected_decision),
+        "original_preparation_digest": digest(original_decision),
+        "correction_resolution_digest": digest(resolution),
+        "requirements": [
+            {
+                "id": "role-suite",
+                "canonical_reference": "item-one#acceptance",
+                "acceptance_text": "Role, suite, and generated adapters agree without weakening",
+                "required_gate": gate,
+            }
+        ],
+    }
+    if fault == "revision":
+        contract["provider_revision"] = "other"
+    elif fault == "effective":
+        contract["preparation_digest"] = "0" * 64
+    elif fault == "original":
+        contract["original_preparation_digest"] = "0" * 64
+    elif fault == "resolution":
+        contract["correction_resolution_digest"] = "0" * 64
+    elif fault == "gate":
+        contract["requirements"][0]["required_gate"] = "Different obligation"
+    elif fault == "uncovered":
+        corrected_value["workflow"]["required_gates"].append("Unknown extra proof")
+        corrected_decision["text"] = json.dumps(corrected_value)
+        atomic_json(app._stage_path("one", "preparation-contract-correction"), corrected_decision)
+        resolution["corrected_decision_digest"] = digest(corrected_decision)
+        atomic_json(app._stage_path("one", "preparation-contract-resolution"), resolution)
+        contract["preparation_digest"] = digest(corrected_decision)
+        contract["correction_resolution_digest"] = digest(resolution)
+    data["workflow"]["items"] = {
+        "one": {"allowed_paths": ["answer.py"], "review_requirements": contract}
+    }
+    config.write_text(yaml.safe_dump(data))
+    current = load_config(config)
+    if fault:
+        with pytest.raises(TransitionBlocked):
+            prepared_workflow(app, "one", current)
+    else:
+        workflow = prepared_workflow(app, "one", current)
+        assert workflow["review_requirements"] == contract
+        assert workflow["preparation_evidence"] == {
+            "item_id": "one",
+            "provider_revision": "revision",
+            "decision_digest": digest(corrected_decision),
+            "original_decision_digest": digest(original_decision),
+            "correction_resolution_digest": digest(resolution),
+            "metadata": {"required_gates": [gate]},
+        }

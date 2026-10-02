@@ -212,14 +212,135 @@ class Application:
             else:
                 self._accept_provider_observation(result, revision, observer)
 
-    async def reassess_policy(self):
+    def _retained_provider_observation(self, observation, revision, observer, current):
+        """Validate one exact returned inventory without accepting its policy."""
+        stage = "observe-" + digest([revision, observer])
+        path = Path(observation)
+        expected = self._stage_path("provider-inventory", stage)
+        require(
+            path.is_file()
+            and not path.is_symlink()
+            and path.resolve() == expected.resolve(),
+            "Retained provider observation does not match the current source and observer",
+        )
+        result = json.loads(path.read_text())
+        invocation_path = Path(result.get("evidence_path", ""))
+        required = (
+            "intent.json",
+            "events.jsonl",
+            "outcomes.jsonl",
+            "execution-context.json",
+            "session.json",
+            "telemetry.json",
+            "telemetry-report.json",
+        )
+        require(
+            invocation_path.is_dir()
+            and not invocation_path.is_symlink()
+            and invocation_path.resolve().is_relative_to(self.root.resolve())
+            and all(
+                (invocation_path / name).is_file()
+                and not (invocation_path / name).is_symlink()
+                for name in required
+            ),
+            "Retained provider observation terminal evidence is incomplete",
+        )
+        prior = EvidenceStore.reconcile(invocation_path)
+        request_digest = digest(
+            ["provider", str(current.repository), True, None, PROVIDER_OBSERVATION_PROMPT]
+        )
+        context = json.loads((invocation_path / "execution-context.json").read_text())
+        require(
+            not prior["partial"]
+            and prior["outcome"] == "returned"
+            and prior["operation_id"] == "provider-inventory:" + stage
+            and prior["action"] == stage
+            and prior["request_digest"] == request_digest
+            and prior["invocation_id"] == result.get("invocation_id")
+            and result.get("request_digest") == request_digest
+            and result.get("role") == "coordinator"
+            and result.get("purpose") == "provider"
+            and context
+            == {"purpose": "provider", "provider_operation": None, "read_only": True},
+            "Retained provider observation identity differs",
+        )
+        binding = current.binding("coordinator")
+        observed_binding = AgentBinding(**result["binding"])
+        require(
+            observed_binding.origin == binding.origin
+            and observed_binding.permission_digest == binding.permission_digest,
+            "Retained provider observation binding differs",
+        )
+        recovered = self.recover_invocation(invocation_path)
+        require(recovered == result, "Retained provider observation evidence differs")
+        self.validate_invocation_result(result)
+        self.validate_call_limits(result, current.data["coordinator_limits"])
+        value = self.result_json(result)
+        require(isinstance(value.get("policy"), dict), "Retained provider policy is missing")
+        self.provider.validate_inventory(value)
+        hydrated = []
+        for original in value["items"]:
+            row = dict(original)
+            item_path = self.config.repository / row["path"]
+            require(
+                not Path(row["path"]).is_absolute()
+                and ".." not in Path(row["path"]).parts
+                and item_path.resolve().is_relative_to(self.config.repository / "backlog")
+                and not item_path.is_symlink(),
+                "Unsafe observed item path",
+            )
+            content = item_path.read_bytes()
+            row.setdefault("content", content.decode("utf-8"))
+            row.setdefault("revision", sha256(row["path"].encode() + b"\0" + content).hexdigest())
+            item = Item(**row)
+            require(item_path.read_bytes() == item.content.encode(), "Observed item content differs")
+            require(
+                sha256(item.path.encode() + b"\0" + item.content.encode()).hexdigest()
+                == item.revision,
+                "Observed item revision differs",
+            )
+            hydrated.append(row)
+        require(
+            len({row["item_id"] for row in hydrated}) == len(hydrated),
+            "Duplicate provider identity",
+        )
+        require(
+            self.provider.source_revision() == revision,
+            "Provider changed during retained observation validation",
+        )
+        return {
+            **value,
+            "items": hydrated,
+            "source_revision": revision,
+            "source_manifest": self.provider.source_manifest(),
+            "observer_digest": observer,
+            "capability_digest": self.provider_capability_digest(current, observer),
+            "observer_binding_digest": binding.relevant_digest,
+            "invocation_id": result["invocation_id"],
+        }
+
+    async def reassess_policy(self, observation=None):
         """Reassess scheduling authority without repeating or replacing inventory."""
         require(
             isinstance(self.provider, AgentProvider), "Policy reassessment requires agent provider"
         )
         async with async_operation_lock(self.root / "provider-refresh.lock"):
-            observed = self.provider.policy_reassessment_observation()
-            revision = observed["source_revision"]
+            current = load_config(self.config_path)
+            revision = self.provider.source_revision()
+            manifest = self.provider.source_manifest()
+            observer = self.provider_observer_digest(current)
+            capability = self.provider_capability_digest(current, observer)
+            binding = current.binding("coordinator")
+            observed = (
+                self._retained_provider_observation(observation, revision, observer, current)
+                if observation is not None
+                else self.provider.policy_reassessment_observation()
+            )
+            require(
+                observed["source_revision"] == revision
+                and observed["source_manifest"] == manifest,
+                "Provider changed before policy reassessment",
+            )
             result = await self.invoke(
                 "provider-policy",
                 "reassess-" + digest([revision, observed["policy"]]),
@@ -256,12 +377,6 @@ class Application:
                 self.provider.source_revision() == revision,
                 "Provider changed during policy reassessment",
             )
-            current = load_config(self.config_path)
-            require(
-                current.repository == self.config.repository
-                and current.operational_root == self.root,
-                "Provider identity changed during policy reassessment",
-            )
             from .provider_observation import (
                 LEGACY_POLICY_VALIDATOR_DIGEST,
                 LEGACY_PROVIDER_OBSERVATION_PROMPT,
@@ -296,7 +411,6 @@ class Application:
             # Revalidate the complete retained inventory with the accepted replacement
             # policy before persisting it. Only the exact predecessor contract can move
             # to the clarified observer fingerprint without another inventory invocation.
-            manifest = self.provider.source_manifest()
             self._validate_cached_provider_observation(observed, revision, manifest)
             legacy_capability = self.provider_capability_digest(current, legacy_observer)
             if (
@@ -311,6 +425,19 @@ class Application:
                     capability_digest=self.provider_capability_digest(current, observer),
                     observer_binding_digest=current.binding("coordinator").relevant_digest,
                 )
+            latest = load_config(self.config_path)
+            latest_binding = latest.binding("coordinator")
+            require(
+                latest.repository == self.config.repository
+                and latest.operational_root == self.root
+                and self.provider.source_revision() == revision
+                and self.provider.source_manifest() == manifest
+                and self.provider_observer_digest(latest) == observer
+                and self.provider_capability_digest(latest, observer) == capability
+                and latest_binding.origin == binding.origin
+                and latest_binding.permission_digest == binding.permission_digest,
+                "Provider authority changed during policy reassessment",
+            )
             atomic_json(self.provider.cache_path, observed)
             return observed["policy"]
 
@@ -3648,6 +3775,9 @@ class Application:
                     "proof_reviewer_session in your response. Do not repeat proof or review: "
                     + proof_review_path.read_text()
                 )
+        from .native_evidence import source_review_instructions
+
+        prompt += source_review_instructions(workflow, assignment, candidate_repo)
         if retained_delivery:
             from .recovery_flow import retained_delivery_result
 
@@ -3739,27 +3869,43 @@ class Application:
                 candidate == recovery["packet"]["candidate"]["head"],
                 "Preserved candidate changed without authority",
             )
-        from .native_evidence import verify_native_review
+        from .acceptance_verification import required as verification_required
+        from .acceptance_verification import retain_review
+        from .native_evidence import source_review_context, verify_native_review
 
+        selected_source_review = workflow.get("review_requirements")
+        checks = None
+        if selected_source_review:
+            if self._stage_path(item_id, "superseding-delivery-authorization").exists() or (
+                verification_required(self, item_id)
+                and self._stage_path(item_id, "acceptance-verification-inputs").exists()
+            ):
+                checks = json.loads(self._stage_path(item_id, "source-checks").read_text())
+            else:
+                checks = self.checks(candidate_repo, item_id, candidate, "source-checks")
+        source_context = (
+            source_review_context(candidate_repo, candidate, workflow, assignment, checks)
+            if selected_source_review
+            else None
+        )
         review = verify_native_review(
             produced["session"]["native_session_id"],
             value.get("reviewer_session"),
             candidate,
             self.native_sessions_root(produced["binding"]),
+            **({"source_review": source_context} if source_context else {}),
         )
-        from .acceptance_verification import required as verification_required
-        from .acceptance_verification import retain_review
-
         review = retain_review(self, item_id, review)
-        if self._stage_path(item_id, "superseding-delivery-authorization").exists() or (
-            verification_required(self, item_id)
-            and self._stage_path(item_id, "acceptance-verification-inputs").exists()
-        ):
-            # Superseding integration binds these original receipts immutably;
-            # its own merged-tree checks are validated at the delivery gate.
-            checks = json.loads(self._stage_path(item_id, "source-checks").read_text())
-        else:
-            checks = self.checks(candidate_repo, item_id, candidate, "source-checks")
+        if checks is None:
+            if self._stage_path(item_id, "superseding-delivery-authorization").exists() or (
+                verification_required(self, item_id)
+                and self._stage_path(item_id, "acceptance-verification-inputs").exists()
+            ):
+                # Superseding integration binds these original receipts immutably;
+                # its own merged-tree checks are validated at the delivery gate.
+                checks = json.loads(self._stage_path(item_id, "source-checks").read_text())
+            else:
+                checks = self.checks(candidate_repo, item_id, candidate, "source-checks")
         validate_candidate(
             candidate_repo,
             candidate,

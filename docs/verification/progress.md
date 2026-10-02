@@ -192,3 +192,38 @@ existing installed metadata scenarios passed before these binding-only correctio
 Original live preparation records remain byte-identical. Detailed package and test
 evidence is retained under `.agent-ops/preparation-contract-a46`; live backlog delivery
 remains a separate acceptance result.
+
+## Bound Source Review Requirements
+
+Explicit source-review selections bind the provider revision, original and effective
+preparation, correction resolution, and every retained semantic gate. The existing
+native review receives completed check receipts and must return per-requirement
+conclusions with no unresolved findings. Generic acceptance or passing commands
+alone cannot satisfy the selected requirement.
+
+Independent source review accepted this bounded change after 168 focused tests,
+Ruff, and scoped diff checks. An installed-wheel scenario verified acceptance,
+rejection for evaluation weakening, and replay without additional calls. Two
+existing installed compatibility scenarios also passed. The concrete Diagnostician
+selection draft passed independent coverage and identity review. It remains
+disabled pending combined package verification and installation; no backlog
+completion is implied. Detailed evidence is retained under
+`.agent-ops/source-review-requirements-a47/source-review-candidate`.
+
+## Retained Inventory Policy Reassessment
+
+The existing policy reassessment command accepts an explicit retained observation.
+It validates the exact current observation stage and terminal invocation evidence,
+hydrates the complete inventory from current source bytes, and obtains replacement
+policy through the existing deterministic invocation. Original rejected evidence is
+preserved. Missing telemetry, mismatched identity, invalid replacement policy, and
+source or configuration drift prevent cache publication.
+
+The focused provider coordination, observation, and recovery suite passed 77 tests.
+The installed public-command scenario passed: one rejected inventory observation,
+one policy reassessment, successful hydration, and replay with no additional calls
+or evidence changes. The combined installed source-review scenario also passed.
+Both builds produced the same wheel SHA-256:
+`0d22bc2e491596eb00fdece6f1f97b7cae5a6e7b33fa5d98176d3b9be0ed0b04`.
+All 35 Python modules matched the tested source. Independent policy review accepted the frozen candidate after independently
+repeating the 77 focused tests. Live installation remains pending at this checkpoint.

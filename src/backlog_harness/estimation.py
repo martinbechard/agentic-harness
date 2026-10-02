@@ -224,6 +224,10 @@ def prepared_workflow(app, item_id, config):
             "Explicit proof selection requires retained preparation evidence",
         )
         require(
+            not selected.get("review_requirements"),
+            "Explicit review selection requires retained preparation evidence",
+        )
+        require(
             not selected.get("design_review"),
             "Explicit design selection requires retained preparation evidence",
         )
@@ -231,16 +235,23 @@ def prepared_workflow(app, item_id, config):
         return selected
     saved = json.loads(path.read_text())
     proof_selection = selected.get("proof_requirements")
+    review_selection = selected.get("review_requirements")
     design_selection = selected.get("design_review")
     original_selection = {
         key: value
         for key, value in selected.items()
-        if key not in {"proof_requirements", "candidate_approval_required", "design_review"}
+        if key
+        not in {
+            "proof_requirements",
+            "review_requirements",
+            "candidate_approval_required",
+            "design_review",
+        }
     }
     require(
         saved["workflow_config_digest"] == digest(selected)
         or (
-            bool(proof_selection or design_selection)
+            bool(proof_selection or review_selection or design_selection)
             and saved["workflow_config_digest"] == digest(original_selection)
         ),
         "Prepared workflow configuration changed; reconcile before dispatch",
@@ -265,6 +276,34 @@ def prepared_workflow(app, item_id, config):
             and bool(proof_selection["requirements"]),
             "Explicit proof selection differs from retained preparation authority",
         )
+    correction_resolution_digest = None
+    if decision != original_decision:
+        correction_resolution = json.loads(
+            app._stage_path(item_id, "preparation-contract-resolution").read_text()
+        )
+        correction_resolution_digest = digest(correction_resolution)
+    if review_selection:
+        require(
+            isinstance(review_selection, dict)
+            and review_selection.get("provider_revision") == saved["item"]["revision"]
+            and review_selection.get("preparation_digest") == digest(decision)
+            and isinstance(review_selection.get("requirements"), list)
+            and bool(review_selection["requirements"]),
+            "Explicit review selection differs from retained preparation authority",
+        )
+        if decision == original_decision:
+            require(
+                "original_preparation_digest" not in review_selection
+                and "correction_resolution_digest" not in review_selection,
+                "Uncorrected review selection invents preparation lineage",
+            )
+        else:
+            require(
+                review_selection.get("original_preparation_digest") == digest(original_decision)
+                and review_selection.get("correction_resolution_digest")
+                == correction_resolution_digest,
+                "Explicit review selection differs from corrected preparation lineage",
+            )
     if design_selection:
         require(
             isinstance(design_selection, dict)
@@ -287,11 +326,19 @@ def prepared_workflow(app, item_id, config):
     parameters, metadata = normalize_preparation_workflow(parameters, echoes)
     # A reviewed operator selection names the supported requirements for this
     # exact packet. Free-form gates themselves never select an execution route.
-    require(
-        not metadata.get("required_gates") or bool(proof_selection or design_selection),
-        "Preparation requires unsupported acceptance gates before dispatch: "
-        + json.dumps(metadata.get("required_gates", [])),
-    )
+    required_gates = metadata.get("required_gates", [])
+    if review_selection:
+        selected_gates = [row["required_gate"] for row in review_selection["requirements"]]
+        require(
+            selected_gates == required_gates,
+            "Explicit review selection does not cover the exact retained required gates",
+        )
+    else:
+        require(
+            not required_gates or bool(proof_selection or design_selection),
+            "Preparation requires unsupported acceptance gates before dispatch: "
+            + json.dumps(required_gates),
+        )
 
     paths, checks = validate_preparation_scope(parameters, selected, config)
     # Configured workflow checks remain mandatory even when the agent selects focused checks.
@@ -300,7 +347,7 @@ def prepared_workflow(app, item_id, config):
     selected["checks"] = selected["checks"] + [
         argv for argv in checks if argv not in selected["checks"]
     ]
-    if metadata or proof_selection or design_selection:
+    if metadata or proof_selection or review_selection or design_selection:
         selected["preparation_evidence"] = {
             "item_id": item_id,
             "provider_revision": saved["item"]["revision"],
@@ -309,6 +356,9 @@ def prepared_workflow(app, item_id, config):
         }
         if decision != original_decision:
             selected["preparation_evidence"]["original_decision_digest"] = digest(original_decision)
+            selected["preparation_evidence"]["correction_resolution_digest"] = (
+                correction_resolution_digest
+            )
     return selected
 
 

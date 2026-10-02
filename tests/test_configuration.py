@@ -213,6 +213,48 @@ def test_item_workflow_cannot_override_preparation_or_gates(config_file, overrid
         load_config(path)
 
 
+@pytest.mark.parametrize(
+    "fault",
+    [None, "partial-lineage", "duplicate-id", "duplicate-gate", "missing-gate", "extra-field"],
+)
+def test_explicit_source_review_requirement_contract(config_file, fault):
+    path, data = config_file
+    requirement = {
+        "id": "role-suite",
+        "canonical_reference": "item-one#acceptance",
+        "acceptance_text": "Role and suite agree without weakening evaluation",
+        "required_gate": "Verify role-suite agreement",
+    }
+    contract = {
+        "provider_revision": "revision",
+        "preparation_digest": "1" * 64,
+        "original_preparation_digest": "2" * 64,
+        "correction_resolution_digest": "3" * 64,
+        "requirements": [requirement],
+    }
+    if fault == "partial-lineage":
+        contract.pop("correction_resolution_digest")
+    elif fault == "duplicate-id":
+        contract["requirements"].append(
+            {**requirement, "required_gate": "Verify generated outputs"}
+        )
+    elif fault == "duplicate-gate":
+        contract["requirements"].append({**requirement, "id": "generated"})
+    elif fault == "missing-gate":
+        contract["requirements"][0].pop("required_gate")
+    elif fault == "extra-field":
+        contract["route"] = "invented"
+    data["workflow"]["items"] = {
+        "one": {"allowed_paths": ["answer.py"], "review_requirements": contract}
+    }
+    path.write_text(yaml.safe_dump(data))
+    if fault:
+        with pytest.raises(ConfigError):
+            load_config(path)
+    else:
+        assert load_config(path).data["workflow"]["items"]["one"]["review_requirements"]
+
+
 @pytest.mark.parametrize("setting", ["true", 1, None])
 def test_artifact_output_requires_explicit_boolean(config_file, setting):
     path, data = config_file

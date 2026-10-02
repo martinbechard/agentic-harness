@@ -26,6 +26,10 @@ def policy(repo):
     }
 
 
+def work_item_id(prompt):
+    return re.findall(r"^Work Item ID: ([^\n]+)$", prompt, re.MULTILINE)[-1]
+
+
 def dispatch(prompt, cwd, native_home, argv, session_id):
     repo = Path(os.environ["HARNESS_SYSTEM_REPO"])
     provider = FileProvider(repo, repo / ".agent-ops/fixture-provider")
@@ -55,7 +59,7 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
     if "Decide whether to admit" in prompt:
         return {
             "operation": "new",
-            "item_id": re.findall(r"Work Item ID: (.+)", prompt)[-1],
+            "item_id": work_item_id(prompt),
             "provider_revision": re.search(r"Provider revision: (.+)", prompt)[1],
             "reason": "Authorized fixture",
         }
@@ -126,7 +130,7 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
             and "Persisted canonical approval:" not in prompt
         ):
             return {
-                "item_id": re.findall(r"Work Item ID: (.+)", prompt)[-1],
+                "item_id": work_item_id(prompt),
                 "question": {"question_id": "language", "text": "Which language?"},
             }
         import importlib.util
@@ -142,7 +146,13 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
         git(cwd, "add", "--", *allowed)
         git(cwd, "commit", "-m", "Fixture implementation")
         candidate = git(cwd, "rev-parse", "HEAD")
-        reviewer = module.native_review(native_home, session_id, candidate)
+        reviewer = module.native_review(
+            native_home,
+            session_id,
+            candidate,
+            module.source_review_request(prompt),
+            os.environ.get("SOURCE_REVIEW_FAULT"),
+        )
         if scenario in ("legacy-correct", "legacy-reject"):
             child = next(native_home.glob("sessions/*/*/*/*" + reviewer + ".jsonl"))
             child.write_text(child.read_text().replace("ACCEPT", "REJECT"))
@@ -152,12 +162,18 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
             git(cwd, "add", "--", *allowed)
             git(cwd, "commit", "--amend", "--no-edit")
             candidate = git(cwd, "rev-parse", "HEAD")
-            reviewer = module.native_review(native_home, session_id, candidate)
+            reviewer = module.native_review(
+                native_home,
+                session_id,
+                candidate,
+                module.source_review_request(prompt),
+                os.environ.get("SOURCE_REVIEW_FAULT"),
+            )
         if scenario == "legacy-stale-review":
             git(cwd, "commit", "--amend", "-m", "Different candidate after review")
             candidate = git(cwd, "rev-parse", "HEAD")
         return {
-            "item_id": re.findall(r"Work Item ID: (.+)", prompt)[-1],
+            "item_id": work_item_id(prompt),
             "candidate": candidate,
             "reviewer_session": reviewer,
             "request_completion": True,

@@ -49,6 +49,8 @@ def make_pilot(provider, tmp_path, monkeypatch, *, initialize=True):
         def __init__(self):
             self.calls = []
             self.review_patch = {}
+            self.prompts = {}
+            self.review_source = None
 
         def _stage_path(self, item, stage):
             path = self.root / "stages" / (stage + ".json")
@@ -130,7 +132,7 @@ def make_pilot(provider, tmp_path, monkeypatch, *, initialize=True):
             return result
 
         def checks(self, repo, item, candidate, stage):
-            return [
+            receipts = [
                 {
                     "candidate": candidate,
                     "returncode": 0,
@@ -138,12 +140,15 @@ def make_pilot(provider, tmp_path, monkeypatch, *, initialize=True):
                     "evidence_sha256": "checks",
                 }
             ]
+            atomic_json(self._stage_path(item, stage), receipts)
+            return receipts
 
         async def invoke(self, item, stage, role, prompt, **kwargs):
             path = self._stage_path(item, stage)
             if path.exists():
                 return json.loads(path.read_text())
             self.calls.append((stage, kwargs.get("session")))
+            self.prompts[stage] = prompt
             if stage == "admit":
                 value = {
                     "item_id": item,
@@ -203,7 +208,10 @@ def make_pilot(provider, tmp_path, monkeypatch, *, initialize=True):
     app = App()
     app.provider = provider
 
-    def review(producer, reviewer, candidate, root):
+    def review(producer, reviewer, candidate, root, **kwargs):
+        app.review_source = kwargs.get("source_review")
+        if app.review_source:
+            assert app._stage_path("item-one", "source-checks").exists()
         return {
             "producer_session": producer,
             "reviewer_session": reviewer,
@@ -218,6 +226,37 @@ def make_pilot(provider, tmp_path, monkeypatch, *, initialize=True):
 
     monkeypatch.setattr(item_graph, "verify_native_review", review)
     return app
+
+
+def test_selected_source_review_reuses_review_after_harness_checks(pilot):
+    pilot.question = False
+    workflow = pilot.config.data["workflow"]
+    workflow["preparation_evidence"] = {
+        "provider_revision": "revision",
+        "decision_digest": "1" * 64,
+        "original_decision_digest": "2" * 64,
+        "correction_resolution_digest": "3" * 64,
+        "metadata": {"required_gates": ["Verify role-suite agreement"]},
+    }
+    workflow["review_requirements"] = {
+        "provider_revision": "revision",
+        "preparation_digest": "1" * 64,
+        "original_preparation_digest": "2" * 64,
+        "correction_resolution_digest": "3" * 64,
+        "requirements": [
+            {
+                "id": "role-suite",
+                "canonical_reference": "item-one#acceptance",
+                "acceptance_text": "Preserve evaluation strength",
+                "required_gate": "Verify role-suite agreement",
+            }
+        ],
+    }
+    result = asyncio.run(item_graph.run_item_graph(pilot, "item-one"))
+    assert result["result"]["state"] == "Completed"
+    assert pilot.review_source["harness_checks"][0]["returncode"] == 0
+    assert pilot.review_source["source_evidence"][0]["path"] == "answer.py"
+    assert "SOURCE REVIEW PACKET" in pilot.prompts["graph-produce-0"]
 
 
 def test_restart_question_real_provider_and_delivery(pilot):

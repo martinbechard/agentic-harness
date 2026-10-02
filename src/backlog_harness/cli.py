@@ -21,7 +21,8 @@ def main(argv=None):
     commands.add_parser("app")
     commands.add_parser("reconcile")
     commands.add_parser("refresh-provider")
-    commands.add_parser("reassess-policy")
+    reassess = commands.add_parser("reassess-policy")
+    reassess.add_argument("--observation", type=Path)
     batch = commands.add_parser("run")
     modes = batch.add_mutually_exclusive_group(required=True)
     modes.add_argument("--until-terminal", action="store_true")
@@ -134,7 +135,7 @@ def main(argv=None):
             if args.command == "reconcile":
                 result = app.reconcile()
             elif args.command == "reassess-policy":
-                result = asyncio.run(app.reassess_policy())
+                result = asyncio.run(app.reassess_policy(args.observation))
             elif args.command == "refresh-provider":
                 from .provider import AgentProvider, TransitionBlocked
 

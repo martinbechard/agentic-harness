@@ -188,6 +188,13 @@ def build_graph(app, checkpointer):
                 "Preserve its constraints and supply it in full to the independent reviewer: "
                 + json.dumps(state["assignment"]["workflow"]["preparation_evidence"])
             )
+        from .native_evidence import source_review_instructions
+
+        prompt += source_review_instructions(
+            state["assignment"]["workflow"],
+            state["assignment"]["content"],
+            app.candidate_repository(item_id),
+        )
         if accepted_design:
             prompt += (
                 "\nImplement the independently accepted design; read its bound artifact and preserve "
@@ -320,25 +327,43 @@ def build_graph(app, checkpointer):
     async def review(state):
         produced = state["produced"]
         value = app.result_json(produced)
+        repo = app.candidate_repository(state["item_id"])
+        from .acceptance_verification import required as verification_required
+        from .acceptance_verification import retain_review
+        from .native_evidence import source_review_context
+
+        selected_source_review = state["assignment"]["workflow"].get("review_requirements")
+        checks = None
+        if selected_source_review:
+            checks = app.checks(repo, state["item_id"], state["candidate"], "source-checks")
+        source_context = (
+            source_review_context(
+                repo,
+                state["candidate"],
+                state["assignment"]["workflow"],
+                state["assignment"]["content"],
+                checks,
+            )
+            if selected_source_review
+            else None
+        )
         review = verify_native_review(
             produced["session"]["native_session_id"],
             value.get("reviewer_session"),
             state["candidate"],
             app.native_sessions_root(produced["binding"]),
+            **({"source_review": source_context} if source_context else {}),
         )
-        repo = app.candidate_repository(state["item_id"])
-        from .acceptance_verification import required as verification_required
-        from .acceptance_verification import retain_review
-
-        if verification_required(app, state["item_id"]):
+        if verification_required(app, state["item_id"]) or selected_source_review:
             review = retain_review(app, state["item_id"], review)
-        if (
-            verification_required(app, state["item_id"])
-            and app._stage_path(state["item_id"], "acceptance-verification-inputs").exists()
-        ):
-            checks = json.loads(app._stage_path(state["item_id"], "source-checks").read_text())
-        else:
-            checks = app.checks(repo, state["item_id"], state["candidate"], "source-checks")
+        if checks is None:
+            if (
+                verification_required(app, state["item_id"])
+                and app._stage_path(state["item_id"], "acceptance-verification-inputs").exists()
+            ):
+                checks = json.loads(app._stage_path(state["item_id"], "source-checks").read_text())
+            else:
+                checks = app.checks(repo, state["item_id"], state["candidate"], "source-checks")
         validate_candidate(
             repo,
             state["candidate"],

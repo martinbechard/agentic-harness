@@ -639,6 +639,85 @@ def policy_evidence(repository):
     ]
 
 
+def retained_provider_observation(app, provider):
+    """Build one compact retained envelope for policy-only recovery tests."""
+    import json
+    from dataclasses import asdict
+    from hashlib import sha256
+
+    from backlog_harness.contracts import digest, load_config
+    from backlog_harness.evidence import atomic_json
+    from backlog_harness.provider_observation import PROVIDER_OBSERVATION_PROMPT
+
+    current = load_config(app.config_path)
+    revision = app.provider.source_revision()
+    observer = app.provider_observer_digest(current)
+    stage = "observe-" + digest([revision, observer])
+    evidence = app.root / "runs/retained-observation"
+    evidence.mkdir(parents=True)
+    for name in ("events.jsonl", "outcomes.jsonl"):
+        (evidence / name).write_text("{}\n")
+    for name in ("telemetry.json", "telemetry-report.json", "session.json"):
+        atomic_json(evidence / name, {})
+    atomic_json(
+        evidence / "execution-context.json",
+        {"purpose": "provider", "provider_operation": None, "read_only": True},
+    )
+    item = provider.item("item-one")
+    compact = {
+        key: value for key, value in asdict(item).items() if key not in {"content", "revision"}
+    }
+    project = provider.repository / "PROJECT.yaml"
+    value = {
+        "items": [compact],
+        "dependencies": {item.item_id: []},
+        "policy": {
+            "eligible": False,
+            "mode": "SOLO",
+            "primary_branch": "main",
+            "evidence": [
+                {
+                    "path": "PROJECT.yaml",
+                    "sha256": sha256(project.read_bytes()).hexdigest(),
+                    "excerpt": "execution_mode: SOLO\nmissing intervening authority",
+                    "supports": ["mode", "admission"],
+                }
+            ],
+        },
+    }
+    request_digest = digest(
+        ["provider", str(current.repository), True, None, PROVIDER_OBSERVATION_PROMPT]
+    )
+    atomic_json(evidence / "intent.json", {"request_digest": request_digest})
+    result = {
+        "version": 1,
+        "request_digest": request_digest,
+        "invocation_id": "retained-inventory",
+        "outcome": "returned",
+        "role": "coordinator",
+        "purpose": "provider",
+        "binding": asdict(current.binding("coordinator")),
+        "session": {},
+        "text": json.dumps(value),
+        "events": [],
+        "telemetry": {},
+        "telemetry_path": str(evidence / "telemetry.jsonl"),
+        "evidence_path": str(evidence),
+    }
+    envelope = app._stage_path("provider-inventory", stage)
+    atomic_json(envelope, result)
+    prior = {
+        "partial": False,
+        "outcome": "returned",
+        "operation_id": "provider-inventory:" + stage,
+        "action": stage,
+        "request_digest": request_digest,
+        "invocation_id": result["invocation_id"],
+        "binding": result["binding"],
+    }
+    return envelope, result, prior, value
+
+
 def test_agent_policy_binds_sources_and_project_invariants(provider):
     from backlog_harness.provider import AgentProvider
 
@@ -1037,6 +1116,244 @@ def test_policy_reassessment_repairs_rejected_cached_authority_without_inventory
         assert repaired["observer_digest"] == legacy_observer
         assert repaired["capability_digest"] == "changed-capability"
     assert len(calls) == 1
+
+
+def test_policy_reassessment_accepts_exact_retained_inventory_without_repeating_observation(
+    config_file, provider, monkeypatch
+):
+    import asyncio
+    import json
+
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import EvidenceStore, atomic_json
+
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    envelope, retained, prior, _ = retained_provider_observation(app, provider)
+    original = {"stale": "cache must survive until the replacement is valid"}
+    atomic_json(app.provider.cache_path, original)
+    monkeypatch.setattr(EvidenceStore, "reconcile", staticmethod(lambda _: prior))
+    monkeypatch.setattr(app, "recover_invocation", lambda _: retained)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+    calls = []
+    saved = None
+
+    async def invoke(item_id, stage, role, prompt, **kwargs):
+        nonlocal saved
+        if saved is None:
+            calls.append((item_id, stage, role, prompt, kwargs))
+            saved = {
+                "invocation_id": "replacement-policy",
+                "text": json.dumps(
+                    {
+                        "source_revision": app.provider.source_revision(),
+                        "reason": "Canonical project authority",
+                        "policy": {
+                            "eligible": True,
+                            "mode": "SOLO",
+                            "primary_branch": "main",
+                            "evidence": policy_evidence(provider.repository),
+                        },
+                    }
+                ),
+            }
+        return saved
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    assert asyncio.run(app.reassess_policy(envelope))["eligible"] is True
+    accepted = json.loads(app.provider.cache_path.read_text())
+    assert len(calls) == 1 and calls[0][0] == "provider-policy"
+    assert accepted["invocation_id"] == retained["invocation_id"]
+    assert accepted["items"][0]["content"] == provider.item("item-one").content
+    assert accepted["items"][0]["revision"] == provider.item("item-one").revision
+    assert accepted["policy_reassessment"]["invocation_id"] == "replacement-policy"
+    app.provider.validate_policy(accepted["policy"])
+    assert asyncio.run(app.reassess_policy(envelope))["eligible"] is True
+    assert len(calls) == 1
+
+
+def test_retained_policy_reassessment_requires_existing_nonmutating_terminal_report(
+    config_file, provider, monkeypatch
+):
+    import asyncio
+    import json
+
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import EvidenceStore, atomic_json
+
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    envelope, _, prior, _ = retained_provider_observation(app, provider)
+    evidence = provider.evidence_root / "runs/retained-observation"
+    (evidence / "telemetry-report.json").unlink()
+    original = {"stale": "preserved"}
+    atomic_json(app.provider.cache_path, original)
+    before = {path: path.read_bytes() for path in evidence.iterdir() if path.is_file()}
+    monkeypatch.setattr(EvidenceStore, "reconcile", staticmethod(lambda _: prior))
+    recovered = []
+    invoked = []
+    monkeypatch.setattr(app, "recover_invocation", lambda _: recovered.append(True))
+
+    async def invoke(*args, **kwargs):
+        invoked.append((args, kwargs))
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    with pytest.raises(TransitionBlocked, match="terminal evidence"):
+        asyncio.run(app.reassess_policy(envelope))
+    assert not recovered and not invoked
+    assert json.loads(app.provider.cache_path.read_text()) == original
+    assert {path: path.read_bytes() for path in evidence.iterdir() if path.is_file()} == before
+
+
+@pytest.mark.parametrize("fault", ["path", "action", "recovered"])
+def test_retained_policy_reassessment_rejects_mismatched_observation_identity(
+    config_file, provider, monkeypatch, fault
+):
+    import asyncio
+    import json
+
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import EvidenceStore, atomic_json
+
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    envelope, retained, prior, _ = retained_provider_observation(app, provider)
+    original = {"stale": "preserved"}
+    atomic_json(app.provider.cache_path, original)
+    if fault == "path":
+        changed = envelope.with_name("different-observation.json")
+        changed.write_bytes(envelope.read_bytes())
+        envelope = changed
+    elif fault == "action":
+        prior = {**prior, "action": "different-observation"}
+    else:
+        retained = {**retained, "invocation_id": "different-invocation"}
+    monkeypatch.setattr(EvidenceStore, "reconcile", staticmethod(lambda _: prior))
+    monkeypatch.setattr(app, "recover_invocation", lambda _: retained)
+    invoked = []
+
+    async def invoke(*args, **kwargs):
+        invoked.append((args, kwargs))
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    with pytest.raises(TransitionBlocked, match="observation"):
+        asyncio.run(app.reassess_policy(envelope))
+    assert not invoked
+    assert json.loads(app.provider.cache_path.read_text()) == original
+
+
+@pytest.mark.parametrize("drift", ["observer", "capability", "binding"])
+def test_retained_policy_reassessment_rejects_midcall_authority_drift(
+    config_file, provider, monkeypatch, drift
+):
+    import asyncio
+    import json
+
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.contracts import load_config
+    from backlog_harness.evidence import EvidenceStore, atomic_json
+
+    config, data = config_file
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(provider.evidence_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    envelope, retained, prior, _ = retained_provider_observation(app, provider)
+    original = {"stale": "preserved"}
+    atomic_json(app.provider.cache_path, original)
+    monkeypatch.setattr(EvidenceStore, "reconcile", staticmethod(lambda _: prior))
+    monkeypatch.setattr(app, "recover_invocation", lambda _: retained)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+    original_observer = app.provider_observer_digest
+    original_capability = app.provider_capability_digest
+    current = load_config(config)
+    stable_observer = original_observer(current)
+    stable_capability = original_capability(current, stable_observer)
+    observer_calls = []
+    capability_calls = []
+
+    if drift == "observer":
+        monkeypatch.setattr(
+            app,
+            "provider_observer_digest",
+            lambda current: (
+                observer_calls.append(True)
+                or (original_observer(current) if len(observer_calls) == 1 else "changed-observer")
+            ),
+        )
+    elif drift == "capability":
+        monkeypatch.setattr(
+            app,
+            "provider_capability_digest",
+            lambda current, observer: (
+                capability_calls.append(True)
+                or (
+                    original_capability(current, observer)
+                    if len(capability_calls) == 1
+                    else "changed-capability"
+                )
+            ),
+        )
+
+    async def invoke(*args, **kwargs):
+        if drift == "binding":
+            changed = yaml.safe_load(config.read_text())
+            changed["profiles"]["control"]["permissions"] = ["workspace-write"]
+            config.write_text(yaml.safe_dump(changed))
+            monkeypatch.setattr(
+                app, "provider_capability_digest", lambda current, observer: stable_capability
+            )
+        return {
+            "invocation_id": "replacement-policy",
+            "text": json.dumps(
+                {
+                    "source_revision": app.provider.source_revision(),
+                    "reason": "Canonical project authority",
+                    "policy": {
+                        "eligible": True,
+                        "mode": "SOLO",
+                        "primary_branch": "main",
+                        "evidence": policy_evidence(provider.repository),
+                    },
+                }
+            ),
+        }
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    with pytest.raises(TransitionBlocked, match="changed during policy reassessment"):
+        asyncio.run(app.reassess_policy(envelope))
+    assert json.loads(app.provider.cache_path.read_text()) == original
 
 
 @pytest.mark.parametrize("legacy", [False, True])
