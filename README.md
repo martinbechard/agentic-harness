@@ -38,7 +38,7 @@ scheduling:
 access_timeout: 120
 ```
 
-Use a model available to your Codex account. The bundled adapter inherits the configured Codex sandbox, authentication, and other settings. Add `--profile PROFILE` to any agent command to select a configured profile. Use `--context-file /absolute/path/launch-context.txt` to send deployment-specific instructions directly in the Codex prompt, before the role request. An unreadable file stops the invocation before Codex starts. This transports instructions; it does not enforce agent compliance. Agents need project instructions and provider/delivery skills that describe the backlog, worktree preparation, required tests, and merge convention.
+Use a model available to your Codex account. The bundled adapter uses the official `openai-codex` Python SDK and its matching local app-server runtime. It reuses Codex authentication and the configured sandbox; permission escalation is denied for these unattended invocations. Optional arguments are `--model` and `--effort`. Role instructions are supplied through the SDK's `developer_instructions` parameter and assignments through its turn input. Agents use project instructions and provider/delivery skills for backlog and integration conventions. There is no context-file or shell-wrapper requirement.
 
 ```sh
 uv run agentic-harness --config config.yaml
@@ -51,7 +51,7 @@ All harness activities and agent output appear on the console, in `activities.js
 
 ## Agent interface and verification
 
-[Operator and agent protocol](docs/operator-guide.md) describes custom commands and role boundaries. [Verification](docs/verification.md) maps each use case to its tests.
+[Operator and agent protocol](docs/operator-guide.md) describes custom commands and role boundaries. `AgentAdapter.run` accepts ordinary Python instructions, request data, output schema, working directory, and an activity callback; it returns a result dictionary. Only `codex.py` imports the Codex SDK. Another backend implements that contract and calls `adapter.execute`; select its entry point in the role command configuration without changing the scheduler. [Verification](docs/verification.md) maps each use case to its tests.
 
 ```sh
 uv run pytest -q

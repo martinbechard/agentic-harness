@@ -24,7 +24,11 @@ Each invocation receives:
 
 Write results atomically. A result is accepted only after the process has stopped. Stdout and stderr are activity output, never parsed as the authoritative result. Results must be JSON objects no larger than 1 MiB.
 
-The bundled `python -m backlog_harness.codex` adapter passes the request to `codex exec` and uses `--output-schema` and `--output-last-message` for the result. Optional adapter arguments are `--executable`, `--model`, `--effort`, and `--profile`. It inherits permissions and does not bypass the configured sandbox.
+The bundled `python -m backlog_harness.codex` entry point implements `AgentAdapter` using the official Codex Python SDK. Optional arguments are `--model` and `--effort`. The SDK starts its matching app server, inherits existing authentication and the configured sandbox, and receives role instructions through `thread_start(developer_instructions=...)`. The assignment and output schema are passed to `thread.turn`. Permission escalation uses `ApprovalMode.deny_all`; the adapter does not bypass the sandbox. SDK notifications stream to stdout and therefore enter the existing console, activity, and OTEL logs. Only a completed turn with a JSON object publishes a result.
+
+`adapter.py` owns the backend-neutral contract, role instructions, schemas, and atomic result publication. Its `AgentAdapter.run(instructions, request, schema, cwd, emit)` contract uses Python strings, dictionaries, and paths; SDK types stay within `codex.py`. Another backend implements that contract and invokes `execute(adapter)` from its entry point. Change the configured role command to switch implementations. Backend processes must remain in the invocation process group so timeout and exit cleanup can reap them. Custom commands can also implement the file protocol directly.
+
+The former `--executable`, `--profile`, and `--context-file` adapter flags are removed. Use the SDK adapter directly; deployment-specific wrapper scripts are not part of this interface.
 
 ## Requests and results
 

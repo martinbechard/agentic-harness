@@ -3,11 +3,10 @@
 import asyncio
 import json
 import sys
-from pathlib import Path
 
 import pytest
 
-from backlog_harness.codex import schema_for
+from backlog_harness.adapter import schema_for
 from backlog_harness.engine import Outcome
 from backlog_harness.process import Agents, Process
 
@@ -140,67 +139,6 @@ def test_provider_timeout_is_bounded_and_logged(tmp_path):
     asyncio.run(scenario())
 
 
-@pytest.mark.parametrize("configured", [False, True])
-def test_codex_bridge_preserves_profile_and_uses_structured_final_message(tmp_path, configured):
-    fake = tmp_path / "codex"
-    fake.write_text(
-        f"#!{sys.executable}\n" + "import json,sys\nfrom pathlib import Path\n"
-        "Path('arguments.json').write_text(json.dumps(sys.argv[1:]))\n"
-        "Path('prompt.txt').write_text(sys.stdin.read())\n"
-        "target=Path(sys.argv[sys.argv.index('--output-last-message')+1])\n"
-        "target.write_text(json.dumps({'items':[]}))\n"
-    )
-    fake.chmod(0o755)
-    context = "Current authorization supersedes the historical hold.\nClaim-free operation. café\n"
-    context_path = tmp_path / "launch context.txt"
-    context_path.write_text(context, encoding="utf-8")
-
-    async def scenario():
-        process = await Process.start(
-            [
-                sys.executable,
-                "-m",
-                "backlog_harness.codex",
-                "--executable",
-                str(fake),
-                *(
-                    [
-                        "--profile",
-                        "test",
-                        "--model",
-                        "chosen-model",
-                        "--context-file",
-                        str(context_path),
-                    ]
-                    if configured
-                    else []
-                ),
-            ],
-            {"role": "access", "action": "ready"},
-            tmp_path,
-            tmp_path / "state",
-            lambda *a, **kw: None,
-        )
-        assert await process.response() == {"items": []}
-        arguments = json.loads((tmp_path / "arguments.json").read_text())
-        if configured:
-            assert arguments[arguments.index("--profile") + 1] == "test"
-            assert arguments[arguments.index("--model") + 1] == "chosen-model"
-        assert "--dangerously-bypass-approvals-and-sandbox" not in arguments
-        assert "--sandbox" not in arguments
-        schema = json.loads(Path(arguments[arguments.index("--output-schema") + 1]).read_text())
-        assert schema["required"] == ["items"]
-        prompt = (tmp_path / "prompt.txt").read_text()
-        assert "installed provider/delivery skills" in prompt
-        assert prompt.startswith(context + "\n\n") == configured
-        assert json.loads(prompt.split("Request data follows:\n", 1)[1]) == {
-            "role": "access",
-            "action": "ready",
-        }
-
-    asyncio.run(scenario())
-
-
 def test_incomplete_utf8_output_is_retained_and_logged(tmp_path):
     async def scenario():
         agent, events = await start(tmp_path, "import os; os.write(1, b'\\xe2')")
@@ -258,31 +196,3 @@ def test_codex_provider_schema_is_strict(action):
     schema = schema_for({"role": "access", "action": action})
     assert schema["additionalProperties"] is False
     assert set(schema["required"]) == set(schema["properties"])
-
-
-def test_codex_missing_context_fails_before_executable_start(tmp_path):
-    fake = tmp_path / "codex"
-    fake.write_text(f"#!{sys.executable}\nfrom pathlib import Path\nPath('started').touch()\n")
-    fake.chmod(0o755)
-
-    async def scenario():
-        process = await Process.start(
-            [
-                sys.executable,
-                "-m",
-                "backlog_harness.codex",
-                "--executable",
-                str(fake),
-                "--context-file",
-                str(tmp_path / "missing.txt"),
-            ],
-            {"role": "access", "action": "ready"},
-            tmp_path,
-            tmp_path / "state",
-            lambda *a, **kw: None,
-        )
-        await process.wait()
-        assert process.process.returncode != 0
-        assert not (tmp_path / "started").exists()
-
-    asyncio.run(scenario())

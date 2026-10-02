@@ -1,87 +1,65 @@
-"""Adapt the harness file protocol to Codex exec's structured final response."""
+"""Codex Python SDK implementation of the harness agent adapter."""
 
 import argparse
 import json
-import os
-import subprocess
-from pathlib import Path
+
+from openai_codex import ApprovalMode, Codex, CodexConfig
+from openai_codex.types import ReasoningEffort
+
+from .adapter import execute
 
 
-def schema_for(request):
-    action = request.get("action") if request["role"] == "access" else None
-    item = {
-        "type": "object",
-        "properties": {key: {"type": "string"} for key in ("id", "worktree", "branch")},
-        "required": ["id", "worktree", "branch"],
-        "additionalProperties": False,
-    }
-    properties = {
-        "ready": {"items": {"type": "array", "items": item}},
-        "status": {"status": {"type": "string"}},
-        "failure": {"transient": {"type": "boolean"}},
-        "hold": {"updated": {"type": "boolean"}},
-        "epic_complete": {"complete": {"type": "boolean"}},
-        None: {
-            "status": {"type": "string", "enum": ["success", "failed", "user_action_required"]},
-            "transient": {"type": "boolean"},
-            "detail": {"type": "string"},
-        },
-    }[action]
-    return {
-        "type": "object",
-        "properties": properties,
-        "required": list(properties),
-        "additionalProperties": False,
-    }
+class CodexAdapter:
+    def __init__(self, model=None, effort="high"):
+        self.model = model
+        self.effort = ReasoningEffort(effort)
+
+    def run(self, *, instructions, request, schema, cwd, emit):
+        # SDK owns app-server transport. Its child inherits the invocation group,
+        # allowing the existing harness timeout/exit path to reap both processes.
+        with Codex(CodexConfig(cwd=str(cwd))) as client:
+            thread = client.thread_start(
+                cwd=str(cwd),
+                model=self.model,
+                developer_instructions=instructions,
+                approval_mode=ApprovalMode.deny_all,
+            )
+            emit({"event": "thread_started", "thread": thread.id})
+            turn = thread.turn(json.dumps(request), effort=self.effort, output_schema=schema)
+            response = None
+            completed = False
+            for notification in turn.stream():
+                payload = notification.payload
+                body = (
+                    payload.model_dump(mode="json", by_alias=True)
+                    if hasattr(payload, "model_dump")
+                    else payload.params
+                )
+                event = {"method": notification.method, "payload": body}
+                emit(event)
+                payload = event["payload"]
+                if event["method"] == "item/completed":
+                    item = payload["item"]
+                    if item["type"] == "agentMessage" and item.get("phase") in (
+                        None,
+                        "final_answer",
+                    ):
+                        response = item["text"]
+                if event["method"] == "turn/completed":
+                    completed = payload["turn"]["status"] == "completed"
+                    if not completed:
+                        raise RuntimeError(f"Codex turn did not complete: {payload['turn']}")
+            if not completed or response is None:
+                raise RuntimeError("Codex turn ended without a completed final response")
+            return json.loads(response)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--executable", default="codex")
     parser.add_argument("--model")
-    parser.add_argument("--effort", default="high")
-    parser.add_argument("--profile")
-    parser.add_argument(
-        "--context-file", type=Path, help="Project launch instructions sent in the prompt"
-    )
+    parser.add_argument("--effort", default="high", choices=[e.value for e in ReasoningEffort])
     args = parser.parse_args()
-    request = json.loads(Path(os.environ["HARNESS_REQUEST"]).read_text())
-    result = Path(os.environ["HARNESS_RESULT"])
-    schema_path = result.with_name("schema.json")
-    schema_path.write_text(json.dumps(schema_for(request)))
-    command = [
-        args.executable,
-        "exec",
-        "--json",
-        "--output-schema",
-        str(schema_path),
-        "--output-last-message",
-        str(result),
-        "--config",
-        f"model_reasoning_effort={json.dumps(args.effort)}",
-    ]
-    if args.model:
-        command += ["--model", args.model]
-    if args.profile:
-        command += ["--profile", args.profile]
-    prompt = (
-        "You are the " + request["role"] + " agent for a backlog delivery harness. "
-        "Use the current project's instructions and installed provider/delivery skills to "
-        "choose the work item provider and follow its conventions. The harness does not "
-        "implement provider transactions. Perform the requested operation and return the "
-        "structured final result. Do not ask the harness to implement project conventions. "
-        "For access status, normalize active delivery to 'running'. For access failure, "
-        "record the failure on the item and classify whether it is transient. For access "
-        "hold, move the item to holding and return updated=true only after success. "
-        "For epic_complete, return true only when all epic items are delivered. "
-        "Operate on filesystem work items in the current worktree. Report your activities "
-        "in the agent output. Request data follows:\n" + json.dumps(request)
-    )
-    if args.context_file:
-        prompt = args.context_file.read_text(encoding="utf-8") + "\n\n" + prompt
-    # Inherit the configured Codex profile and sandbox; never bypass them here.
-    completed = subprocess.run([*command, "-"], input=prompt, text=True, check=False)
-    raise SystemExit(completed.returncode)
+    execute(CodexAdapter(args.model, args.effort))
 
 
 if __name__ == "__main__":

@@ -29,14 +29,14 @@ The scope is `functional-spec.md`. Historical acceptance records in `archive/pre
 - **P-004:** Item-specific access commands and development commands run in the item's worktree. Separate-project tests verify main remains unchanged for unmerged failure/user-action updates and receives delivered records through Git merge. Merge instructions explicitly require reconciliation of conflicting attempt information.
 - **P-005:** Tests cover transient retries, nontransient holding, timeout exhaustion, and recovery. Two automatic retries are shared by delivery and interruption recovery within the foreground run.
 - **P-006:** Integration fixtures initialize a separate temporary Git project outside this checkout, with status folders, work item creation/update, dependencies, defect recording, independent worktrees, combined tests, and delivery merges. No production backlog is used.
-- Manual item selection, human-answer management, direct provider transactions, dashboards, harness-owned review/proof gates, and retired transports have no implementation or public command. The wheel contains only `__init__`, `__main__`, `cli`, `codex`, `engine`, and `process`.
+- Manual item selection, human-answer management, direct provider transactions, dashboards, harness-owned review/proof gates, and retired transports have no implementation or public command. The wheel contains only `__init__`, `__main__`, `adapter`, `cli`, `codex`, `engine`, and `process`.
 
 ## Verification results
 
 Verified on 2026-10-02 with Python 3.12:
 
-- 75 tests passed, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
-- Coverage: 100% of 449 production statements and 132 branches. The existing 100% gate remains enabled.
+- 83 automated tests passed; one opt-in live test skipped in the default suite, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
+- Coverage: 100% of 479 production statements and 140 branches. The existing 100% gate remains enabled.
 - Ruff lint and format checks passed.
 - Source distribution and wheel built successfully. Wheel contents were inspected for retired modules.
 
@@ -55,12 +55,22 @@ uv run coverage report
 uv build --offline --out-dir .agent-ops/verification/dist
 ```
 
-The automated suite verifies agent-owned decisions through deterministic test agents and checks the Codex bridge against a controlled executable. Subsequent [live Codex verification](live-codex-verification.md) passed actual filesystem delivery, tested integration, and interrupted-agent recovery with Codex in all three roles. No live GitHub-provider run was performed. OTEL output is a local OTLP JSON log export, not network collector delivery.
+The automated suite verifies agent-owned decisions through deterministic test agents and runs the real Codex Python SDK against a controlled app server. Earlier [live Codex verification](live-codex-verification.md) passed filesystem delivery, tested integration, and interrupted-agent recovery with the former CLI adapter; those runs do not establish SDK end-to-end delivery. No live GitHub-provider run was performed. OTEL output is a local OTLP JSON log export, not network collector delivery.
 
 ## Deployment regressions
 
-The Codex bridge now accepts `--context-file` and sends that file verbatim before its role prompt. `test_codex_bridge_preserves_profile_and_uses_structured_final_message` captures the executable's actual stdin with and without context; `test_codex_missing_context_fails_before_executable_start` verifies an unreadable context prevents launch. These assert transport, not model compliance.
+`test_exact_instructions_are_received_by_sdk_server` compares complete instructions, assignment data, and output schema against JSON-RPC messages received by a local server through the real SDK. `test_codex_sdk_transmits_instructions_schema_and_streams_activity` exercises the subprocess entry point and verifies SDK options and streamed output. Failure tests cover failed/interrupted turns, missing and malformed responses, non-object results, and transport disconnection. The cancellation test confirms the SDK app server is in the invocation process group and is reaped when the invocation stops.
+
+`test_another_adapter_uses_same_request_result_and_event_contract` supplies an unrelated backend through the same interface, with no SDK types in the contract. The temporary context-file option and CLI configuration overrides are removed.
+
+`test_live_codex_receives_instructions` is an opt-in authenticated SDK test in a disposable project. A random receipt is supplied only through developer instructions, not through the turn input or schema. Codex returned the exact receipt in a completed structured response on 2026-10-02 using SDK 0.160.0 and gpt-6-luna. This demonstrates receipt and use for that test, not arbitrary policy compliance. Run it with:
+
+```sh
+RUN_CODEX_LIVE=1 uv run pytest -q tests/test_adapter.py::test_live_codex_receives_instructions
+```
+
+The ordinary suite skips that paid model call. Backlog execution remains stopped.
 
 `test_provider_reconciles_legacy_candidate_and_excludes_unpublished_work` uses a separate Git project and deterministic provider agents. An explicitly interrupted candidate survives provider-owned reconciliation and the tested delivery merge; its commit remains an ancestor of main. Unrelated local files remain uncommitted. A live assignment is not duplicated and an unreviewed committed candidate is not merged. The fixture's explicit interruption record stands in for provider knowledge; this does not prove a model can diagnose arbitrary historical attempts.
 
-Full regression run: 75 tests passed, 100% statement and branch coverage; Ruff and diff checks passed.
+Full regression run: 83 passed, one opt-in live test skipped; 100% statement and branch coverage. The live test passed separately. Ruff, diff checks, and package builds passed.
