@@ -29,6 +29,7 @@ class Outcome:
 class Attempt:
     item: Item
     task: asyncio.Task
+    agent: object = None
 
 
 class Harness:
@@ -44,6 +45,7 @@ class Harness:
         poll_interval=10,
         merge_interval=60,
         merge_timeout=3600,
+        heartbeat_interval=10,
         epic=None,
     ):
         if (
@@ -51,7 +53,7 @@ class Harness:
             or capacity < 1
             or any(
                 type(v) not in (int, float) or not 0 < v < float("inf")
-                for v in (timeout, poll_interval, merge_interval, merge_timeout)
+                for v in (timeout, poll_interval, merge_interval, merge_timeout, heartbeat_interval)
             )
         ):
             raise ValueError(
@@ -61,6 +63,7 @@ class Harness:
         self.capacity, self.timeout = capacity, timeout
         self.poll_interval, self.merge_interval = poll_interval, merge_interval
         self.merge_timeout = merge_timeout
+        self.heartbeat_interval = heartbeat_interval
         self.epic = epic
         self.active = {}
         self.pending = []
@@ -115,13 +118,25 @@ class Harness:
                 agent = await self.launch(item, interrupted)
             except (OSError, RuntimeError, ValueError) as exc:
                 return await self.failed(item, f"launch failed: {exc}")
-            self.emit("dispatched", item=item.id, interrupted=interrupted)
+            self.active[item.id].agent = agent
+            identity = {
+                "item": item.id,
+                "role": "development",
+                "invocation": getattr(agent, "id", None),
+            }
+            self.emit("dispatched", **identity, interrupted=interrupted)
             try:
                 # Shield preserves the wait task until kill has reaped the process.
                 waiter = asyncio.create_task(agent.wait())
                 try:
                     outcome = await asyncio.wait_for(asyncio.shield(waiter), self.timeout)
                 except TimeoutError:
+                    self.emit(
+                        "development_timeout",
+                        **identity,
+                        timeout_seconds=self.timeout,
+                        outcome="unknown",
+                    )
                     await agent.kill()
                     await waiter
                     return await self.failed(item, "timeout: outcome unknown")
@@ -134,10 +149,10 @@ class Harness:
             if outcome is None:
                 status = await self.provider(self.access.status, item)
                 if status == "running":
-                    self.emit("interrupted", item=item.id)
+                    self.emit("interrupted", **identity, reason="process_stopped_without_result")
                     return await self.retry(item, interrupted=True)
                 return await self.failed(item, "process stopped without delivery outcome")
-            self.emit("outcome", item=item.id, status=outcome.status)
+            self.emit("outcome", **identity, status=outcome.status)
             if outcome.status == "success":
                 self.merge_requested.set()
             elif outcome.status == "failed":
@@ -223,26 +238,57 @@ class Harness:
             except TimeoutError:
                 pass
 
+    async def schedule(self, merger):
+        while True:
+            self.wake.clear()
+            try:
+                await self.cycle()
+            except (OSError, RuntimeError, ValueError) as exc:
+                self.emit("dispatch_error", detail=str(exc))
+            if self.complete and not self.active:
+                break
+            try:
+                await asyncio.wait_for(self.wake.wait(), self.poll_interval)
+            except TimeoutError:
+                pass
+        self.merge_requested.set()
+        await merger
+
+    def heartbeat(self):
+        self.emit(
+            "heartbeat",
+            monitoring_status="paused" if self.paused else "active" if self.active else "idle",
+            interval_seconds=self.heartbeat_interval,
+            active_items=[
+                {"item": key, "invocation": getattr(attempt.agent, "id", None)}
+                for key, attempt in self.active.items()
+            ],
+            active_invocations=getattr(self.access, "running_invocations", list)(),
+        )
+
     async def run(self):
         merger = asyncio.create_task(self.merges())
+        scheduler = asyncio.create_task(self.schedule(merger))
+        reason = "cancelled"
         try:
-            while True:
-                self.wake.clear()
-                try:
-                    await self.cycle()
-                except (OSError, RuntimeError, ValueError) as exc:
-                    self.emit("dispatch_error", detail=str(exc))
-                if self.complete and not self.active:
-                    break
-                try:
-                    await asyncio.wait_for(self.wake.wait(), self.poll_interval)
-                except TimeoutError:
-                    pass
-            self.merge_requested.set()
-            await merger
+            # This is the supervising task, not a detached heartbeat timer. Slow
+            # agent I/O yields here; a stalled event loop cannot emit a heartbeat.
+            while not scheduler.done():
+                if merger.done():
+                    merger.result()
+                self.heartbeat()
+                await asyncio.wait({scheduler}, timeout=self.heartbeat_interval)
+            await scheduler
+            reason = "completed"
+        except Exception:
+            reason = "error"
+            raise
         finally:
+            self.emit("shutdown_started", reason=reason)
+            scheduler.cancel()
             merger.cancel()
             tasks = [a.task for a in self.active.values()]
             for task in tasks:
                 task.cancel()
-            await asyncio.gather(merger, *tasks, return_exceptions=True)
+            await asyncio.gather(scheduler, merger, *tasks, return_exceptions=True)
+            self.emit("shutdown_completed", reason=reason)

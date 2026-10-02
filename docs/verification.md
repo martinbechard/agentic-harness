@@ -35,8 +35,8 @@ The scope is `functional-spec.md`. Historical acceptance records in `archive/pre
 
 Verified on 2026-10-02 with Python 3.12:
 
-- 83 automated tests passed; one opt-in live test skipped in the default suite, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
-- Coverage: 100% of 479 production statements and 140 branches. The existing 100% gate remains enabled.
+- 96 automated tests passed; one opt-in live test skipped in the default suite, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
+- Coverage: 100% of 523 production statements and 148 branches. The existing 100% gate remains enabled.
 - Ruff lint and format checks passed.
 - Source distribution and wheel built successfully. Wheel contents were inspected for retired modules.
 
@@ -73,4 +73,13 @@ The ordinary suite skips that paid model call. Backlog execution remains stopped
 
 `test_provider_reconciles_legacy_candidate_and_excludes_unpublished_work` uses a separate Git project and deterministic provider agents. An explicitly interrupted candidate survives provider-owned reconciliation and the tested delivery merge; its commit remains an ancestor of main. Unrelated local files remain uncommitted. A live assignment is not duplicated and an unreviewed committed candidate is not merged. The fixture's explicit interruption record stands in for provider knowledge; this does not prove a model can diagnose arbitrary historical attempts.
 
-Full regression run: 83 passed, one opt-in live test skipped; 100% statement and branch coverage. The live test passed separately. Ruff, diff checks, and package builds passed.
+Full regression run: 96 passed, one opt-in live test skipped; 100% statement and branch coverage. The live test passed separately. Ruff, diff checks, and package builds passed.
+
+
+## Monitoring and process events
+
+Heartbeat tests observe actual emitted events during idle, paused, and slow-provider operation with a concurrent stalled merge agent. Active heartbeats identify the assigned invocation. A deliberate event-loop stall produces no heartbeat; cancellation stops further events and records shutdown. Supervisor failure records error shutdown.
+
+Subprocess tests distinguish spontaneous exit without a result, reported success/failure, invalid results, requested termination, and routine group cleanup. They check invocation, role, item, PID, exit code, registry removal, and exactly one exit event. The separate-project timeout test matches each timeout event to its actual development invocation. Console/JSONL/OTEL equality now includes a heartbeat.
+
+Verification: 96 tests passed, one authenticated SDK test skipped in the default suite; 100% of 523 statements and 148 branches. SDK transport did not change, so the previously passing live instruction-receipt test was not repeated. No production backlog was launched or restarted for this change.

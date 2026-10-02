@@ -35,6 +35,7 @@ scheduling:
   poll_interval: 10
   merge_interval: 60
   merge_timeout: 3600
+  heartbeat_interval: 10
 access_timeout: 120
 ```
 

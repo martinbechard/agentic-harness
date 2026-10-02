@@ -69,3 +69,33 @@ Pause prevents dispatch, including retry/recovery dispatch; it does not cancel c
 ## Activity output
 
 Every harness event and stdout/stderr chunk is echoed and appended to `activities.jsonl`. The matching `otel.jsonl` entry is an OTLP `ExportLogsServiceRequest` JSON object with the service name, timestamp, run identity, event name, and associated fields. This is a local OTLP log export; the harness does not send it to a network collector. Per-invocation `output.log` retains the exact combined output bytes.
+
+
+## Monitoring events
+
+`scheduling.heartbeat_interval` defaults to 10 seconds and must be positive and finite. The supervising `Harness.run` task emits a heartbeat immediately and at that interval while it observes scheduling and merge execution. Provider/merge I/O runs in supervised tasks, so quiet agents and slow asynchronous calls do not suppress heartbeats. A blocked event loop or stopped supervisor cannot emit them. This reports monitoring liveness, not proof that an agent is making progress.
+
+Heartbeats use the existing writer: `activities.jsonl` contains `timeUnixNano` and `run`, and the console and OTEL carry the same event fields. `monitoring_status` is `paused`, `active` (delivery assignments exist), or `idle` (no delivery assignments). An idle monitor can still have an access or merge invocation running. `active_items` lists assigned items, including those awaiting provider updates; an invocation can be null before launch. `active_invocations` lists currently running child invocations, with `invocation`, `role`, `item` (null for non-item operations), and `pid`.
+
+Example activity-log record (timestamp and identities illustrative):
+
+```json
+{"timeUnixNano":"1790980000000000000","event":"heartbeat","run":"run-123","monitoring_status":"active","interval_seconds":10,"active_items":[{"item":"item-1","invocation":"dev-456"}],"active_invocations":[{"invocation":"dev-456","role":"development","item":"item-1","pid":12345}]}
+```
+
+Dashboard recommendation: mark a run's monitoring overdue after three heartbeat intervals (30 seconds by default), measured from the last heartbeat's timestamp. Paused and idle runs still require heartbeats. Allow for log-ingestion delay; overdue monitoring does not establish that an agent died. A run that emitted `shutdown_started` is stopping; `shutdown_completed` confirms cleanup finished. These events carry `reason`: `completed`, `cancelled` (including operator cancellation), or `error`. No further heartbeats are emitted after shutdown starts. If cleanup hangs, report incomplete shutdown rather than an unexplained heartbeat loss.
+
+| Event | Fields beyond run/timestamp | Meaning |
+| --- | --- | --- |
+| `development_timeout` | `invocation`, `role=development`, `item`, `timeout_seconds`, `outcome=unknown` | Delivery deadline elapsed; emitted before killing the invocation or asking the provider to record failure. |
+| `agent_exited` | `invocation`, `role`, `item`, `pid`, `exit_code`, `stop_requested` | Child has stopped; emitted once after process/output cleanup. `stop_requested=true` means the harness requested termination while it was live. A zero exit code alone does not mean delivery succeeded. |
+| `agent_result` | `invocation`, `role`, `item`, `pid`, `result_state` | Result examination returned `missing`, `invalid` (unreadable/malformed/non-object/oversized), or `reported` (JSON object, subject to role validation). Cancelled result examination need not emit this event. |
+| `agent_group_stopped` | `invocation`, `role`, `item`, `pid`, `reason` | Group signal sent for `stop_requested` or post-exit `cleanup`; routine cleanup is not an unexpected death. |
+| `interrupted` | `invocation`, `role=development`, `item`, `reason=process_stopped_without_result` | No delivery result was returned and the provider confirms the item remains running; existing recovery policy applies. |
+| `outcome` | `invocation`, `role=development`, `item`, `status` | Validated delivery outcome. A reported failed result remains distinct from a missing result. |
+
+Example timeout event fields:
+
+```json
+{"event":"development_timeout","invocation":"dev-456","role":"development","item":"item-1","timeout_seconds":3600,"outcome":"unknown"}
+```

@@ -37,8 +37,16 @@ class Process:
             start_new_session=True,
         )
         self.killed = False
+        self.exit_reported = False
+        self.stop_requested = False
+        self.identity = {
+            "invocation": self.id,
+            "role": request["role"],
+            "item": request.get("item", {}).get("id"),
+            "pid": self.process.pid,
+        }
         self.output = asyncio.create_task(self.read_output())
-        self.emit("agent_started", invocation=self.id, pid=self.process.pid, role=request["role"])
+        self.emit("agent_started", **self.identity)
         return self
 
     async def read_output(self):
@@ -55,13 +63,26 @@ class Process:
     async def kill(self):
         if not self.killed:
             self.killed = True
+            self.stop_requested = self.process.returncode is None
             try:
                 os.killpg(self.process.pid, signal.SIGKILL)
-                self.emit("agent_group_stopped", invocation=self.id)
+                self.emit(
+                    "agent_group_stopped",
+                    **self.identity,
+                    reason="stop_requested" if self.stop_requested else "cleanup",
+                )
             except ProcessLookupError:
                 pass
         await self.process.wait()
         await asyncio.shield(self.output)
+        if not self.exit_reported:
+            self.exit_reported = True
+            self.emit(
+                "agent_exited",
+                **self.identity,
+                exit_code=self.process.returncode,
+                stop_requested=self.stop_requested,
+            )
 
     async def response(self):
         # A stopped parent can leave children holding its output pipe open. Observe
@@ -69,14 +90,20 @@ class Process:
         while self.process.returncode is None:
             await asyncio.sleep(0.02)
         await self.kill()
-        if not self.result.exists():
-            return None
-        if self.result.stat().st_size > 1_048_576:
-            raise ValueError("Agent result exceeds 1 MiB")
-        value = json.loads(self.result.read_text())
-        if not isinstance(value, dict):
-            raise ValueError("Agent result must be an object")  # noqa: TRY004
-        return value
+        result_state = "missing"
+        try:
+            if not self.result.exists():
+                return None
+            result_state = "invalid"
+            if self.result.stat().st_size > 1_048_576:
+                raise ValueError("Agent result exceeds 1 MiB")
+            value = json.loads(self.result.read_text())
+            if not isinstance(value, dict):
+                raise ValueError("Agent result must be an object")  # noqa: TRY004
+            result_state = "reported"
+            return value
+        finally:
+            self.emit("agent_result", **self.identity, result_state=result_state)
 
     async def wait(self):
         try:
@@ -102,15 +129,30 @@ class Agents:
         self.config, self.emit = config, emit
         self.access_lock = asyncio.Lock()
         self.workspaces = {}
+        self.invocations = {}
+
+    def running_invocations(self):
+        return [
+            agent.identity
+            for agent in self.invocations.values()
+            if agent.process.returncode is None
+        ]
 
     async def start(self, role, payload, cwd=None):
-        return await Process.start(
+        def emit(event, **fields):
+            if event == "agent_exited":
+                self.invocations.pop(fields["invocation"], None)
+            self.emit(event, **fields)
+
+        agent = await Process.start(
             self.config[role],
             {"role": role, **payload},
             cwd or self.config["project"],
             self.config["state"],
-            self.emit,
+            emit,
         )
+        self.invocations[agent.id] = agent
+        return agent
 
     async def ask(self, action, **payload):
         async with self.access_lock:

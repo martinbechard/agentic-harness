@@ -196,3 +196,66 @@ def test_codex_provider_schema_is_strict(action):
     schema = schema_for({"role": "access", "action": action})
     assert schema["additionalProperties"] is False
     assert set(schema["required"]) == set(schema["properties"])
+
+
+@pytest.mark.parametrize("mode", ["missing", "failed", "invalid", "success"])
+def test_child_exit_and_result_events_distinguish_outcomes(tmp_path, mode):
+    async def scenario():
+        code = {
+            "missing": "import sys; sys.exit(7)",
+            "invalid": "import os; open(os.environ['HARNESS_RESULT'],'w').write('bad json')",
+            "failed": "import os,json; open(os.environ['HARNESS_RESULT'],'w').write(json.dumps({'status':'failed'}))",
+            "success": "import os,json; open(os.environ['HARNESS_RESULT'],'w').write(json.dumps({'status':'success'}))",
+        }[mode]
+        events = []
+        agent = await Process.start(
+            [sys.executable, "-c", code],
+            {"role": "development", "item": {"id": "one"}},
+            tmp_path,
+            tmp_path / "state",
+            lambda e, **kw: events.append((e, kw)),
+        )
+        outcome = await agent.wait()
+        exit_event = next(v for e, v in events if e == "agent_exited")
+        assert exit_event == {
+            "invocation": agent.id,
+            "role": "development",
+            "item": "one",
+            "pid": agent.process.pid,
+            "exit_code": 7 if mode == "missing" else 0,
+            "stop_requested": False,
+        }
+        result_event = next(v for e, v in events if e == "agent_result")
+        assert result_event["result_state"] == (
+            mode if mode in {"missing", "invalid"} else "reported"
+        )
+        assert (outcome is None) == (mode == "missing")
+        await agent.kill()
+        assert sum(e == "agent_exited" for e, _ in events) == 1
+        assert all(v["reason"] == "cleanup" for e, v in events if e == "agent_group_stopped")
+
+    asyncio.run(scenario())
+
+
+def test_agent_registry_and_requested_stop_events(tmp_path):
+    async def scenario():
+        events = []
+        agents = Agents(
+            {
+                "project": str(tmp_path),
+                "state": str(tmp_path / "state"),
+                "development": [sys.executable, "-c", "import time; time.sleep(60)"],
+            },
+            lambda e, **kw: events.append((e, kw)),
+        )
+        agent = await agents.start("development", {"item": {"id": "one"}})
+        assert agents.running_invocations() == [agent.identity]
+        await agent.kill()
+        assert agents.running_invocations() == []
+        assert agents.invocations == {}
+        event = next(v for e, v in events if e == "agent_exited")
+        assert event["stop_requested"] is True
+        assert event["exit_code"] != 0
+        assert event["item"] == "one"
+
+    asyncio.run(scenario())

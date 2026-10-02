@@ -170,6 +170,9 @@ def test_actual_timeout_processes_are_reaped_before_hold(project):
     started = [e for e in events if e["event"] == "agent_started" and e["role"] == "development"]
     stopped = {e["invocation"] for e in events if e["event"] == "agent_group_stopped"}
     assert len(started) == 3
+    timeouts = [e for e in events if e["event"] == "development_timeout"]
+    assert {e["invocation"] for e in timeouts} == {e["invocation"] for e in started}
+    assert all(e["role"] == "development" and e["item"] == "one" for e in timeouts)
     assert all(e["invocation"] in stopped for e in started)
     assert len(json.loads(target.read_text())["failures"]) == 3
 

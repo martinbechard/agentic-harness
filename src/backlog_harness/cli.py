@@ -92,6 +92,7 @@ def load_config(path):
         "poll_interval",
         "merge_interval",
         "merge_timeout",
+        "heartbeat_interval",
     }:
         raise ValueError("Unknown scheduling setting")
     return config

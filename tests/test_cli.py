@@ -12,10 +12,17 @@ def test_every_activity_has_matching_console_log_and_otel_record(tmp_path, capsy
     emit = Events(tmp_path)
     emit("dispatched", item="one")
     emit("agent_output", text="agent activity")
+    emit(
+        "heartbeat",
+        monitoring_status="idle",
+        interval_seconds=10,
+        active_items=[],
+        active_invocations=[],
+    )
     console = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
     logged = [json.loads(line) for line in (tmp_path / "activities.jsonl").read_text().splitlines()]
     otel = [json.loads(line) for line in (tmp_path / "otel.jsonl").read_text().splitlines()]
-    assert len(console) == len(logged) == len(otel) == 2
+    assert len(console) == len(logged) == len(otel) == 3
     for visible, activity, export in zip(console, logged, otel, strict=True):
         record = export["resourceLogs"][0]["scopeLogs"][0]["logRecords"][0]
         assert record["timeUnixNano"] == activity.pop("timeUnixNano")

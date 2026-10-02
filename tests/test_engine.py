@@ -298,7 +298,13 @@ def test_invalid_provider_batch_starts_nothing(items):
 
 @pytest.mark.parametrize(
     "options",
-    [{"capacity": 0}, {"capacity": 1.5}, {"timeout": -1}, {"poll_interval": float("nan")}],
+    [
+        {"capacity": 0},
+        {"capacity": 1.5},
+        {"timeout": -1},
+        {"poll_interval": float("nan")},
+        {"heartbeat_interval": 0},
+    ],
 )
 def test_invalid_configuration(options):
     with pytest.raises(ValueError):
@@ -397,5 +403,147 @@ def test_shutdown_reaps_live_development_process_before_returning():
             await run
         assert launched[0][2].killed
         assert merged[0].killed
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("state", ["idle", "paused", "slow_provider"])
+def test_monitor_heartbeats_continue_during_quiet_or_slow_work_and_stop_on_shutdown(state):
+    async def scenario():
+        h, access, _, merged, events = make(heartbeat_interval=0.01, poll_interval=1)
+        access.items = []
+        release = asyncio.Event()
+        if state == "paused":
+            h.pause()
+        if state == "slow_provider":
+
+            async def ready(*args):
+                await release.wait()
+                return []
+
+            access.ready = ready
+        run = asyncio.create_task(h.run())
+        try:
+
+            async def pulses():
+                while sum(e == "heartbeat" for e, _ in events) < 3:
+                    await asyncio.sleep(0.001)
+
+            await asyncio.wait_for(pulses(), 0.5)
+            assert merged and not merged[0].stopped.is_set()  # Slow merge too.
+            heartbeats = [v for e, v in events if e == "heartbeat"]
+            assert all(
+                v["monitoring_status"] == ("paused" if state == "paused" else "idle")
+                for v in heartbeats
+            )
+            assert all(v["interval_seconds"] == 0.01 for v in heartbeats)
+        finally:
+            run.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await run
+        size = len(events)
+        await asyncio.sleep(0.03)
+        assert len(events) == size
+        assert events[-1] == ("shutdown_completed", {"reason": "cancelled"})
+        assert any(e == "shutdown_started" for e, _ in events)
+
+    asyncio.run(scenario())
+
+
+def test_active_heartbeat_and_timeout_identify_the_assignment():
+    async def scenario():
+        h, access, launched, _, events = make(timeout=0.04, heartbeat_interval=0.005)
+        access.transient = False
+        original = h.launch
+
+        async def launch(item, interrupted):
+            agent = await original(item, interrupted)
+            agent.id = "development-123"
+            return agent
+
+        h.launch = launch
+        run = asyncio.create_task(h.run())
+        try:
+
+            async def held():
+                while not access.held:
+                    await asyncio.sleep(0.001)
+
+            await asyncio.wait_for(held(), 1)
+            assert any(
+                e == "heartbeat"
+                and v["monitoring_status"] == "active"
+                and v["active_items"] == [{"item": "one", "invocation": "development-123"}]
+                for e, v in events
+            )
+            timeout = next(v for e, v in events if e == "development_timeout")
+            assert timeout == {
+                "item": "one",
+                "role": "development",
+                "invocation": "development-123",
+                "timeout_seconds": 0.04,
+                "outcome": "unknown",
+            }
+            assert launched[0][2].killed
+        finally:
+            run.cancel()
+            await asyncio.gather(run, return_exceptions=True)
+
+    asyncio.run(scenario())
+
+
+def test_interruption_event_identifies_missing_result_attempt():
+    async def scenario():
+        h, _, launched, _, events = make()
+        await started(h)
+        launched[0][2].finish()
+        await settle(h)
+        event = next(v for e, v in events if e == "interrupted")
+        assert event == {
+            "item": "one",
+            "role": "development",
+            "invocation": None,
+            "reason": "process_stopped_without_result",
+        }
+
+    asyncio.run(scenario())
+
+
+def test_monitor_failure_emits_shutdown_and_stops_heartbeats():
+    async def scenario():
+        h, _, _, _, events = make(heartbeat_interval=0.005)
+
+        async def broken():
+            raise RuntimeError("monitor dependency failed")
+
+        h.merges = broken
+        with pytest.raises(RuntimeError, match="monitor dependency failed"):
+            await h.run()
+        assert events[-1] == ("shutdown_completed", {"reason": "error"})
+        size = len(events)
+        await asyncio.sleep(0.02)
+        assert len(events) == size
+
+    asyncio.run(scenario())
+
+
+def test_event_loop_stall_does_not_emit_misleading_heartbeats():
+    import time
+
+    async def scenario():
+        h, access, _, _, events = make(heartbeat_interval=0.005)
+        access.items = []
+        run = asyncio.create_task(h.run())
+        await asyncio.sleep(0.02)
+        try:
+            before = sum(e == "heartbeat" for e, _ in events)
+            assert before > 0
+            time.sleep(0.04)  # noqa: ASYNC251 - deliberately stall the monitoring event loop.
+            assert sum(e == "heartbeat" for e, _ in events) == before
+            await asyncio.sleep(0.02)
+            assert sum(e == "heartbeat" for e, _ in events) > before
+        finally:
+            run.cancel()
+            await asyncio.gather(run, return_exceptions=True)
 
     asyncio.run(scenario())
