@@ -47,7 +47,21 @@ def source_review_request(prompt):
     return None
 
 
-def native_review(native_home, producer, candidate, source_review=None, fault=None):
+def coordination_block(prompt):
+    marker = "COORDINATION CONTEXT\n"
+    end = "\nEND COORDINATION CONTEXT"
+    if marker not in prompt:
+        return None
+    tail = prompt.split(marker, 1)[1]
+    value, offset = json.JSONDecoder().raw_decode(tail)
+    if not tail[offset:].startswith(end):
+        raise ValueError("Incomplete coordination context")
+    return marker + json.dumps(value, sort_keys=True, separators=(",", ":")) + end
+
+
+def native_review(
+    native_home, producer, candidate, source_review=None, fault=None, coordination=None
+):
     """Emit simulated native child records consumed by the unchanged real verifier."""
     root = Path(native_home) / "sessions"
     parents = list(root.rglob(f"*{producer}.jsonl"))
@@ -155,6 +169,8 @@ def native_review(native_home, producer, candidate, source_review=None, fault=No
         }
 
     message = "Review exact candidate " + candidate
+    if coordination:
+        message += "\n" + coordination
     if packet:
         message += "\nSOURCE REVIEW PACKET\n" + json.dumps(packet)
     parent_records += [
@@ -295,6 +311,7 @@ def handle_graph(prompt, cwd, native_home, session_id):
         candidate,
         source_review_request(prompt),
         os.environ.get("SOURCE_REVIEW_FAULT"),
+        coordination_block(prompt),
     )
     return {
         "item_id": request["item_id"],

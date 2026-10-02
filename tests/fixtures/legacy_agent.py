@@ -152,6 +152,7 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
             candidate,
             module.source_review_request(prompt),
             os.environ.get("SOURCE_REVIEW_FAULT"),
+            module.coordination_block(prompt),
         )
         if scenario in ("legacy-correct", "legacy-reject"):
             child = next(native_home.glob("sessions/*/*/*/*" + reviewer + ".jsonl"))
@@ -168,6 +169,7 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
                 candidate,
                 module.source_review_request(prompt),
                 os.environ.get("SOURCE_REVIEW_FAULT"),
+                module.coordination_block(prompt),
             )
         if scenario == "legacy-stale-review":
             git(cwd, "commit", "--amend", "-m", "Different candidate after review")

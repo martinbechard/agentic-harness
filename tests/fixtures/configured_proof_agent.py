@@ -75,7 +75,13 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
                 "acceptance_coverage": "Inspected canonical assignment, native source review, and passing exact candidate checks",
                 "unresolved_findings": [],
             }
-        reviewer = native_review(native_home, session_id, request["candidate"], **extra)
+        reviewer = native_review(
+            native_home,
+            session_id,
+            request["candidate"],
+            coordination=helper("graph_agent").coordination_block(prompt),
+            **extra,
+        )
         if fault == "verification-overlap":
             receipt = Path(request["verification_inputs"]["receipts"]["review"]["path"])
             reviewer = json.loads(receipt.read_text())["reviewer_session"]

@@ -145,6 +145,7 @@ class EvidenceStore:
         action,
         item_id=None,
         request_digest=None,
+        coordination_digest=None,
     ):
         path = (
             self.run
@@ -165,6 +166,8 @@ class EvidenceStore:
             "request_digest": request_digest,
             "created_at": utcnow(),
         }
+        if coordination_digest is not None:
+            record["coordination_digest"] = coordination_digest
         # Persist references and digests only: arbitrary adapter options may contain secrets.
         atomic_json(
             path / "config.json",

@@ -18,8 +18,10 @@ def object_after(prompt, marker):
     return json.JSONDecoder().raw_decode(prompt.split(marker, 1)[1])[0]
 
 
-def native_review(home, producer, candidate, **extra):
-    reviewer = helper("graph_agent").native_review(home, producer, candidate)
+def native_review(home, producer, candidate, coordination=None, **extra):
+    reviewer = helper("graph_agent").native_review(
+        home, producer, candidate, coordination=coordination
+    )
     path = next(home.glob("sessions/*/*/*/*" + reviewer + ".jsonl"))
     rows = [json.loads(line) for line in path.read_text().splitlines()]
     value = json.loads(rows[-1]["payload"]["last_agent_message"])
@@ -107,6 +109,7 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
                 native_home,
                 session_id,
                 candidate,
+                coordination=helper("graph_agent").coordination_block(prompt),
                 proof_result_digest=handoff["request"]["proof_result_digest"],
             )
             return {

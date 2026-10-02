@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from backlog_harness.contracts import load_config
@@ -18,6 +20,21 @@ def test_intent_requested_and_uncertain_are_not_replayed(config_file, tmp_path):
         store.begin("op", "inv", snapshot, snapshot.binding("orchestrator"), action="start")
     store.outcome(path, "returned")
     assert store.reconcile(path)["outcome"] == "returned"
+
+
+def test_intent_optionally_binds_coordination_digest(config_file, tmp_path):
+    config, _ = config_file
+    snapshot = load_config(config)
+    path = EvidenceStore(tmp_path / "ops", "run").begin(
+        "op",
+        "inv",
+        snapshot,
+        snapshot.binding("orchestrator"),
+        action="start",
+        coordination_digest="a" * 64,
+    )
+    intent = json.loads((path / "intent.json").read_text())
+    assert intent["coordination_digest"] == "a" * 64
 
 
 def test_partial_line_is_not_published_or_overwritten(tmp_path):

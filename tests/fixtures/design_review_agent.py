@@ -46,6 +46,7 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
             unresolved_findings=["Specify exact content"] if reject else [],
             request_digest="wrong" if fault == "wrong-digest" else digest(request),
             design_digest=artifact["sha256"],
+            coordination=helper("graph_agent").coordination_block(prompt),
         )
         result = {
             "item_id": request["item_id"],

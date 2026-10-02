@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 
 from backlog_harness.contracts import digest
-from backlog_harness.native_evidence import verify_native_review
+from backlog_harness.native_evidence import coordination_instructions, verify_native_review
 from backlog_harness.provider import TransitionBlocked
 
 
@@ -72,6 +72,101 @@ def test_native_child_freshness_candidate_verdict(tmp_path):
     write(producer, parent)
     with pytest.raises(TransitionBlocked, match="Fresh"):
         verify_native_review(producer, "/root/review", candidate, tmp_path)
+
+
+def test_native_review_requires_exact_bound_coordination_context(tmp_path):
+    root = tmp_path / "2026/10/02"
+    root.mkdir(parents=True)
+    producer, reviewer = str(uuid4()), str(uuid4())
+    candidate = "a" * 40
+    context = {
+        "version": 1,
+        "config_digest": "1" * 64,
+        "source_revision": "2" * 64,
+        "resource_coordination": "resource-claim",
+        "claims_required": False,
+        "claim_exemption": "Active recovery prohibits claims",
+        "policy_digest": "3" * 64,
+        "evidence": [],
+    }
+
+    def write(identity, records):
+        (root / f"rollout-{identity}.jsonl").write_text(
+            "".join(json.dumps(record) + "\n" for record in records)
+        )
+
+    def parent(message):
+        return [
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "name": "spawn_agent",
+                    "call_id": "call",
+                    "arguments": json.dumps(
+                        {"fork_turns": "none", "task_name": "review", "message": message}
+                    ),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "call",
+                    "output": json.dumps({"task_name": "/root/review"}),
+                },
+            },
+        ]
+
+    child = [
+        {
+            "type": "session_meta",
+            "payload": {
+                "id": reviewer,
+                "parent_thread_id": producer,
+                "agent_path": "/root/review",
+                "source": {"subagent": {"thread_spawn": {"parent_thread_id": producer}}},
+                "git": {"commit_hash": candidate},
+            },
+        },
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "task_complete",
+                "last_agent_message": json.dumps(
+                    {"candidate": candidate, "verdict": "ACCEPT", "unresolved_findings": []}
+                ),
+            },
+        },
+    ]
+    write(producer, parent("Review exact candidate." + coordination_instructions(context)))
+    write(reviewer, child)
+    assert verify_native_review(
+        producer,
+        "/root/review",
+        candidate,
+        tmp_path,
+        coordination_context=context,
+    )["verdict"] == "ACCEPT"
+    write(producer, parent("Review exact candidate."))
+    with pytest.raises(TransitionBlocked, match="coordination context"):
+        verify_native_review(
+            producer,
+            "/root/review",
+            candidate,
+            tmp_path,
+            coordination_context=context,
+        )
+    changed = {**context, "claims_required": True}
+    write(producer, parent("Review exact candidate." + coordination_instructions(changed)))
+    with pytest.raises(TransitionBlocked, match="differs"):
+        verify_native_review(
+            producer,
+            "/root/review",
+            candidate,
+            tmp_path,
+            coordination_context=context,
+        )
 
 
 @pytest.mark.parametrize(

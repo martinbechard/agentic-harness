@@ -15,6 +15,46 @@ from .contracts import digest
 from .workflow import require
 
 SOURCE_REVIEW_PACKET_MARKER = "SOURCE REVIEW PACKET\n"
+COORDINATION_CONTEXT_MARKER = "COORDINATION CONTEXT\n"
+COORDINATION_CONTEXT_END = "\nEND COORDINATION CONTEXT"
+_COORDINATION_UNSPECIFIED = object()
+
+
+def coordination_instructions(context):
+    """Tell an agent and its native delegates which validated claim rule applies."""
+    behavior = (
+        "Claims are required: manage them through the configured helper when the selected workflow "
+        "requires an operation."
+        if context["claims_required"]
+        else "Claims are prohibited: do not acquire, release, renew, inspect, restore, or substitute claims."
+    )
+    return (
+        "\nCurrent claim coordination authority is bound to this invocation. "
+        + behavior
+        + " Copy the following exact block into every fresh native delegate or reviewer prompt; "
+        "the block is authority context, not permission to widen source or lifecycle scope.\n"
+        + COORDINATION_CONTEXT_MARKER
+        + json.dumps(context, sort_keys=True, separators=(",", ":"))
+        + COORDINATION_CONTEXT_END
+    )
+
+
+def _validate_coordination_prompt(arguments, expected):
+    message = arguments.get("message", arguments.get("prompt"))
+    require(isinstance(message, str), "Native reviewer prompt is missing")
+    require(
+        message.count(COORDINATION_CONTEXT_MARKER) == 1,
+        "Native reviewer coordination context is missing or ambiguous",
+    )
+    tail = message.split(COORDINATION_CONTEXT_MARKER, 1)[1]
+    try:
+        observed, end = json.JSONDecoder().raw_decode(tail)
+    except ValueError as exc:
+        require(False, "Native reviewer coordination context is invalid: " + str(exc))
+    require(
+        tail[end:].startswith(COORDINATION_CONTEXT_END) and observed == expected,
+        "Native reviewer coordination context differs",
+    )
 
 
 def candidate_source_evidence(repository, candidate, paths):
@@ -305,6 +345,7 @@ def verify_native_review(
     *,
     accepted_verdicts=("ACCEPT",),
     source_review=None,
+    coordination_context=_COORDINATION_UNSPECIFIED,
 ):
     require(reviewer and reviewer != producer, "Distinct native reviewer session is required")
     parent, parent_hash = native_records(producer, sessions_root)
@@ -385,6 +426,8 @@ def verify_native_review(
         len(fresh) == 1 and meta.get("git", {}).get("commit_hash") == candidate,
         "Fresh native reviewer context bound to this candidate is not proven",
     )
+    if coordination_context is not _COORDINATION_UNSPECIFIED and coordination_context is not None:
+        _validate_coordination_prompt(fresh[0][0], coordination_context)
     completed = [
         r["payload"]
         for r in child

@@ -610,6 +610,69 @@ class Application:
                 )
         return policy
 
+    def claim_coordination_context(self, snapshot):
+        """Bind current source-backed claim applicability to one invocation snapshot."""
+        require(
+            isinstance(self.provider, AgentProvider),
+            "Claim coordination context requires the agent provider",
+        )
+        import yaml
+
+        revision = self.provider.source_revision()
+        policy = self.provider.observation()["policy"]
+        self.provider.validate_policy(policy)
+        project = yaml.safe_load((snapshot.repository / "PROJECT.yaml").read_text())
+        selected = project.get("resource_coordination", {}).get("selected")
+        require(selected in {"none", "resource-claim"}, "Unsupported resource coordination route")
+        claims_required = selected == "resource-claim" and policy.get("claims_required") is not False
+        context = {
+            "version": 1,
+            "config_digest": snapshot.file_digest,
+            "source_revision": revision,
+            "resource_coordination": selected,
+            "claims_required": claims_required,
+            "policy_digest": digest(policy),
+            "evidence": plain(policy["evidence"]),
+        }
+        if policy.get("claims_required") is False:
+            context["claim_exemption"] = policy["claim_exemption"]
+        require(
+            self.provider.source_revision() == revision,
+            "Provider changed while binding claim coordination",
+        )
+        return context
+
+    def invocation_coordination_context(self, result):
+        """Recover the originating claim context, preserving proven pre-change receipts."""
+        evidence = Path(result["evidence_path"]).resolve()
+        require(
+            evidence.is_relative_to(self.root.resolve()) and not evidence.is_symlink(),
+            "Invocation coordination evidence escaped the operational root",
+        )
+        intent = json.loads((evidence / "intent.json").read_text())
+        require(
+            intent.get("invocation_id") == result.get("invocation_id")
+            and intent.get("request_digest") == result.get("request_digest")
+            and (evidence / "requested.json").is_file(),
+            "Invocation coordination origin is incomplete",
+        )
+        context_path = evidence / "coordination-context.json"
+        recorded = intent.get("coordination_digest")
+        require(
+            context_path.exists() == (recorded is not None),
+            "Invocation coordination context is incomplete",
+        )
+        if not context_path.exists():
+            return None
+        require(not context_path.is_symlink(), "Invocation coordination context is unsafe")
+        context = json.loads(context_path.read_text())
+        require(
+            digest(context) == recorded
+            and context.get("config_digest") == intent.get("config_digest"),
+            "Invocation coordination context differs from its intent",
+        )
+        return context
+
     async def transition(
         self, item_id, expected_revision, target, authority, *, validate, declared_paths=None
     ):
@@ -1515,6 +1578,7 @@ class Application:
         continuation=None,
         review_candidate=None,
         integration_resolution=None,
+        coordination=False,
     ):
         with operation_lock(self.root / "locks" / (component(item_id + ":" + stage) + ".lock")):
             async with self.capacity_slot() as reservation:
@@ -1532,6 +1596,7 @@ class Application:
                     continuation=continuation,
                     review_candidate=review_candidate,
                     integration_resolution=integration_resolution,
+                    coordination=coordination,
                 )
 
     @staticmethod
@@ -1619,6 +1684,7 @@ class Application:
         continuation=None,
         review_candidate=None,
         integration_resolution=None,
+        coordination=False,
     ):
         # Re-read immediately before every harness invocation. The resolved storage identity
         # cannot move mid-run; such edits require explicit reconciliation.
@@ -1740,6 +1806,50 @@ class Application:
             data["workspace"] = str(workspace.resolve())
             snapshot = replace(snapshot, data=freeze(data))
         binding = snapshot.binding(role)
+        run_id = "item:" + item_id
+        store = EvidenceStore(self.root, run_id)
+        operation = operation_id or item_id + ":" + stage
+        operation_path = store.run / "operations" / component(operation)
+        coordination_context = None
+        if coordination:
+            require(
+                isinstance(self.provider, AgentProvider) and role == "orchestrator",
+                "Claim coordination binding requires an agent-provider orchestrator invocation",
+            )
+            intents = list(operation_path.glob("invocations/*/intent.json"))
+            require(len(intents) <= 1, "Invocation intent is absent or ambiguous; reconcile storage")
+            if intents:
+                intent_path = intents[0]
+                intent = json.loads(intent_path.read_text())
+                context_path = intent_path.parent / "coordination-context.json"
+                recorded = intent.get("coordination_digest")
+                require(
+                    context_path.exists() == (recorded is not None),
+                    "Invocation coordination context is incomplete",
+                )
+                if context_path.exists():
+                    coordination_context = json.loads(context_path.read_text())
+                    require(
+                        not context_path.is_symlink()
+                        and digest(coordination_context) == recorded
+                        and coordination_context.get("config_digest")
+                        == intent.get("config_digest"),
+                        "Invocation coordination context differs from its intent",
+                    )
+                else:
+                    require(
+                        (intent_path.parent / "requested.json").is_file(),
+                        "Unsubmitted invocation lacks claim coordination context",
+                    )
+            else:
+                coordination_context = self.claim_coordination_context(snapshot)
+            if coordination_context is not None:
+                from .native_evidence import coordination_instructions
+
+                prompt = prompt.replace(
+                    "Follow current claim-free crisis authority; do not invoke claims. ", ""
+                )
+                prompt += coordination_instructions(coordination_context)
         saved = self._stage_path(item_id, stage)
         # Preserve existing implementation receipts; provider effects bind their workspace
         # and access mode so a saved stage cannot be reused across execution purposes.
@@ -1762,10 +1872,6 @@ class Application:
                 self.item_quiescent(item_id), "Integration stage requires quiescent prior execution"
             )
             self.validate_integration_stage(None, item_id)
-        run_id = "item:" + item_id
-        store = EvidenceStore(self.root, run_id)
-        operation = operation_id or item_id + ":" + stage
-        operation_path = store.run / "operations" / component(operation)
         if continuation is not None:
             require(operation_id is not None, "Continuation operation identity is required")
             original = [
@@ -1875,7 +1981,14 @@ class Application:
                 action=stage,
                 item_id=None if role == "coordinator" else item_id,
                 request_digest=request_hash,
+                coordination_digest=(
+                    digest(coordination_context) if coordination_context is not None else None
+                ),
             )
+            if coordination_context is not None:
+                atomic_json(
+                    path / "coordination-context.json", coordination_context, exclusive=True
+                )
         with TelemetryReceiver(self.root) as receiver:
             context_path = path / "execution-context.json"
             context = {
@@ -1931,6 +2044,13 @@ class Application:
                 "CLI binding has not passed launch capability validation",
             )
             atomic_json(path / "capability.json", capability)
+            if coordination_context is not None:
+                latest = load_config(self.config_path)
+                require(
+                    latest.file_digest == snapshot.file_digest
+                    and self.claim_coordination_context(latest) == coordination_context,
+                    "Claim coordination authority changed before invocation dispatch",
+                )
             handle = await (
                 adapter.resume_session(session, request)
                 if session
@@ -3791,6 +3911,7 @@ class Application:
                 prompt,
                 session=self.session(acceptance),
                 read_only=False,
+                coordination=isinstance(self.provider, AgentProvider),
             )
         value = self.result_json(produced)
         approval_question = bool(
@@ -3858,6 +3979,11 @@ class Application:
                 value.get("proof_reviewer_session"),
                 candidate,
                 self.native_sessions_root(produced["binding"]),
+                **(
+                    {"coordination_context": self.invocation_coordination_context(produced)}
+                    if isinstance(self.provider, AgentProvider)
+                    else {}
+                ),
             )
             require(
                 proof_review.get("proof_result_digest") == digest(proof_result),
@@ -3893,6 +4019,11 @@ class Application:
             value.get("reviewer_session"),
             candidate,
             self.native_sessions_root(produced["binding"]),
+            **(
+                {"coordination_context": self.invocation_coordination_context(produced)}
+                if isinstance(self.provider, AgentProvider)
+                else {}
+            ),
             **({"source_review": source_context} if source_context else {}),
         )
         review = retain_review(self, item_id, review)

@@ -1352,6 +1352,7 @@ async def ensure_configured_proof(app, item_id, candidate, acceptance):
         review_prompt,
         session=app.session(acceptance),
         read_only=True,
+        coordination=isinstance(app.provider, AgentProvider),
     )
     value = app.result_json(reviewed)
     require(
@@ -1365,6 +1366,11 @@ async def ensure_configured_proof(app, item_id, candidate, acceptance):
         value.get("proof_reviewer_session"),
         candidate,
         app.native_sessions_root(reviewed["binding"]),
+        **(
+            {"coordination_context": app.invocation_coordination_context(reviewed)}
+            if isinstance(app.provider, AgentProvider)
+            else {}
+        ),
     )
     validate_requirement_review(request["proof_requirements"], result, proof, review)
     from .acceptance_verification import validate as validate_verification
@@ -1510,6 +1516,11 @@ def validated_design_attempt(app, item_id, request, acceptance, attempt):
         request["candidate"],
         app.native_sessions_root(result["binding"]),
         accepted_verdicts=("ACCEPT", "REJECT"),
+        **(
+            {"coordination_context": app.invocation_coordination_context(result)}
+            if isinstance(app.provider, AgentProvider)
+            else {}
+        ),
     )
     require(
         review.get("candidate") == request["candidate"]
@@ -1602,7 +1613,15 @@ async def ensure_design_acceptance(app, item_id, base, acceptance):
         )
         if not app._stage_path(item_id, stage).exists():
             await app.enforce_guard(item_id)
-        await app.invoke(item_id, stage, "orchestrator", prompt, read_only=False, purpose="proof")
+        await app.invoke(
+            item_id,
+            stage,
+            "orchestrator",
+            prompt,
+            read_only=False,
+            purpose="proof",
+            coordination=isinstance(app.provider, AgentProvider),
+        )
         require(
             git(repo, "rev-parse", "HEAD") == base and not git(repo, "status", "--porcelain"),
             "Source changed before independent design acceptance",

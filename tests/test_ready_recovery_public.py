@@ -20,6 +20,7 @@ from test_telemetry import payload
 from backlog_harness.application import Application
 from backlog_harness.contracts import digest
 from backlog_harness.evidence import atomic_json, component
+from backlog_harness.native_evidence import coordination_instructions
 from backlog_harness.provider import TransitionBlocked, git
 from backlog_harness.recovery_flow import recover_item
 from backlog_harness.telemetry import Sink
@@ -173,9 +174,7 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                 "provider_operation": kwargs.get("provider_operation"),
             },
         )
-        atomic_json(
-            native / "intent.json",
-            {
+        intent = {
                 "invocation_id": stage,
                 "request_digest": result["request_digest"],
                 "binding": binding,
@@ -183,8 +182,13 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                 "item_id": None if result["purpose"] == "provider" else item.item_id,
                 "action": stage,
                 "operation_id": item.item_id + ":" + stage,
-            },
-        )
+            }
+        if kwargs.get("coordination"):
+            context = app.claim_coordination_context(app.config)
+            intent["coordination_digest"] = digest(context)
+            atomic_json(native / "coordination-context.json", context)
+            atomic_json(native / "requested.json", {"version": 1})
+        atomic_json(native / "intent.json", intent)
         atomic_json(app._stage_path(item.item_id, stage), result)
         return result
 
@@ -192,6 +196,13 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
         saved = app._stage_path(item_id, stage)
         if saved.exists():
             return json.loads(saved.read_text())
+        coordination = None
+        if kwargs.get("coordination"):
+            coordination = app.claim_coordination_context(app.config)
+            prompt = prompt.replace(
+                "Follow current claim-free crisis authority; do not invoke claims. ", ""
+            )
+            prompt += coordination_instructions(coordination)
         calls.append(stage)
         prompts[stage] = prompt
         if stage == "reservation-effect-reconciliation":
@@ -232,7 +243,17 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
                         "type": "function_call",
                         "name": "spawn_agent",
                         "call_id": "review-call",
-                        "arguments": json.dumps({"fork_turns": "none"}),
+                        "arguments": json.dumps(
+                            {
+                                "fork_turns": "none",
+                                "message": "Review retained candidate."
+                                + (
+                                    coordination_instructions(coordination)
+                                    if coordination is not None
+                                    else ""
+                                ),
+                            }
+                        ),
                     },
                 },
                 {

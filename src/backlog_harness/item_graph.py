@@ -207,6 +207,7 @@ def build_graph(app, checkpointer):
             prompt,
             session=app.session(state["acceptance"]),
             read_only=False,
+            coordination=isinstance(app.provider, AgentProvider),
         )
         value = app.result_json(result)
         require(value.get("item_id") == item_id, "Worker item differs")
@@ -352,6 +353,11 @@ def build_graph(app, checkpointer):
             value.get("reviewer_session"),
             state["candidate"],
             app.native_sessions_root(produced["binding"]),
+            **(
+                {"coordination_context": app.invocation_coordination_context(produced)}
+                if isinstance(app.provider, AgentProvider)
+                else {}
+            ),
             **({"source_review": source_context} if source_context else {}),
         )
         if verification_required(app, state["item_id"]) or selected_source_review:
