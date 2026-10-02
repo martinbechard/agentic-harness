@@ -679,10 +679,9 @@ class Application:
             )
             require(receipt["workflow"] == expected, "Scope admission workflow differs")
             previous = receipt
-        require(
-            self.provider.item(item_id).revision == chain[-1]["provider_revision"],
-            "Scope admission provider revision changed",
-        )
+        from .scope_admission import admitted_question_continuation
+
+        admitted_question_continuation(self, item_id, chain[-1])
         return chain[-1]
 
     def recovery_record(self, item_id):
@@ -1628,6 +1627,17 @@ class Application:
                     blob(self.config.repository, head, item.path) == item.content.encode(),
                     "Observed provider content differs from committed source",
                 )
+                scoped_content = None
+                if self.scope_admission(item.item_id) and (
+                    (item.state == "Running" and target == "User Action Required")
+                    or (
+                        item.state == "User Action Required"
+                        and target in {"Running", "User Action Required"}
+                    )
+                ):
+                    from .scope_admission import scoped_question_content
+
+                    scoped_content = scoped_question_content(item.content, target, authority)
                 prompt = (
                     "Perform only this authorized provider transition using the project's selected "
                     "management skills. Manage configured claims yourself. Recheck the expected "
@@ -1647,6 +1657,7 @@ class Application:
                     "Status: User Action Required and append the question after all existing content; "
                     "preserve every other original byte, requirement, owner, history and candidate reference. "
                     "Use ready_question_content exactly when supplied; append no other prose or history. "
+                    "Use scoped_question_content exactly when supplied; it preserves admitted scope and binds all lifecycle additions. "
                     "mode, primary_branch, and evidence [{path,sha256,excerpt,supports:[mode/admission/coordination]}] "
                     "for current source after your transition. Preserve source-backed claims_required and "
                     "claim_exemption when still applicable, citing coordination authority; SOLO alone "
@@ -1667,6 +1678,11 @@ class Application:
                             )
                             if item.state == "Ready" and target == "User Action Required"
                             else None,
+                            **(
+                                {"scoped_question_content": scoped_content}
+                                if scoped_content is not None
+                                else {}
+                            ),
                             "target_owner": "Unowned"
                             if target == "Ready"
                             else authority["session_id"]
@@ -1677,6 +1693,11 @@ class Application:
                     )
                 )
                 record = {
+                    **(
+                        {"scoped_question_content": scoped_content}
+                        if scoped_content is not None
+                        else {}
+                    ),
                     "repository": str(self.config.repository),
                     "head": head,
                     "stage_operation": item.item_id + ":" + stage,
@@ -1950,6 +1971,17 @@ class Application:
                 "Prospective Execution High: " + str(record["authority"]["prospective_high"])
                 in after.content.splitlines(),
                 "Committed prospective estimate is missing",
+            )
+        if "scoped_question_content" in record:
+            from .scope_admission import scoped_question_content
+
+            require(
+                after.content
+                == record["scoped_question_content"]
+                == scoped_question_content(
+                    record["item"]["content"], record["target"], record["authority"]
+                ),
+                "Scoped question changed admitted content or lifecycle evidence",
             )
         receipt = {"operation": digest(record), "commit": commit, "after": asdict(after)}
         if record["target"] == "User Action Required":
@@ -4367,19 +4399,26 @@ class Application:
             )
         continuation_path = self._stage_path(item_id, "continuation")
         stage = "produce-review"
+        scoped_answer = None
         if scope_admission:
-            from .scope_admission import validate_current_candidate
+            from .scope_admission import admitted_question_continuation, validate_current_candidate
 
-            validate_current_candidate(
-                candidate_repo,
-                scope_admission["candidate"],
-                workflow["allowed_paths"],
+            scoped_answer = admitted_question_continuation(self, item_id, scope_admission)
+            stage = (
+                scoped_answer["stage"]
+                if scoped_answer
+                else "scope-continuation-" + digest(scope_admission)
             )
+            if not self._stage_path(item_id, stage).exists():
+                validate_current_candidate(
+                    candidate_repo,
+                    scope_admission["candidate"],
+                    workflow["allowed_paths"],
+                )
             require(
                 acceptance["session"] == scope_admission["session"],
                 "Scope continuation native session changed",
             )
-            stage = "scope-continuation-" + digest(scope_admission)
             prompt += (
                 "\nContinue the same canonical and native execution from the exact admitted candidate. "
                 "Preserve all earlier attempts, usage, source changes, and historical evidence. The original "
@@ -4421,10 +4460,14 @@ class Application:
                     "approval if absent. This handoff grants no new permissions or delivery authority. "
                     + json.dumps(proof_followup)
                 )
-        if continuation_path.exists():
+        if scoped_answer:
+            prompt += "\nScoped question continuation: " + json.dumps(
+                scoped_answer["binding"], sort_keys=True
+            )
+            prompt += "\nPersisted canonical approval: " + json.dumps(scoped_answer["approval"])
+        if continuation_path.exists() and not scope_admission:
             continuation = json.loads(continuation_path.read_text())
-            if not scope_admission:
-                stage = continuation["stage"]
+            stage = continuation["stage"]
             prompt += "\nPersisted canonical approval: " + json.dumps(continuation["approval"])
             proof_review_path = self._stage_path(item_id, "proof-review")
             if proof_review_path.exists():
@@ -4480,7 +4523,13 @@ class Application:
                 == (
                     value.get("candidate")
                     if approval_question
-                    else (recovery["packet"]["candidate"]["head"] if recovery else base)
+                    else (
+                        scope_admission["candidate"]["head"]
+                        if scope_admission
+                        else recovery["packet"]["candidate"]["head"]
+                        if recovery
+                        else base
+                    )
                 ),
                 "Question boundary contains unapproved source work",
             )

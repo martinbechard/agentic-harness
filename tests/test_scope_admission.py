@@ -327,7 +327,7 @@ def test_scope_admission_replays_the_validated_pre_extension_review_contract(
         "decision": decision,
         "provider_receipt": {
             "operation": operation,
-            "after": {"revision": "amended-revision"},
+            "after": asdict(Item("one", provider_path, "amended-revision", "Running", "owner", 100, approved["amended_content"])),
         },
         "provider_revision": "amended-revision",
         "workflow": workflow,
@@ -345,7 +345,7 @@ def test_scope_admission_replays_the_validated_pre_extension_review_contract(
     monkeypatch.setattr(
         app.provider,
         "item",
-        lambda item_id: SimpleNamespace(revision="amended-revision"),
+        lambda item_id: Item(**receipt["provider_receipt"]["after"]),
     )
     assert app.scope_admission("one") == receipt
     assert receipt["workflow"]["review_requirements"] == original_review
@@ -661,7 +661,8 @@ def test_scope_answer_rejects_unrelated_older_answer_and_binds_latest_authority(
         )
 
 
-def test_scope_amendment_rejects_an_older_result_than_the_current_continuation(tmp_path):
+def test_scope_amendment_rejects_an_older_result_than_the_current_continuation(tmp_path, monkeypatch):
+    monkeypatch.setattr("backlog_harness.scope_admission.admitted_question_continuation", lambda *args: None)
     item_id = "one"
     root = tmp_path / item_id
     root.mkdir()

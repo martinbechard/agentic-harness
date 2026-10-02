@@ -391,7 +391,10 @@ def current_production_result(app, item_id, previous_admission, acceptance, expe
     """Resolve the one production stage that the legacy execution would currently resume."""
     continuation_path = app._stage_path(item_id, "continuation")
     if previous_admission:
-        stage = "scope-continuation-" + digest(previous_admission)
+        approved = admitted_question_continuation(app, item_id, previous_admission)
+        stage = (
+            approved["stage"] if approved else "scope-continuation-" + digest(previous_admission)
+        )
     elif continuation_path.exists():
         require(not continuation_path.is_symlink(), "Production continuation evidence is unsafe")
         continuation = json.loads(continuation_path.read_text())
@@ -567,3 +570,215 @@ def validate_retained_usage(usage):
 
 def validate_current_candidate(repository, candidate, allowed_paths):
     return _validate_candidate(candidate, repository, candidate["base"], allowed_paths)
+
+
+def question_continuation_stage(binding):
+    return "scope-answer-continuation-" + digest(binding)
+
+
+def admitted_question_continuation(app, item_id, admission):
+    """Read only the verified question/answer chain descending from this admission."""
+    from dataclasses import asdict
+
+    from .evidence import component
+    from .workflow import validate_transition
+
+    def read(path):
+        require(path.is_file() and not path.is_symlink(), "Scoped question evidence is missing")
+        return json.loads(path.read_text())
+
+    cursor = admission["provider_receipt"]["after"]
+    current = asdict(app.provider.item(item_id))
+    session = admission["session"]
+    stage = "scope-continuation-" + digest(admission)
+    pending_question = pending_result = answer_operation = None
+    binding = approval = None
+    operations = []
+    for path in (app.root / "provider-agent-operations").glob("*/requested.json"):
+        record = read(path)
+        if record.get("item", {}).get("item_id") == item_id:
+            operations.append((path, record))
+    visited = set()
+    while cursor != current:
+        require(cursor["revision"] not in visited, "Scoped question lifecycle cycle")
+        visited.add(cursor["revision"])
+        matches = [(path, record) for path, record in operations if record.get("item") == cursor]
+        require(
+            len(matches) == 1,
+            "Scope admission provider revision changed without a unique question effect",
+        )
+        path, record = matches[0]
+        operation_id = digest(record)
+        require(
+            path.parent.name == component(operation_id) and record.get("kind") is None,
+            "Scoped question operation identity differs",
+        )
+        receipt = read(path.parent / "receipt.json")
+        require(
+            receipt.get("operation") == operation_id
+            and receipt.get("advancement_verified") is True,
+            "Scoped question provider advancement is unverified",
+        )
+        authority = record["authority"]
+        before, target = Item(**cursor), record["target"]
+        validate_transition(before, target, authority)
+        app.verify_provider_receipt(
+            record,
+            {
+                "operation_id": record["stage_operation"],
+                "before_revision": cursor["revision"],
+                **receipt,
+            },
+        )
+        after = receipt["after"]
+        require(
+            after["owner"] == session["session_id"] == cursor["owner"]
+            and after["original_high"] == cursor["original_high"],
+            "Scoped question canonical owner or estimate changed",
+        )
+        if before.state == "Running" and target == "User Action Required":
+            result = read(app._stage_path(item_id, stage))
+            app.validate_invocation_result(result)
+            value = app.result_json(result)
+            require(
+                result.get("role") == "orchestrator"
+                and result.get("session") == session
+                and value.get("item_id") == item_id
+                and value.get("question") == authority.get("question")
+                and authority == app.authority(result, item_id, question=value["question"]),
+                "Scoped question does not bind the admitted producer",
+            )
+            pending_question = {
+                **value["question"],
+                "item_id": item_id,
+                "item_revision": after["revision"],
+                "owner": after["owner"],
+                "answer": None,
+                "disposition": None,
+            }
+            pending_result = result
+            answer_operation = binding = approval = None
+        elif before.state == "User Action Required" and target in {
+            "Running",
+            "User Action Required",
+        }:
+            require(
+                pending_question is not None and authority.get("question") == pending_question,
+                "Scoped answer names a stale question",
+            )
+            answer = authority.get("answer", {})
+            require(
+                isinstance(answer.get("text"), str)
+                and answer["text"].strip()
+                and answer.get("digest") == digest(answer["text"]),
+                "Scoped answer is incomplete",
+            )
+            if authority.get("role") == "operator":
+                require(
+                    target == "User Action Required"
+                    and answer.get("question_revision") == cursor["revision"],
+                    "Scoped operator answer revision differs",
+                )
+                answer_operation = read(
+                    app._stage_path(
+                        item_id,
+                        "answer-operation-"
+                        + digest(
+                            [pending_question["question_id"], cursor["revision"], answer["text"]]
+                        ),
+                    )
+                )
+                require(
+                    answer_operation.get("question") == pending_question
+                    and answer_operation.get("answer") == answer
+                    and answer_operation.get("before_revision") == cursor["revision"]
+                    and authority.get("invocation_id")
+                    == "operator:"
+                    + digest([pending_question["question_id"], answer["text"], cursor["revision"]]),
+                    "Scoped persisted answer differs",
+                )
+            else:
+                require(
+                    answer_operation is not None and answer_operation["answer"] == answer,
+                    "Scoped disposition has no actual operator answer",
+                )
+                result = read(
+                    app._stage_path(
+                        item_id,
+                        "answer-" + digest([pending_question["question_id"], answer["digest"]]),
+                    )
+                )
+                app.validate_invocation_result(result)
+                value = app.result_json(result)
+                disposition = value.get("disposition")
+                require(
+                    result.get("role") == "orchestrator"
+                    and result.get("session") == session
+                    and value.get("question_id") == pending_question["question_id"]
+                    and value.get("answer_digest") == answer["digest"]
+                    and disposition in {"approve", "defer", "decline", "ambiguous"}
+                    and target
+                    == ("Running" if disposition == "approve" else "User Action Required")
+                    and authority
+                    == app.authority(
+                        result,
+                        item_id,
+                        question=pending_question,
+                        answer=answer,
+                        disposition=disposition,
+                    ),
+                    "Scoped answer disposition differs",
+                )
+                if target == "Running":
+                    binding = {
+                        "admission_digest": digest(admission),
+                        "question_result_digest": digest(pending_result),
+                        "answer_operation_digest": digest(answer_operation),
+                    }
+                    approval = authority
+                    stage = question_continuation_stage(binding)
+        else:
+            require(False, "Scope admission lifecycle is not a question/answer transition")
+        require(
+            record.get("scoped_question_content")
+            == scoped_question_content(cursor["content"], target, authority)
+            == after["content"],
+            "Scoped question changed admitted content or lifecycle evidence",
+        )
+        cursor = after
+    if binding is None or current["state"] != "Running":
+        return None
+    if "result" not in answer_operation:
+        return None
+    require(
+        answer_operation.get("result", {}).get("state") == "Running"
+        and answer_operation["result"].get("revision") == current["revision"]
+        and answer_operation["result"].get("disposition") == "approve",
+        "Scoped approved answer is incomplete; use resume-answer",
+    )
+    continuation = read(app._stage_path(item_id, "continuation"))
+    require(
+        continuation
+        == {
+            "stage": "produce-review-"
+            + digest([pending_question["question_id"], answer_operation["answer"]["digest"]]),
+            "approval": approval,
+        },
+        "Scoped approved continuation differs",
+    )
+    return {"binding": binding, "approval": approval, "stage": stage}
+
+
+def scoped_question_content(before, target, authority):
+    """Bind lifecycle additions while preserving every admitted requirement byte."""
+    require(
+        len(re.findall(r"^Status: .+$", before, re.MULTILINE)) == 1,
+        "Scoped question requires one exact Status header",
+    )
+    expected = re.sub(r"^Status: .+$", "Status: " + target, before, count=1, flags=re.MULTILINE)
+    return (
+        expected
+        + "\n## Harness Transition Evidence\n```json\n"
+        + json.dumps({"authority": authority}, sort_keys=True)
+        + "\n```\n"
+    )

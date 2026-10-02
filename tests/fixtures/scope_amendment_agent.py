@@ -12,6 +12,10 @@ QUESTION = {
     "question_id": "reconcile-verifier-validation-blocker",
     "text": "Should the original scope be explicitly revised?",
 }
+POST_AMENDMENT_QUESTION = {
+    "question_id": "restore-required-verification-environment",
+    "text": "Can the required verification environment be restored?",
+}
 
 
 def _legacy():
@@ -94,12 +98,47 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
                 "original_high": record["item"]["original_high"],
             },
         }
+    if "Perform only this authorized provider transition" in prompt:
+        record = _payload(prompt)
+        scoped_content = record.get("scoped_question_content")
+        if scoped_content is not None:
+            item = record["item"]
+            source = repo / item["path"]
+            destination = next(
+                (path for path in record["paths"] if path != item["path"]), item["path"]
+            )
+            out = repo / destination
+            out.parent.mkdir(parents=True, exist_ok=True)
+            if out != source:
+                source.unlink()
+            out.write_text(scoped_content)
+            git(repo, "add", "--", *record["paths"])
+            git(repo, "commit", "-m", "Fixture " + record["target"])
+            authority = record["authority"]
+            return {
+                "operation_id": record["operation_id"],
+                "before_revision": item["revision"],
+                "commit": git(repo, "rev-parse", "HEAD"),
+                "after": {
+                    "item_id": item["item_id"],
+                    "path": destination,
+                    "state": record["target"],
+                    "owner": record["target_owner"],
+                    "original_high": item["original_high"],
+                },
+                **({"question": authority["question"]} if authority.get("question") else {}),
+            }
     if "Running is now recorded for your exact session" in prompt:
         if "Scope admission:" not in prompt:
             (cwd / "answer.txt").write_text("candidate\n")
             git(cwd, "add", "--", "answer.txt")
             git(cwd, "commit", "-m", "Retained partial candidate")
             return {"item_id": "item-one", "question": QUESTION}
+        if (
+            os.environ.get("HARNESS_SCOPE_POST_AMENDMENT_QUESTION") == "1"
+            and "Scoped question continuation:" not in prompt
+        ):
+            return {"item_id": "item-one", "question": POST_AMENDMENT_QUESTION}
         marker = repo.parent / "scope-continuation.json"
         marker.write_text(
             json.dumps(
