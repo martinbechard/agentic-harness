@@ -1,6 +1,7 @@
 """Verify a fresh harness-launched review without weakening agent-child review rules."""
 
 import json
+import re
 from pathlib import Path
 
 from .contracts import digest
@@ -9,7 +10,14 @@ from .workflow import require
 
 
 def verify_integration_review(
-    producer, reviewer, record, result_value, sessions_root, *, proof_context=None
+    producer,
+    reviewer,
+    record,
+    result_value,
+    sessions_root,
+    *,
+    proof_context=None,
+    native_binding=None,
 ):
     require(reviewer != producer, "Integration reviewer must be independent")
     records, evidence_hash = native_records(reviewer, sessions_root)
@@ -35,13 +43,65 @@ def verify_integration_review(
         and not ends[0].get("error"),
         "Integration review requires one successful native turn",
     )
-    messages = [e.get("message", "") for e in events if e.get("type") == "user_message"]
-    marker = "Integration review identity: " + digest(record)
-    require(len(messages) == 1 and marker in messages[0], "Integration review prompt is unbound")
-    if proof_context is not None:
+    # CLI versions emit the submitted prompt as an event, a user response item,
+    # or both. Injected AGENTS guidance is another user message, not another turn.
+    messages = []
+    active_turn = False
+    for row in records:
+        payload = row.get("payload", {})
+        if row.get("type") == "event_msg" and payload.get("type") == "task_started":
+            active_turn = True
+        if row.get("type") == "turn_context":
+            require(
+                payload.get("turn_id") == starts[0]["turn_id"],
+                "Integration review context belongs to another turn",
+            )
+        message = None
+        if row.get("type") == "event_msg" and payload.get("type") == "user_message":
+            message = payload.get("message", "")
+        elif (
+            row.get("type") == "response_item"
+            and payload.get("type") == "message"
+            and payload.get("role") == "user"
+        ):
+            message = "\n".join(
+                part.get("text", "")
+                for part in payload.get("content", [])
+                if part.get("type") == "input_text" and isinstance(part.get("text"), str)
+            )
+        if message is not None and "[harness-invocation " in message:
+            require(
+                native_binding is not None
+                and native_binding.get("native_session_id") == reviewer
+                and native_binding.get("native_turn_id") == starts[0]["turn_id"]
+                and native_binding.get("native_evidence_sha256") == evidence_hash,
+                "Marked integration review requires exact retained native request evidence",
+            )
+        if message is not None and (
+            "Integration review identity:" in message or "Proof applicability identity:" in message
+        ):
+            require(
+                active_turn
+                and payload.get("turn_id", starts[0]["turn_id"]) == starts[0]["turn_id"],
+                "Integration review prompt belongs to another turn",
+            )
+            messages.append(message)
+        if row.get("type") == "event_msg" and payload.get("type") == "task_complete":
+            active_turn = False
+    messages = list(dict.fromkeys(messages))
+    require(len(messages) == 1, "Integration review prompt is unbound or ambiguous")
+    prompt = messages[0]
+    for label, expected in (
+        ("Integration review identity", digest(record)),
+        (
+            "Proof applicability identity",
+            digest(proof_context) if proof_context is not None else None,
+        ),
+    ):
+        identities = re.findall(r"^" + label + r": ([^\r\n]+)$", prompt, re.MULTILINE)
         require(
-            "Proof applicability identity: " + digest(proof_context) in messages[0],
-            "Integration proof applicability prompt is unbound",
+            identities == ([expected] if expected is not None else []),
+            "Integration review prompt identity is unbound or conflicting",
         )
     verdict = json.loads(ends[0].get("last_agent_message", "null"))
     require(
@@ -55,7 +115,7 @@ def verify_integration_review(
             if verdict["verdict"] == "ACCEPT"
             else bool(verdict["unresolved_findings"])
         )
-        and verdict.get("evidence"),
+        and _supporting_evidence(verdict),
         "Integration review lacks exact verdict and supporting evidence",
     )
     return {
@@ -67,6 +127,20 @@ def verify_integration_review(
         "evidence_sha256": evidence_hash,
         "provenance": "harness-launched-independent-integration-review",
     }
+
+
+def _supporting_evidence(verdict):
+    # Retain the exact native verdict. Older prompts allowed the descriptive alias.
+    present = [verdict[key] for key in ("evidence", "supporting_evidence") if key in verdict]
+    return bool(present) and all(
+        (isinstance(value, str) and bool(value.strip()))
+        or (
+            isinstance(value, list)
+            and bool(value)
+            and all(isinstance(item, str) and bool(item.strip()) for item in value)
+        )
+        for value in present
+    )
 
 
 def validate_proof_applicability(proof, review):

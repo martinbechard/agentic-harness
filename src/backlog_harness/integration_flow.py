@@ -233,7 +233,8 @@ async def _attempt(
         {
             "task": "Independently review this exact integration candidate and its delta against "
             "both parents. Return candidate, verdict ACCEPT or REJECT, "
-            "unresolved_findings, and supporting evidence. Do not modify source.",
+            "unresolved_findings (a list), and evidence (a nonempty list of nonempty strings). "
+            "Return one JSON object. Do not modify source.",
             "item_id": item_id,
             "candidate_record": record,
             "original_evidence": context["original_evidence"],

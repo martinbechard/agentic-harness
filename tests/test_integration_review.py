@@ -185,3 +185,95 @@ def test_scoped_proof_applicability_requires_complete_bound_review(fault):
         result = validate_proof_applicability(proof, review)
         assert result["disposition"] == "reviewed-applicability"
         assert result["context"] == context and result["decision"] == decision
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        None,
+        "unbound",
+        "conflict",
+        "wrong-role",
+        "wrong-turn",
+        "wrong-context",
+        "missing-native-request",
+        "empty",
+        "blank",
+        "typed",
+        "result",
+    ],
+)
+def test_native_response_item_prompt_and_supporting_evidence(tmp_path, fault):
+    producer, reviewer = str(uuid4()), str(uuid4())
+    record = {"candidate": "a" * 40, "workspace": str(tmp_path)}
+    prompt = "Integration review identity: " + digest(record)
+    if fault == "missing-native-request":
+        prompt = '[harness-invocation {"invocation_id":"retained"}]\n' + prompt
+    if fault == "unbound":
+        prompt = "No identity"
+    if fault == "conflict":
+        prompt += "\nIntegration review identity: wrong"
+    value = {
+        "candidate": record["candidate"],
+        "verdict": "ACCEPT",
+        "unresolved_findings": [],
+        "supporting_evidence": ["Both parent deltas inspected"],
+    }
+    if fault in ("empty", "blank", "typed"):
+        value["supporting_evidence"] = {"empty": [], "blank": [" "], "typed": [True]}[fault]
+    user = {
+        "type": "message",
+        "role": "assistant" if fault == "wrong-role" else "user",
+        "content": [{"type": "input_text", "text": prompt}],
+    }
+    if fault == "wrong-turn":
+        user["turn_id"] = "other"
+    records = [
+        {
+            "type": "session_meta",
+            "payload": {
+                "id": reviewer,
+                "source": "exec",
+                "cwd": str(tmp_path),
+                "git": {"commit_hash": record["candidate"]},
+            },
+        },
+        {"type": "event_msg", "payload": {"type": "task_started", "turn_id": "turn"}},
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": "# AGENTS.md instructions\nBe careful."}
+                ],
+            },
+        },
+        {
+            "type": "turn_context",
+            "payload": {"turn_id": "other" if fault == "wrong-context" else "turn"},
+        },
+        {"type": "response_item", "payload": user},
+        {
+            "type": "event_msg",
+            "payload": {
+                "type": "task_complete",
+                "turn_id": "turn",
+                "last_agent_message": json.dumps(value),
+            },
+        },
+    ]
+    path = tmp_path / "2026/10/01" / (reviewer + ".jsonl")
+    path.parent.mkdir(parents=True)
+    path.write_text("".join(json.dumps(r) + "\n" for r in records))
+    original = path.read_bytes()
+    if fault == "result":
+        value = {**value, "supporting_evidence": ["Changed"]}
+    if fault:
+        with pytest.raises(TransitionBlocked):
+            verify_integration_review(producer, reviewer, record, value, tmp_path)
+    else:
+        result = verify_integration_review(producer, reviewer, record, value, tmp_path)
+        assert result["supporting_evidence"] == value["supporting_evidence"]
+        assert "evidence" not in result
+    assert path.read_bytes() == original

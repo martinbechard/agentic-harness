@@ -1852,6 +1852,18 @@ class Application:
             and result.get("session") is not None,
             "Integration review invocation identity differs",
         )
+        invocation_path = Path(result["evidence_path"])
+        native = None
+        if (invocation_path / "native-request.json").exists():
+            from .adapters.codex.completion_evidence import reconcile_native_completion
+
+            native = reconcile_native_completion(invocation_path)
+            require(
+                native["invocation_id"] == result["invocation_id"]
+                and native["native_session_id"] == result["session"]["native_session_id"]
+                and json.loads(native["text"]) == self.result_json(result),
+                "Integration review differs from its exact native invocation",
+            )
         stage = result.get("integration_review_stage", "integration-review")
         from .integration_reconciliation import integration_attempt, integration_suffix
 
@@ -1869,6 +1881,7 @@ class Application:
             record,
             self.result_json(result),
             self.native_sessions_root(result["binding"]),
+            native_binding=native,
             proof_context=self.verify_integration_proof(
                 item_id,
                 record,
