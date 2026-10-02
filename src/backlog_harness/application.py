@@ -40,7 +40,13 @@ from .provider import AgentProvider, FileProvider, Item, TransitionBlocked, blob
 from .provider_observation import PROVIDER_OBSERVATION_PROMPT
 from .runtime import AgentRequest, SessionHandle
 from .telemetry import TelemetryReceiver
-from .workflow import preparation_question_content, require, validate_candidate, validate_transition
+from .workflow import (
+    preparation_question_content,
+    require,
+    validate_candidate,
+    validate_content_amendment_request,
+    validate_transition,
+)
 
 
 class Application:
@@ -569,6 +575,9 @@ class Application:
         require(self.execution_engine(item_id) == "legacy", "Use graph resume for this execution")
 
     def item_workflow(self, item_id):
+        admission = self.scope_admission(item_id)
+        if admission:
+            return admission["workflow"]
         assignment = self._stage_path(item_id, "assignment")
         if assignment.exists():
             frozen = json.loads(assignment.read_text())
@@ -580,6 +589,93 @@ class Application:
         from .estimation import prepared_workflow
 
         return prepared_workflow(self, item_id, self.config)
+
+    def scope_admission(self, item_id, *, current=None):
+        """Read a fully linked admission without replacing historical assignment evidence."""
+        from .scope_admission import admission_receipts, effective_workflow
+
+        chain = admission_receipts(self, item_id)
+        if not chain:
+            return None
+        current = current or load_config(self.config_path)
+        previous = None
+        frozen = json.loads(self._stage_path(item_id, "assignment").read_text())
+        acceptance = json.loads(self._stage_path(item_id, "accept").read_text())
+        for receipt in chain:
+            required = {
+                "version",
+                "input",
+                "decision",
+                "provider_receipt",
+                "provider_revision",
+                "workflow",
+                "candidate",
+                "session",
+                "usage",
+                "remaining_high",
+            }
+            require(
+                isinstance(receipt, dict)
+                and set(receipt) == required
+                and receipt["version"] == 1,
+                "Scope admission receipt is invalid",
+            )
+            value = receipt["input"]
+            require(
+                value.get("item_id") == item_id
+                and value.get("previous_admission_digest")
+                == (digest(previous) if previous else None)
+                and value.get("original_assignment_digest") == digest(frozen)
+                and value.get("acceptance_digest") == digest(acceptance)
+                and receipt["session"] == acceptance["session"]
+                and receipt["remaining_high"] == value.get("remaining_estimate")
+                and receipt["candidate"] == value.get("candidate")
+                and receipt["provider_receipt"]["after"]["revision"]
+                == receipt["provider_revision"],
+                "Scope admission lineage differs",
+            )
+            operation = receipt["provider_receipt"].get("operation")
+            require(isinstance(operation, str), "Scope admission provider operation is missing")
+            request_path = (
+                self.root
+                / "provider-agent-operations"
+                / component(operation)
+                / "requested.json"
+            )
+            require(request_path.is_file(), "Scope admission provider operation is missing")
+            provider_request = json.loads(request_path.read_text())
+            require(
+                digest(provider_request) == operation
+                and provider_request.get("kind") == "amend-content"
+                and provider_request.get("admission_input_digest") == digest(value),
+                "Scope admission provider operation differs",
+            )
+            self.verify_provider_receipt(
+                provider_request,
+                {
+                    "operation_id": provider_request["stage_operation"],
+                    "before_revision": provider_request["item"]["revision"],
+                    **receipt["provider_receipt"],
+                },
+            )
+            self.validate_invocation_result(receipt["decision"])
+            decision = self.result_json(receipt["decision"])
+            require(
+                value.get("authority", {}).get("decision_digest") == digest(receipt["decision"])
+                and value["authority"].get("invocation_id")
+                == receipt["decision"].get("invocation_id")
+                and decision.get("operation") == "amend-content"
+                and decision.get("authorized") is True,
+                "Scope admission authority differs",
+            )
+            expected = effective_workflow(self, value, previous, current)
+            require(receipt["workflow"] == expected, "Scope admission workflow differs")
+            previous = receipt
+        require(
+            self.provider.item(item_id).revision == chain[-1]["provider_revision"],
+            "Scope admission provider revision changed",
+        )
+        return chain[-1]
 
     def recovery_record(self, item_id):
         path = self._stage_path(item_id, "recovery")
@@ -857,6 +953,210 @@ class Application:
         require(names is not None, "Admission dependencies are unknown")
         return [asdict(self.provider.item(name)) for name in names]
 
+    async def amend_scope(self, item_id, input_path):
+        """Append authorized item requirements, then admit their exact same-session scope."""
+        async with async_operation_lock(self.root / "item-locks" / (component(item_id) + ".lock")):
+            with operation_lock(self.root / "solo-execution.lock"):
+                return await self._amend_scope(item_id, input_path)
+
+    async def _amend_scope(self, item_id, input_path):
+        from .estimation import validate_preparation_invocation
+        from .scope_admission import validate_coverage, validate_request, validate_retained_usage
+
+        require(isinstance(self.provider, AgentProvider), "Scope amendment requires agent provider management")
+        self.require_legacy_execution(item_id)
+        current = load_config(self.config_path)
+        require(
+            current.repository == self.config.repository
+            and current.operational_root == self.root
+            and current.data.get("candidate_root") == self.config.data.get("candidate_root"),
+            "Scope amendment storage identity changed",
+        )
+        supplied = json.loads(Path(input_path).read_text())
+        supplied_digest = digest(supplied)
+        existing_admission = self.scope_admission(item_id, current=current)
+        if existing_admission:
+            retained_request = {
+                key: value
+                for key, value in existing_admission["input"].items()
+                if key not in {"remaining_estimate", "authority"}
+            }
+            if digest(retained_request) == supplied_digest:
+                require(retained_request == supplied, "Scope amendment replay input changed")
+                return existing_admission
+        approved_matches = []
+        for path in self._stage_path(item_id, "unused").parent.glob(
+            "scope-admission-input-*.json"
+        ):
+            value = json.loads(path.read_text())
+            if value.get("authority", {}).get("operator_request_digest") == supplied_digest:
+                approved_matches.append(value)
+        require(len(approved_matches) <= 1, "Scope amendment approved input is ambiguous")
+        retained_record = None
+        if approved_matches:
+            approved_digest = digest(approved_matches[0])
+            matches = []
+            for path in (self.root / "provider-agent-operations").glob("*/requested.json"):
+                value = json.loads(path.read_text())
+                if (
+                    value.get("kind") == "amend-content"
+                    and value.get("admission_input_digest") == approved_digest
+                ):
+                    matches.append(value)
+            require(len(matches) == 1, "Scope amendment provider operation is absent or ambiguous")
+            retained_record = matches[0]
+        item = Item(**retained_record["item"]) if retained_record else self.provider.item(item_id)
+        request, workflow, previous_result, acceptance, scope_answer = validate_request(
+            self, item, supplied, Path(input_path), current
+        )
+        request_digest = digest(request)
+        request_path = self._stage_path(item_id, "scope-amendment-request-" + request_digest)
+        if request_path.exists():
+            require(json.loads(request_path.read_text()) == request, "Scope amendment request changed")
+        else:
+            atomic_json(request_path, request, exclusive=True)
+        usage = validate_retained_usage(self.usage_view(item_id, observed_item=item))
+        stage = "scope-admission-decision-" + request_digest
+        prompt = (
+            "You are the Dev Backlog Coordinator. Decide one exact same-execution content amendment "
+            "and remaining-work scope. Read only; do not mutate, delegate, invoke claims, or launch "
+            "implementation. The operator request is exact authority for the proposed appended provider "
+            "bytes, not permission to widen it. Historical preparation scope remains evidence of the "
+            "original admission; the proposed scope below is current only if every preserved candidate "
+            "change remains included and current configuration authorizes every path and command. Preserve "
+            "all existing checks and all review, proof, design, approval, accounting and delivery gates. "
+            "Assess every requirement in the appended content. Return only JSON with operation "
+            "amend-content or assess, authorized boolean, item_id, expected_revision, request_digest, "
+            "previous_admission_digest, candidate, scope, amended_content_sha256, remaining_high, reason, "
+            "coverage_complete, unsupported_new_requirements, and requirements_coverage. remaining_high "
+            "is a positive prospective estimate of remaining work; it cannot reset prior usage or the "
+            "original ceiling. requirements_coverage is a nonempty list of {excerpt,kind,value}; excerpt "
+            "must occur in the appended bytes, kind is check with an exact selected argv or gate with the "
+            "canonical digest of one unchanged non-scope workflow value. If authority, capacity, coverage, "
+            "scope or checks are insufficient, return assess/false and the exact blocker. When "
+            "resolved_scope_answer is present, also echo question_digest and answer_digest and return "
+            "question_disposition approve only when that exact answer resolves this amendment question.\n"
+            + json.dumps(
+                {
+                    "request": request,
+                    "effective_workflow": workflow,
+                    "usage": usage,
+                    "previous_result_digest": digest(previous_result),
+                    "acceptance_session": acceptance["session"],
+                    "resolved_scope_answer": scope_answer,
+                },
+                sort_keys=True,
+            )
+        )
+        decision = await self.invoke(
+            item_id,
+            stage,
+            "coordinator",
+            prompt,
+            read_only=True,
+            purpose="provider",
+            scope_workflow=workflow,
+        )
+        self.validate_invocation_result(decision)
+        validate_preparation_invocation(decision, current.file_digest, self.root)
+        self.validate_call_limits(decision, current.data["coordinator_limits"])
+        answer = self.result_json(decision)
+        remaining = answer.get("remaining_high")
+        expected = {
+            "operation": "amend-content",
+            "authorized": True,
+            "item_id": item_id,
+            "expected_revision": item.revision,
+            "request_digest": request_digest,
+            "previous_admission_digest": request["previous_admission_digest"],
+            "candidate": request["candidate"],
+            "scope": request["scope"],
+            "amended_content_sha256": sha256(request["amended_content"].encode()).hexdigest(),
+        }
+        require(all(answer.get(key) == value for key, value in expected.items()), "Coordinator did not authorize the exact scope amendment")
+        if scope_answer:
+            require(
+                answer.get("question_digest") == scope_answer["question_digest"]
+                and answer.get("answer_digest") == scope_answer["answer_digest"]
+                and answer.get("question_disposition") == "approve",
+                "Coordinator did not resolve the exact scope question",
+            )
+        require(
+            type(remaining) is int
+            and remaining > 0
+            and remaining <= usage["ceiling"] - usage["generated_tokens"]
+            and isinstance(answer.get("reason"), str)
+            and answer["reason"].strip(),
+            "Scope amendment estimate exceeds retained authority",
+        )
+        validate_coverage(answer, request["amended_content"][len(item.content) :], workflow)
+        approved = {
+            **request,
+            "remaining_estimate": remaining,
+            "authority": {
+                "operator_request_digest": request_digest,
+                "decision_digest": digest(decision),
+                "invocation_id": decision["invocation_id"],
+                "scope_answer_digest": digest(scope_answer) if scope_answer else None,
+            },
+        }
+        approved_path = self._stage_path(item_id, "scope-admission-input-" + digest(approved))
+        if approved_path.exists():
+            require(json.loads(approved_path.read_text()) == approved, "Scope admission input changed")
+        else:
+            atomic_json(approved_path, approved, exclusive=True)
+        latest = load_config(self.config_path)
+        item = Item(**retained_record["item"]) if retained_record else self.provider.item(item_id)
+        reread, latest_workflow, _, latest_acceptance, latest_answer = validate_request(
+            self, item, request, Path(input_path), latest
+        )
+        require(
+            reread == request
+            and latest.file_digest == current.file_digest
+            and latest_workflow == workflow
+            and latest_acceptance == acceptance,
+            "Scope amendment authority changed before provider dispatch",
+        )
+        require(latest_answer == scope_answer, "Scope amendment answer changed before dispatch")
+        before = json.loads(self.provider.cache_path.read_text())
+        manifest = retained_record["source_manifest"] if retained_record else self.provider.source_manifest()
+        receipt = await self.invoke_provider_amendment(item, approved, decision, workflow)
+        self.advance_provider_projection(before, manifest, receipt, [item.path])
+        after = self.provider.item(item_id)
+        require(asdict(after) == receipt["after"], "Provider amendment projection differs")
+        final_config = load_config(self.config_path)
+        require(final_config.file_digest == current.file_digest, "Scope amendment configuration changed during publication")
+        # The provider revision changes, but the candidate, owner and native execution must not.
+        from .scope_admission import validate_current_candidate
+
+        validate_current_candidate(
+            self.candidate_repository(item_id), request["candidate"], workflow["allowed_paths"]
+        )
+        require(
+            after.state == "Running"
+            and after.owner == acceptance["session"]["session_id"]
+            and self.process_stopped(Path(previous_result["evidence_path"])),
+            "Scope amendment execution changed before publication",
+        )
+        admission = {
+            "version": 1,
+            "input": approved,
+            "decision": decision,
+            "provider_receipt": receipt,
+            "provider_revision": after.revision,
+            "workflow": workflow,
+            "candidate": request["candidate"],
+            "session": acceptance["session"],
+            "usage": usage,
+            "remaining_high": remaining,
+        }
+        destination = self._stage_path(item_id, "scope-admission-receipt-" + digest(approved))
+        if destination.exists():
+            require(json.loads(destination.read_text()) == admission, "Scope admission receipt changed")
+        else:
+            atomic_json(destination, admission, exclusive=True)
+        return admission
+
     async def enforce_guard(self, item_id):
         try:
             return self.guard(item_id)
@@ -998,6 +1298,98 @@ class Application:
             and value.get("owner_binding_digest") == digest(recovery["owner_binding"]),
             "No-change recovery decision differs",
         )
+
+    async def invoke_provider_amendment(self, item, admission, decision, workflow):
+        """Submit one exact content append through the existing provider evidence boundary."""
+        self.validate_management_readiness("coordinator")
+        content = admission["amended_content"]
+        stage = "provider-amend-" + digest(admission)
+        async with async_operation_lock(self.config.repository / ".git/agentic-provider.lock"):
+            request_path = self._stage_path(item.item_id, stage + "-request")
+            if request_path.exists():
+                record = json.loads(request_path.read_text())
+            else:
+                head = git(self.config.repository, "rev-parse", "HEAD")
+                require(
+                    blob(self.config.repository, head, item.path) == item.content.encode(),
+                    "Observed provider content differs from committed source",
+                )
+                prompt = (
+                    "Perform only this authorized provider content amendment using the project's selected "
+                    "management skills. Manage configured claims yourself. Recheck the exact before revision "
+                    "at the write boundary. Do not change lifecycle state, owner, original estimate, identity, "
+                    "path, or any other provider file. Replace the item with amended_content verbatim and make "
+                    "one commit containing only the declared path. This is not a Running-to-Running transition. "
+                    "If the outcome is uncertain, report it and do not repeat the mutation. Return only JSON "
+                    "with operation_id, before_revision, commit, and after {item_id,path,state,owner,original_high}. "
+                    "Omit content and revision; the harness hydrates them from exact committed bytes.\n"
+                    + json.dumps(
+                        {
+                            "operation_id": item.item_id + ":" + stage,
+                            "item": asdict(item),
+                            "admission_input_digest": digest(admission),
+                            "amended_content": content,
+                            "amended_content_sha256": sha256(content.encode()).hexdigest(),
+                            "paths": [item.path],
+                        },
+                        sort_keys=True,
+                    )
+                )
+                record = {
+                    "kind": "amend-content",
+                    "repository": str(self.config.repository),
+                    "head": head,
+                    "stage_operation": item.item_id + ":" + stage,
+                    "prompt_digest": digest(prompt),
+                    "prompt": prompt,
+                    "item": asdict(item),
+                    "target": item.state,
+                    "target_owner": item.owner,
+                    "target_original_high": item.original_high,
+                    "authority": admission["authority"],
+                    "executing_role": "coordinator",
+                    "paths": [item.path],
+                    "expected_path": item.path,
+                    "source_manifest": self.provider.source_manifest(),
+                    "admission_input_digest": digest(admission),
+                    "amended_content": content,
+                    "amended_content_sha256": sha256(content.encode()).hexdigest(),
+                }
+                validate_content_amendment_request(item, record)
+                atomic_json(request_path, record, exclusive=True)
+            validate_content_amendment_request(item, record)
+            operation = digest(record)
+            evidence = self.root / "provider-agent-operations" / component(operation)
+            if not (evidence / "requested.json").exists():
+                atomic_json(evidence / "requested.json", record, exclusive=True)
+            result = await self.invoke(
+                item.item_id,
+                stage,
+                "coordinator",
+                record["prompt"],
+                read_only=False,
+                purpose="provider",
+                provider_operation=operation,
+                scope_workflow=workflow,
+            )
+            receipt = self.verify_provider_receipt(record, self.result_json(result))
+            receipt.update(
+                decision_owner=decision["invocation_id"],
+                executing_invocation=result["invocation_id"],
+                executing_session=result["session"],
+                usage_evidence=result["evidence_path"],
+                advancement_verified=False,
+            )
+            atomic_json(evidence / "receipt.json", receipt)
+            self.validate_call_limits(
+                result, load_config(self.config_path).data["administrative_review_limits"]
+            )
+            previous_policy = json.loads(self.provider.cache_path.read_text())["policy"]
+            self.provider.validate_policy(previous_policy)
+            receipt["policy"] = previous_policy
+            receipt["advancement_verified"] = True
+            atomic_json(evidence / "receipt.json", receipt)
+            return receipt
 
     async def invoke_provider_transition(self, item, target, authority, paths):
         """Submit one agent-managed operation; verify its commit before returning a receipt."""
@@ -1427,6 +1819,8 @@ class Application:
 
     def verify_provider_receipt(self, record, value, *, preserved_owner=False):
         """Check immutable provider evidence without parsing its lifecycle document format."""
+        if record.get("kind") == "amend-content":
+            return self.verify_provider_amendment_receipt(record, value)
         require(
             value.get("operation_id") == record["stage_operation"], "Provider operation differs"
         )
@@ -1546,6 +1940,58 @@ class Application:
             receipt["policy"] = value["policy"]
         return receipt
 
+    def verify_provider_amendment_receipt(self, record, value):
+        """Verify exact appended bytes while lifecycle fields remain unchanged."""
+        validate_content_amendment_request(Item(**record["item"]), record)
+        require(
+            value.get("operation_id") == record["stage_operation"]
+            and value.get("before_revision") == record["item"]["revision"],
+            "Provider amendment operation differs",
+        )
+        commit = value.get("commit")
+        require(
+            isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40,64}", commit),
+            "Provider amendment commit is missing",
+        )
+        require(
+            git(self.config.repository, "rev-parse", commit + "^") == record["head"]
+            and git(self.config.repository, "merge-base", "HEAD", commit) == commit,
+            "Provider amendment commit lineage differs",
+        )
+        changed = git(
+            self.config.repository,
+            "diff-tree",
+            "--no-commit-id",
+            "--name-only",
+            "-r",
+            commit,
+        ).splitlines()
+        require(changed == record["paths"], "Provider amendment commit exceeds operation")
+        committed = blob(self.config.repository, commit, record["expected_path"])
+        require(
+            committed == record["amended_content"].encode()
+            and sha256(committed).hexdigest() == record["amended_content_sha256"],
+            "Provider amendment committed bytes differ",
+        )
+        row = dict(value.get("after", {}))
+        row.setdefault("content", committed.decode())
+        row.setdefault(
+            "revision",
+            sha256(record["expected_path"].encode() + b"\0" + committed).hexdigest(),
+        )
+        after = Item(**row)
+        before = Item(**record["item"])
+        require(
+            after.item_id == before.item_id
+            and after.path == before.path
+            and after.state == before.state
+            and after.owner == before.owner
+            and after.original_high == before.original_high,
+            "Provider amendment changed lifecycle authority",
+        )
+        require(after.content == record["amended_content"], "Provider amendment content differs")
+        return {"operation": digest(record), "commit": commit, "after": asdict(after)}
+
     def candidate_repository(self, item_id):
         if "candidate_root" not in self.config.data:
             return Path(self.config.data["workspace"]).resolve()
@@ -1579,6 +2025,7 @@ class Application:
         review_candidate=None,
         integration_resolution=None,
         coordination=False,
+        scope_workflow=None,
     ):
         with operation_lock(self.root / "locks" / (component(item_id + ":" + stage) + ".lock")):
             async with self.capacity_slot() as reservation:
@@ -1597,6 +2044,7 @@ class Application:
                     review_candidate=review_candidate,
                     integration_resolution=integration_resolution,
                     coordination=coordination,
+                    scope_workflow=scope_workflow,
                 )
 
     @staticmethod
@@ -1685,6 +2133,7 @@ class Application:
         review_candidate=None,
         integration_resolution=None,
         coordination=False,
+        scope_workflow=None,
     ):
         # Re-read immediately before every harness invocation. The resolved storage identity
         # cannot move mid-run; such edits require explicit reconciliation.
@@ -1698,18 +2147,37 @@ class Application:
         if assignment.exists():
             frozen = json.loads(assignment.read_text())
             recovery = self.recovery_record(item_id)
-            selected = recovery["workflow"] if recovery else plain(snapshot.data["workflow"])
+            admission = self.scope_admission(item_id, current=snapshot)
+            selected = (
+                scope_workflow
+                if scope_workflow is not None
+                else admission["workflow"]
+                if admission
+                else recovery["workflow"]
+                if recovery
+                else plain(snapshot.data["workflow"])
+            )
+            if scope_workflow is not None:
+                require(
+                    purpose == "provider"
+                    and role == "coordinator"
+                    and stage.startswith(("scope-admission-decision-", "provider-amend-")),
+                    "Scope workflow override is unauthorized",
+                )
             if recovery:
                 require(
                     plain(snapshot.data["workflow"]) == recovery["config_workflow"],
                     "Recovery workflow configuration changed",
                 )
-            if not recovery:
+            if not recovery and admission is None and scope_workflow is None:
                 from .estimation import prepared_workflow
 
                 selected = prepared_workflow(self, item_id, snapshot)
             require(
-                "workflow" not in frozen or selected == frozen["workflow"],
+                "workflow" not in frozen
+                or selected == frozen["workflow"]
+                or admission is not None
+                or scope_workflow is not None,
                 "Accepted workflow changed; reconcile before another invocation",
             )
             require(
@@ -3562,6 +4030,10 @@ class Application:
             )
         frozen_assignment = json.loads(assignment_path.read_text())
         assignment = frozen_assignment["content"]
+        scope_admission = self.scope_admission(item_id)
+        effective_assignment = (
+            scope_admission["input"]["amended_content"] if scope_admission else assignment
+        )
         if item.state == "Ready":
             require(
                 frozen_assignment.get("provider_revision") == item.revision
@@ -3794,7 +4266,7 @@ class Application:
             "provider evidence before advancement. Checks: "
             + json.dumps([list(a) for a in workflow["checks"]])
             + "\nWork item:\n"
-            + assignment
+            + effective_assignment
         )
         if workflow.get("preparation_evidence"):
             prompt += (
@@ -3851,7 +4323,28 @@ class Application:
             )
         continuation_path = self._stage_path(item_id, "continuation")
         stage = "produce-review"
-        if not continuation_path.exists():
+        if scope_admission:
+            from .scope_admission import validate_current_candidate
+
+            validate_current_candidate(
+                candidate_repo,
+                scope_admission["candidate"],
+                workflow["allowed_paths"],
+            )
+            require(
+                acceptance["session"] == scope_admission["session"],
+                "Scope continuation native session changed",
+            )
+            stage = "scope-continuation-" + digest(scope_admission)
+            prompt += (
+                "\nContinue the same canonical and native execution from the exact admitted candidate. "
+                "Preserve all earlier attempts, usage, source changes, and historical evidence. The original "
+                "preparation scope is historical; only this verified admission supplies the current source "
+                "paths and checks. Run fresh final checks and independent review over the complete amended "
+                "Work Item and base..final candidate. Do not restart or replace the candidate. Scope admission: "
+                + json.dumps(scope_admission, sort_keys=True)
+            )
+        if not scope_admission and not continuation_path.exists():
             from .recovery_flow import work_continuation
 
             followup = work_continuation(self, item_id, acceptance)
@@ -3864,7 +4357,7 @@ class Application:
                     "or bypass of required proof, usage limits, review, approval, or delivery gates. "
                     "Bounded continuation request: " + json.dumps(followup, sort_keys=True)
                 )
-        if not continuation_path.exists():
+        if not scope_admission and not continuation_path.exists():
             from .recovery_flow import proof_continuation
 
             proof_followup = proof_continuation(self, item_id, acceptance)
@@ -3886,7 +4379,8 @@ class Application:
                 )
         if continuation_path.exists():
             continuation = json.loads(continuation_path.read_text())
-            stage = continuation["stage"]
+            if not scope_admission:
+                stage = continuation["stage"]
             prompt += "\nPersisted canonical approval: " + json.dumps(continuation["approval"])
             proof_review_path = self._stage_path(item_id, "proof-review")
             if proof_review_path.exists():
@@ -3897,7 +4391,7 @@ class Application:
                 )
         from .native_evidence import source_review_instructions
 
-        prompt += source_review_instructions(workflow, assignment, candidate_repo)
+        prompt += source_review_instructions(workflow, effective_assignment, candidate_repo)
         if retained_delivery:
             from .recovery_flow import retained_delivery_result
 
@@ -3967,6 +4461,17 @@ class Application:
             ),
         )
         candidate = value.get("candidate")
+        if scope_admission:
+            try:
+                git(
+                    candidate_repo,
+                    "merge-base",
+                    "--is-ancestor",
+                    scope_admission["candidate"]["head"],
+                    candidate,
+                )
+            except TransitionBlocked as exc:
+                raise TransitionBlocked("Admitted candidate is not preserved in final lineage") from exc
         if self._stage_path(item_id, "proof-continuation").exists():
             from .recovery_flow import validated_auxiliary_proof
 
@@ -4010,7 +4515,7 @@ class Application:
             else:
                 checks = self.checks(candidate_repo, item_id, candidate, "source-checks")
         source_context = (
-            source_review_context(candidate_repo, candidate, workflow, assignment, checks)
+            source_review_context(candidate_repo, candidate, workflow, effective_assignment, checks)
             if selected_source_review
             else None
         )
@@ -4045,7 +4550,7 @@ class Application:
             produced["session"]["native_session_id"],
             review,
             checks,
-            preserved=recovery is not None,
+            preserved=recovery is not None or scope_admission is not None,
         )
         if workflow.get("proof_requirements"):
             from .recovery_flow import ensure_configured_proof

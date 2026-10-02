@@ -26,7 +26,7 @@ class CodexAdapter:
     def validate_provider_request(request, cwd):
         """Provider purpose alone never authorizes a write to the primary checkout."""
         from ...provider import Item
-        from ...workflow import require, validate_transition
+        from ...workflow import require, validate_content_amendment_request, validate_transition
 
         require(cwd == request.snapshot.repository, "Provider workspace must be authoritative")
         if request.read_only:
@@ -42,12 +42,18 @@ class CodexAdapter:
         require(digest(record) == operation, "Provider operation identity differs")
         require(record["repository"] == str(cwd), "Provider operation repository differs")
         require(
-            record.get("executing_role", record["authority"]["role"]) == request.binding.role,
+            record.get("executing_role", record.get("authority", {}).get("role"))
+            == request.binding.role,
             "Provider actor differs",
         )
         require(record["stage_operation"] == request.operation_id, "Provider invocation differs")
         require(record["prompt_digest"] == digest(request.prompt), "Provider prompt differs")
-        validate_transition(Item(**record["item"]), record["target"], record["authority"])
+        item = Item(**record["item"])
+        if record.get("kind", "transition") == "amend-content":
+            validate_content_amendment_request(item, record)
+        else:
+            require(record.get("kind", "transition") == "transition", "Unknown provider operation kind")
+            validate_transition(item, record["target"], record["authority"])
         paths = record.get("paths")
         require(isinstance(paths, list) and bool(paths), "Provider mutation paths are required")
         for name in paths:

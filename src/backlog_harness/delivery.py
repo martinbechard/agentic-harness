@@ -68,6 +68,21 @@ def compatible_primary_paths(primary, candidate_repo, candidate, base, head, cha
     )
 
 
+def preserved_candidate_mode(app, item_id, candidate_repo, candidate):
+    """Bind multi-commit delivery to a validated recovery or scope checkpoint."""
+    recovery = app.recovery_record(item_id) if hasattr(app, "recovery_record") else None
+    admission = app.scope_admission(item_id) if hasattr(app, "scope_admission") else None
+    if admission:
+        checkpoint = admission["candidate"]["head"]
+        try:
+            git(candidate_repo, "merge-base", "--is-ancestor", checkpoint, candidate)
+        except TransitionBlocked as exc:
+            raise TransitionBlocked(
+                "Admitted candidate checkpoint is not preserved at delivery"
+            ) from exc
+    return bool(recovery or admission)
+
+
 def integrate(
     app,
     item_id,
@@ -136,9 +151,7 @@ def integrate(
             review["producer_session"],
             review,
             checks,
-            preserved=bool(app.recovery_record(item_id))
-            if hasattr(app, "recovery_record")
-            else False,
+            preserved=preserved_candidate_mode(app, item_id, candidate_repo, candidate),
         )
         require(
             not any(

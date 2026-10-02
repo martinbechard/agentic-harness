@@ -2,6 +2,7 @@
 
 import re
 from datetime import datetime
+from hashlib import sha256
 
 from .provider import TransitionBlocked, git
 
@@ -186,6 +187,37 @@ def validate_transition(item, target, authority):
         )
     else:
         raise TransitionBlocked(f"Unsupported transition {item.state} -> {target}")
+
+
+def validate_content_amendment_request(item, record):
+    """Authorize exact Running-item bytes without pretending they are a state transition."""
+    require(record.get("kind") == "amend-content", "Unknown provider operation kind")
+    require(item.state == "Running", "Content amendment requires Running work")
+    require(record.get("item") == item.__dict__, "Content amendment item differs")
+    require(
+        record.get("paths") == [item.path]
+        and record.get("expected_path") == item.path,
+        "Content amendment path differs",
+    )
+    content = record.get("amended_content")
+    require(
+        isinstance(content, str)
+        and content.startswith(item.content)
+        and content != item.content
+        and sha256(content.encode()).hexdigest() == record.get("amended_content_sha256"),
+        "Content amendment bytes are invalid",
+    )
+    require(
+        isinstance(record.get("admission_input_digest"), str)
+        and re.fullmatch(r"[0-9a-f]{64}", record["admission_input_digest"]),
+        "Content amendment admission is missing",
+    )
+    require(
+        record.get("target") == item.state
+        and record.get("target_owner") == item.owner
+        and record.get("target_original_high") == item.original_high,
+        "Content amendment changed lifecycle authority",
+    )
 
 
 def validate_candidate(

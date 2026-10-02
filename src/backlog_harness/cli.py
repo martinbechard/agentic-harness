@@ -77,6 +77,9 @@ def main(argv=None):
     defer_item = commands.add_parser("defer-item")
     defer_item.add_argument("item_id")
     defer_item.add_argument("--question", type=Path, required=True)
+    amend_scope = commands.add_parser("amend-scope")
+    amend_scope.add_argument("item_id")
+    amend_scope.add_argument("--input", type=Path, required=True)
     resume_observation = commands.add_parser("resume-provider-observation")
     resume_observation.add_argument("operation_id")
     resume_observation.add_argument("native_session_id")
@@ -130,6 +133,7 @@ def main(argv=None):
                 "authorize-delivery",
                 "reconcile-integration",
                 "reconcile-stopped-owner",
+                "amend-scope",
             }:
                 app.require_legacy_execution(args.item_id)
             if args.command == "reconcile":
@@ -224,6 +228,8 @@ def main(argv=None):
                 from .recovery_flow import defer_item
 
                 result = asyncio.run(defer_item(app, args.item_id, args.question))
+            elif args.command == "amend-scope":
+                result = asyncio.run(app.amend_scope(args.item_id, args.input))
             elif args.command == "resume-provider-observation":
                 result = asyncio.run(
                     app.resume_provider_observation(args.operation_id, args.native_session_id)

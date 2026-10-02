@@ -241,6 +241,70 @@ def test_provider_write_requires_bound_transition(config_file, provider):
         CodexAdapter.validate_provider_request(bound, snapshot.repository)
 
 
+def test_provider_write_accepts_only_exact_bound_content_amendment(config_file):
+    from dataclasses import asdict
+    from hashlib import sha256
+    from types import SimpleNamespace
+
+    from backlog_harness.contracts import digest
+    from backlog_harness.evidence import atomic_json, component
+    from backlog_harness.provider import Item, TransitionBlocked
+
+    config, _ = config_file
+    snapshot = load_config(config)
+    content = "Work Item ID: one\nStatus: Running\n"
+    item = Item("one", "backlog/feature-backlog/one.md", "a" * 64, "Running", "owner", 100, content)
+    amended = content + "\nAdditional requirement.\n"
+    prompt = "Apply exact amendment"
+    record = {
+        "kind": "amend-content",
+        "repository": str(snapshot.repository),
+        "stage_operation": "one:provider-amend",
+        "prompt_digest": digest(prompt),
+        "item": asdict(item),
+        "target": "Running",
+        "target_owner": "owner",
+        "target_original_high": 100,
+        "authority": {"decision_digest": "b" * 64},
+        "executing_role": "coordinator",
+        "paths": [item.path],
+        "expected_path": item.path,
+        "admission_input_digest": "c" * 64,
+        "amended_content": amended,
+        "amended_content_sha256": sha256(amended.encode()).hexdigest(),
+    }
+
+    def request(value):
+        identity = digest(value)
+        atomic_json(
+            snapshot.operational_root
+            / "provider-agent-operations"
+            / component(identity)
+            / "requested.json",
+            value,
+        )
+        return SimpleNamespace(
+            snapshot=snapshot,
+            read_only=False,
+            provider_operation=identity,
+            binding=snapshot.binding("coordinator"),
+            operation_id=record["stage_operation"],
+            prompt=prompt,
+        )
+
+    assert CodexAdapter.validate_provider_request(request(record), snapshot.repository) == [item.path]
+    for change, message in [
+        ({"target_owner": "other"}, "lifecycle authority"),
+        ({"target": "Completed"}, "lifecycle authority"),
+        ({"amended_content": content}, "bytes are invalid"),
+        ({"admission_input_digest": "bad"}, "admission is missing"),
+        ({"kind": "other"}, "Unknown provider operation kind"),
+    ]:
+        changed = {**record, **change}
+        with pytest.raises(TransitionBlocked, match=message):
+            CodexAdapter.validate_provider_request(request(changed), snapshot.repository)
+
+
 def test_invocation_reloads_timeout_before_launch(config_file, monkeypatch):
     from backlog_harness.application import Application
 
