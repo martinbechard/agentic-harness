@@ -3503,6 +3503,13 @@ class Application:
                 "the exact-candidate review and checks and identifying their evidence. "
                 "Do not integrate or claim completion before approval."
             )
+        if workflow.get("candidate_approval_required"):
+            prompt += (
+                "\nAfter committing the candidate and obtaining source review, request exact-candidate "
+                "approval with {item_id,candidate,reviewer_session,question:{question_id,text,candidate}} "
+                "unless the persisted approval below already approves this exact candidate. "
+                "Do not deliver. The harness obtains required configured proof before presenting approval."
+            )
         continuation_path = self._stage_path(item_id, "continuation")
         stage = "produce-review"
         if not continuation_path.exists():
@@ -3566,8 +3573,19 @@ class Application:
         value = self.result_json(produced)
         approval_question = bool(
             not retained_delivery
-            and recovery
-            and recovery["packet"].get("preserved_execution", {}).get("candidate_approval_required")
+            and (
+                (
+                    workflow.get("candidate_approval_required")
+                    and isinstance(value.get("question"), dict)
+                    and value["question"].get("candidate")
+                )
+                or bool(
+                    recovery
+                    and recovery["packet"]
+                    .get("preserved_execution", {})
+                    .get("candidate_approval_required")
+                )
+            )
             and value.get("question")
         )
         if value.get("question") and not retained_delivery:
@@ -3578,7 +3596,11 @@ class Application:
             require(
                 not git(candidate_repo, "status", "--porcelain")
                 and git(candidate_repo, "rev-parse", "HEAD")
-                == (recovery["packet"]["candidate"]["head"] if recovery else base),
+                == (
+                    value.get("candidate")
+                    if approval_question
+                    else (recovery["packet"]["candidate"]["head"] if recovery else base)
+                ),
                 "Question boundary contains unapproved source work",
             )
             if not approval_question:
@@ -3650,6 +3672,10 @@ class Application:
             checks,
             preserved=recovery is not None,
         )
+        if workflow.get("proof_requirements"):
+            from .recovery_flow import ensure_configured_proof
+
+            await ensure_configured_proof(self, item_id, candidate, acceptance)
         if approval_question:
             require(
                 value["question"]["candidate"] == candidate, "Approval question candidate differs"
@@ -3662,22 +3688,9 @@ class Application:
                 self.authority(produced, item_id, question=value["question"]),
                 validate=validate_transition,
             )
-        if recovery and recovery["packet"].get("preserved_execution", {}).get(
-            "candidate_approval_required"
-        ):
-            approved = (
-                json.loads(continuation_path.read_text()).get("approval", {})
-                if continuation_path.exists()
-                else {}
-            )
-            require(
-                approved.get("item_id") == item_id
-                and approved.get("disposition") == "approve"
-                and approved.get("question", {}).get("candidate") == candidate
-                and approved.get("answer", {}).get("digest")
-                == digest(approved.get("answer", {}).get("text")),
-                "Exact preserved-candidate approval is required before delivery",
-            )
+        from .recovery_flow import verify_candidate_approval
+
+        verify_candidate_approval(self, item_id, candidate)
         if not retained_delivery:
             await self.enforce_guard(item_id)
         from .delivery import integrate

@@ -98,3 +98,24 @@ The installed Completed replay returned without adding or changing any of 78 inv
 
 
 The follow-on queue run returned an explicit blocked report. Read-only revalidation of two retained preparation responses found supported parameters accompanied by explanatory metadata and additional required gates. The narrow correction separates executable parameters from bound explanatory evidence and rejects unsupported acceptance gates before dispatch. Independent source review accepts that boundary with 51 focused tests. The exact a42 installed wheel passes three end-to-end regressions: metadata-only preparation reaches Completed, both retained gate packets stop before producer/provider effects, and replay adds zero calls with unchanged receipts. This correction does not implement browser/print/approval enforcement or remove existing permission denials.
+
+Version `0.1.0a43` adds explicitly configured browser/print proof requirements using
+existing confined artifact collection and native independent review. Delivery
+checks every requirement's result, artifact integrity, substantive review,
+candidate identity and any required exact-candidate approval. Independent source
+review accepted the final changes. Focused verification includes 56 preparation,
+24 configured-proof, 43 configuration/native, and 48 legacy/graph/recovery tests;
+these sets are not presented as a deduplicated suite total. Four installed public
+workflow cases prove valid delivery, three invalid-evidence stops, and replay
+without new calls or modified receipts. One negative assertion was corrected to
+match the actual rejection wording, then that case passed separately.
+
+The installed release matches the tested production modules byte-for-byte except
+for the verified version-only replacement. Release wheel SHA-256 is
+`adda812a1320f86bda1114530f1b6669832a88667503999a21b637e5a825e000`;
+the manifest is retained under `.agent-ops/pre-backlog-a43`. No live item was
+enabled. [The coverage assessment](dev-methodology-proof-coverage.md) preserves
+the dashboard product-target question and portrait pre-implementation design
+review gap. Graph execution rejects configured candidate approval before dispatch;
+the existing legacy route supports it. Prior browser/server denials, historical
+usage uncertainty, and immutable receipts remain effective.

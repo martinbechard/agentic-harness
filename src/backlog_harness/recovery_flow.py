@@ -1181,3 +1181,258 @@ async def authorize_retained_delivery(app, item_id, authorization_path):
         authorization["answer"],
         retained_delivery=registration,
     )
+
+
+def validate_requirement_results(contract, value):
+    """Check the complete configured evidence set; visual correctness belongs to review."""
+    expected = {row["id"] for row in contract["requirements"]}
+    rows = value.get("requirement_results")
+    require(
+        isinstance(rows, list)
+        and all(isinstance(row, dict) for row in rows)
+        and len(rows) == len(expected)
+        and {row.get("id") for row in rows} == expected,
+        "Proof must report every configured requirement exactly once",
+    )
+    artifacts = value.get("artifacts", [])
+    for row in rows:
+        require(
+            set(row) == {"id", "outcome", "artifacts"}
+            and row["outcome"] == "PASS"
+            and isinstance(row["artifacts"], list)
+            and bool(row["artifacts"])
+            and all(ref in artifacts for ref in row["artifacts"]),
+            "Proof requirement failed or supporting artifact is unbound: " + str(row.get("id")),
+        )
+
+
+def validate_requirement_review(contract, proof_result, proof, review):
+    require(
+        review.get("proof_result_digest") == digest(proof_result)
+        and review.get("requirements_digest") == digest(contract),
+        "Independent proof review binding differs",
+    )
+    expected = {row["id"]: row for row in proof["requirement_results"]}
+    rows = review.get("requirement_assessments")
+    require(
+        isinstance(rows, list)
+        and all(isinstance(row, dict) for row in rows)
+        and len(rows) == len(expected)
+        and {row.get("id") for row in rows} == set(expected),
+        "Independent proof review omitted or duplicated a requirement",
+    )
+    for row in rows:
+        require(
+            set(row) == {"id", "verdict", "assessment", "artifacts"}
+            and row["verdict"] == "ACCEPT"
+            and isinstance(row["assessment"], str)
+            and bool(row["assessment"].strip())
+            and isinstance(row["artifacts"], list)
+            and bool(row["artifacts"])
+            and all(ref in expected[row["id"]]["artifacts"] for ref in row["artifacts"]),
+            "Independent proof review lacks supported acceptance: " + str(row.get("id")),
+        )
+
+
+def configured_proof_request(app, item_id, candidate, acceptance):
+    workflow = app.item_workflow(item_id)
+    contract = plain(workflow.get("proof_requirements"))
+    if not contract:
+        return None
+    preparation_path = app._stage_path(item_id, "preparation")
+    require(preparation_path.exists(), "Configured proof requires original preparation evidence")
+    preparation = json.loads(preparation_path.read_text())
+    require(
+        contract["provider_revision"] == preparation["item"]["revision"]
+        and contract["preparation_digest"] == digest(preparation["decision"]),
+        "Configured proof differs from original preparation",
+    )
+    binding = app.config.binding("orchestrator")
+    require(
+        app.config.data["profiles"][binding.profile_name].get("artifact_output") is True,
+        "Configured proof requires artifact_output permission",
+    )
+    return {
+        "item_id": item_id,
+        "revision": contract["provider_revision"],
+        "owner": acceptance["session"]["session_id"],
+        "candidate": candidate,
+        "binding": asdict(binding),
+        "proof_requirements": contract,
+        "requirements_digest": digest(contract),
+        "preparation_receipt_digest": digest(preparation),
+    }
+
+
+async def ensure_configured_proof(app, item_id, candidate, acceptance):
+    """Reuse confined artifact production and a fresh native review for explicit visual proof."""
+    request = configured_proof_request(app, item_id, candidate, acceptance)
+    if request is None:
+        return
+    saved = app._stage_path(item_id, "configured-proof-request")
+    if saved.exists():
+        require(json.loads(saved.read_text()) == request, "Configured proof request changed")
+    else:
+        atomic_json(saved, request, exclusive=True)
+    stage = "configured-proof-" + digest(request)
+    preparation = app._stage_path(item_id, "preparation").read_text()
+    prompt = (
+        "Collect only the explicitly required browser/print evidence for this exact candidate. "
+        "Source and provider are read-only; use the invocation artifact-output directory only. "
+        "Requirements do not grant browser/server permissions: preserve all actual denials. "
+        "If unavailable return blocked with concrete blockers, never substitute static checks. "
+        "Return JSON {item_id,candidate,status:evidence-ready|blocked,artifacts:[{path,sha256}],"
+        "requirement_results:[{id,outcome:PASS|FAIL,artifacts:[{path,sha256}]}],blockers:[]}. "
+        "Every configured requirement needs one result and its actual supporting captures. "
+        "Do not change source, commit, deliver, or mutate lifecycle. Bound request: "
+        + json.dumps(request)
+        + "\nOriginal preparation receipt: "
+        + preparation
+    )
+    if not app._stage_path(item_id, stage).exists():
+        await app.enforce_guard(item_id)
+    result = await app.invoke(
+        item_id, stage, "orchestrator", prompt, read_only=False, purpose="proof"
+    )
+    require(
+        git(app.candidate_repository(item_id), "rev-parse", "HEAD") == candidate
+        and not git(app.candidate_repository(item_id), "status", "--porcelain"),
+        "Candidate changed during configured proof",
+    )
+    proof = validate_artifact_proof(app, item_id, stage, request, result, acceptance)
+    require(
+        proof["status"] == "evidence-ready",
+        "Configured proof blocked: " + json.dumps(proof.get("blockers")),
+    )
+    validate_requirement_results(request["proof_requirements"], proof)
+    review_stage = "configured-proof-review-" + digest(result)
+    review_prompt = (
+        "Arrange one fresh native read-only child review using fork_turns=none or fork_context=false. "
+        "Do not repeat source production, proof collection, or source review. Give the reviewer the "
+        "exact candidate, full original preparation, configured requirements and proof artifacts. "
+        "The reviewer must inspect supporting files and assess substantive acceptance for EVERY "
+        "requirement. Return child JSON {candidate,verdict:ACCEPT|REJECT,unresolved_findings:[],"
+        "proof_result_digest,requirements_digest,requirement_assessments:[{id,verdict:ACCEPT|REJECT,"
+        "assessment:<substantive reason>,artifacts:[{path,sha256}]}]}. Wait for that reviewer. "
+        "Return only JSON {item_id,candidate,proof_reviewer_session:<native child identity>}. "
+        "No delivery authority. Bound request: "
+        + json.dumps(request)
+        + "\nProof result digest: "
+        + digest(result)
+        + "\nProof result: "
+        + json.dumps(proof)
+        + "\nOriginal preparation receipt: "
+        + preparation
+    )
+    if not app._stage_path(item_id, review_stage).exists():
+        await app.enforce_guard(item_id)
+    reviewed = await app.invoke(
+        item_id,
+        review_stage,
+        "orchestrator",
+        review_prompt,
+        session=app.session(acceptance),
+        read_only=True,
+    )
+    value = app.result_json(reviewed)
+    require(
+        value.get("item_id") == item_id and value.get("candidate") == candidate,
+        "Proof review response differs",
+    )
+    from .native_evidence import verify_native_review
+
+    review = verify_native_review(
+        reviewed["session"]["native_session_id"],
+        value.get("proof_reviewer_session"),
+        candidate,
+        app.native_sessions_root(reviewed["binding"]),
+    )
+    validate_requirement_review(request["proof_requirements"], result, proof, review)
+    record = {
+        "request_digest": digest(request),
+        "result_digest": digest(result),
+        "review_result": reviewed,
+        "review": review,
+    }
+    path = app._stage_path(item_id, "configured-proof-acceptance")
+    if path.exists():
+        previous = json.loads(path.read_text())
+        # Native parent transcripts can grow on resume; their current verification is decisive.
+        require(
+            previous["request_digest"] == record["request_digest"]
+            and previous["result_digest"] == record["result_digest"]
+            and previous["review_result"] == reviewed,
+            "Configured proof acceptance changed",
+        )
+    else:
+        atomic_json(path, record, exclusive=True)
+
+
+def verify_configured_proof(app, item_id, candidate):
+    """Delivery always rechecks files and native acceptance, including recovery/integration."""
+    if not app.item_workflow(item_id).get("proof_requirements"):
+        return
+    acceptance = json.loads(app._stage_path(item_id, "accept").read_text())
+    request = configured_proof_request(app, item_id, candidate, acceptance)
+    saved = app._stage_path(item_id, "configured-proof-request")
+    require(
+        saved.exists() and json.loads(saved.read_text()) == request,
+        "Required configured candidate proof is missing or stale",
+    )
+    stage = "configured-proof-" + digest(request)
+    result_path = app._stage_path(item_id, stage)
+    require(result_path.exists(), "Configured proof result is missing")
+    result = json.loads(result_path.read_text())
+    app.validate_invocation_result(result)
+    proof = validate_artifact_proof(app, item_id, stage, request, result, acceptance)
+    require(proof["status"] == "evidence-ready", "Configured proof is blocked")
+    validate_requirement_results(request["proof_requirements"], proof)
+    path = app._stage_path(item_id, "configured-proof-acceptance")
+    require(path.exists(), "Required configured proof acceptance is missing")
+    saved = json.loads(path.read_text())
+    require(
+        saved["request_digest"] == digest(request) and saved["result_digest"] == digest(result),
+        "Configured proof acceptance binding differs",
+    )
+    reviewed = saved["review_result"]
+    app.validate_invocation_result(reviewed)
+    value = app.result_json(reviewed)
+    require(
+        value.get("item_id") == item_id and value.get("candidate") == candidate,
+        "Proof review response differs",
+    )
+    from .native_evidence import verify_native_review
+
+    review = verify_native_review(
+        reviewed["session"]["native_session_id"],
+        value.get("proof_reviewer_session"),
+        candidate,
+        app.native_sessions_root(reviewed["binding"]),
+    )
+    validate_requirement_review(request["proof_requirements"], result, proof, review)
+
+
+def verify_candidate_approval(app, item_id, candidate, *, include_recovery=True):
+    workflow = app.item_workflow(item_id)
+    recovery = app.recovery_record(item_id) if include_recovery else None
+    required = workflow.get("candidate_approval_required") or bool(
+        recovery
+        and recovery["packet"].get("preserved_execution", {}).get("candidate_approval_required")
+    )
+    if not required:
+        return
+    path = app._stage_path(item_id, "continuation")
+    approved = json.loads(path.read_text()).get("approval", {}) if path.exists() else {}
+    require(
+        approved.get("item_id") == item_id
+        and approved.get("disposition") == "approve"
+        and approved.get("question", {}).get("candidate") == candidate
+        and isinstance(approved.get("answer", {}).get("text"), str)
+        and bool(approved["answer"]["text"].strip())
+        and approved.get("answer", {}).get("digest") == digest(approved["answer"]["text"]),
+        (
+            "Exact preserved-candidate approval is required before delivery"
+            if recovery
+            else "Exact candidate approval is required before delivery"
+        ),
+    )

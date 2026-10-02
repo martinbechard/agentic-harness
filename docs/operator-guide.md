@@ -130,6 +130,31 @@ are rejected. Enabling output changes the permission fingerprint and cannot sile
 resume an existing session.
 
 For a preserved Running item whose existing bounded continuation returned blocked,
+For ordinary items with retained preparation, an explicitly reviewed
+`workflow.items.<id>.proof_requirements` selection can require visual proof before
+delivery. It contains `provider_revision`, `preparation_digest` (the complete saved
+decision envelope digest), and a nonempty `requirements` list. Each requirement
+has a unique `id`, `canonical_reference`, `evidence_kind` (`browser` or `print`),
+and `acceptance_text`. Independently review coverage of the full preparation
+packet before enabling this selection; the harness does not interpret free-form
+gate text as a workflow. Existing scope and check authority must remain unchanged.
+
+With artifact output enabled, the harness collects confined proof once and asks
+the owning agent to arrange a fresh native child review. Each requirement needs
+supporting artifact hashes, a passing result, and an independent accepted
+assessment bound to the candidate, proof result and complete requirement set.
+Delivery revalidates these bindings and artifact contents. Missing, altered or
+stale proof stops delivery; a changed integration candidate cannot reuse it.
+Existing browser/server restrictions still apply. These mechanics establish
+evidence integrity and reviewer identity; the reviewer judges visual acceptance.
+
+Set `candidate_approval_required: true` only when the item's authority requires
+explicit approval of the exact candidate. The legacy workflow uses the existing
+operator question/answer route; the graph workflow currently rejects this option
+before dispatch. A normal clarification answer does not grant candidate approval.
+The actual dev-methodology selections remain disabled pending their separate
+[coverage review](verification/dev-methodology-proof-coverage.md).
+
 `run-proof ITEM --instruction /absolute/proof.txt` runs one separate proof invocation.
 Add `--prepare-only` to persist the exact invocation intent and report its artifact
 directory without launching a process or granting access. This makes a proposed

@@ -114,6 +114,11 @@ def integrate(
                 record["primary"],
             )
             review, checks = integrated_authority["review"], integrated_authority["checks"]
+        if hasattr(app, "item_workflow"):
+            from .recovery_flow import verify_candidate_approval, verify_configured_proof
+
+            verify_configured_proof(app, item_id, candidate)
+            verify_candidate_approval(app, item_id, candidate, include_recovery=False)
         untracked = preserved_untracked(primary)
         changed = validate_candidate(
             candidate_repo,

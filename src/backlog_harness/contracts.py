@@ -346,10 +346,51 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
         for item_id, selected in items.items():
             _text(item_id, "item id")
             _object(selected, "item workflow")
-            if set(selected) - {"allowed_paths", "checks", "engine"}:
+            if set(selected) - {
+                "allowed_paths",
+                "checks",
+                "engine",
+                "proof_requirements",
+                "candidate_approval_required",
+            }:
                 raise ConfigError(
-                    "Item workflow may only override allowed_paths, checks and engine"
+                    "Item workflow may only override allowed_paths, checks, engine, proof_requirements and candidate_approval_required"
                 )
+            if (
+                "candidate_approval_required" in selected
+                and type(selected["candidate_approval_required"]) is not bool
+            ):
+                raise ConfigError("candidate_approval_required must be boolean")
+            if "proof_requirements" in selected:
+                proof = _object(selected["proof_requirements"], "proof_requirements")
+                if set(proof) != {"provider_revision", "preparation_digest", "requirements"}:
+                    raise ConfigError(
+                        "Proof requirements need exact preparation binding and requirements"
+                    )
+                for field in ("provider_revision", "preparation_digest"):
+                    _text(proof.get(field), "proof_requirements." + field)
+                requirements = proof["requirements"]
+                if not isinstance(requirements, list) or not requirements:
+                    raise ConfigError("Proof requirements must be nonempty")
+                identifiers = set()
+                for requirement in requirements:
+                    if not isinstance(requirement, dict) or set(requirement) != {
+                        "id",
+                        "canonical_reference",
+                        "evidence_kind",
+                        "acceptance_text",
+                    }:
+                        raise ConfigError("Invalid explicit proof requirement")
+                    for field in ("id", "canonical_reference", "acceptance_text"):
+                        _text(requirement[field], "proof requirement " + field)
+                    if requirement["id"] in identifiers or requirement["evidence_kind"] not in {
+                        "browser",
+                        "print",
+                    }:
+                        raise ConfigError(
+                            "Proof requirement id must be unique and evidence_kind browser or print"
+                        )
+                    identifiers.add(requirement["id"])
             if selected.get("engine", "legacy") not in {"legacy", "langgraph"}:
                 raise ConfigError("Item workflow engine must be legacy or langgraph")
             if not isinstance(selected.get("allowed_paths"), list) or not selected["allowed_paths"]:

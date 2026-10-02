@@ -66,6 +66,10 @@ def build_graph(app, checkpointer):
         app.execution_policy(item_id)
         item = app.provider.item(item_id)
         require(
+            not app.item_workflow(item_id).get("candidate_approval_required"),
+            "Graph pilot does not support candidate approval; select legacy engine before dispatch",
+        )
+        require(
             item.state == "Ready" and item.original_high is not None,
             "Graph pilot requires fresh Ready item with known estimate",
         )
@@ -301,7 +305,7 @@ def build_graph(app, checkpointer):
             ),
         }
 
-    def review(state):
+    async def review(state):
         produced = state["produced"]
         value = app.result_json(produced)
         review = verify_native_review(
@@ -321,6 +325,12 @@ def build_graph(app, checkpointer):
             review,
             checks,
         )
+        if state["assignment"]["workflow"].get("proof_requirements"):
+            from .recovery_flow import ensure_configured_proof
+
+            await ensure_configured_proof(
+                app, state["item_id"], state["candidate"], state["acceptance"]
+            )
         return {"review": review, "checks": checks}
 
     async def deliver(state):

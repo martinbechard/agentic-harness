@@ -854,3 +854,82 @@ def test_preparation_metadata_invalid_fields_block(field, value):
             {"allowed_paths": ["answer.py"], "checks": [["git", "diff", "--check"]], field: value},
             {"completion": "main-branch"},
         )
+
+
+@pytest.mark.parametrize("fault", [None, "revision", "decision", "old_checks", "old_scope"])
+def test_explicit_proof_selection_preserves_frozen_preparation(config_file, monkeypatch, fault):
+    from backlog_harness.contracts import load_config
+    from backlog_harness.estimation import configured_workflow, prepared_workflow
+
+    config, data = config_file
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": [["git", "diff", "--check"]],
+    }
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(
+        "backlog_harness.estimation.validate_preparation_invocation", lambda *a: None
+    )
+    decision = {
+        "role": "coordinator",
+        "text": json.dumps(
+            {
+                "item_id": "one",
+                "provider_revision": "revision",
+                "workflow": {
+                    "allowed_paths": ["answer.py"],
+                    "checks": [["git", "diff", "--check"]],
+                    "required_gates": ["Independent browser evidence for the candidate"],
+                },
+            }
+        ),
+    }
+    path = app._stage_path("one", "preparation")
+    atomic_json(
+        path,
+        {
+            "item": {"revision": "revision"},
+            "decision": decision,
+            "workflow_config_digest": digest(configured_workflow(app.config, "one")),
+            "invocation_config_digest": app.config.file_digest,
+        },
+    )
+    original = path.read_bytes()
+    contract = {
+        "provider_revision": "revision",
+        "preparation_digest": digest(decision),
+        "requirements": [
+            {
+                "id": "browser",
+                "canonical_reference": "item-one#acceptance",
+                "evidence_kind": "browser",
+                "acceptance_text": "Readable candidate",
+            }
+        ],
+    }
+    selected = {"allowed_paths": data["workflow"]["allowed_paths"], "proof_requirements": contract}
+    if fault == "revision":
+        contract["provider_revision"] = "other"
+    elif fault == "decision":
+        contract["preparation_digest"] = "0" * 64
+    elif fault == "old_checks":
+        selected["checks"] = [["git", "status"]]
+    elif fault == "old_scope":
+        selected["allowed_paths"] = ["unrelated.py"]
+    data["workflow"]["items"] = {"one": selected}
+    config.write_text(yaml.safe_dump(data))
+    current = load_config(config)
+    if fault:
+        with pytest.raises(TransitionBlocked):
+            prepared_workflow(app, "one", current)
+    else:
+        first = prepared_workflow(app, "one", current)
+        assert prepared_workflow(app, "one", current) == first
+        assert first["proof_requirements"] == contract
+        assert first["preparation_evidence"]["decision_digest"] == digest(decision)
+        assert first["preparation_evidence"]["metadata"]["required_gates"] == [
+            "Independent browser evidence for the candidate"
+        ]
+    assert path.read_bytes() == original
