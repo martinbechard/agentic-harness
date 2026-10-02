@@ -69,3 +69,13 @@ Design authority accepts truthful gap preservation and fail-closed advancement. 
 ## Release boundary
 
 The executable route is file-provider/main-branch delivery with explicit coordination `none`, SOLO or authorized MULTITASK, independent candidate clones, and Codex 0.159.2. Claim-helper projects and other production CLI adapters remain unsupported and fenced. Real delivery evidence remains bound to its historical source; current corrections are established by deterministic regressions, independent review, installed content matching, and zero-invocation recovery replay. See [release-acceptance.json](release-acceptance.json) for current release status and [progress.md](progress.md) for the final documentation verdict.
+
+
+## Upgrade Recovery Evidence, 2026-10-01
+
+The dev-methodology adoption follow-up adds an explicit upgrade boundary: an already completed integration review must remain reusable after native-receipt verifier corrections. Version `0.1.0a41` preserves the original integration prompt byte-for-byte. `test_frozen_pre_fix_review_request_replays_without_new_invocation` and its changed-request case cover retained request identity and rejection of changed obligations; the focused review suite passes 33 tests. Marked native reviews require the retained invocation request, exact native session/turn/transcript identity, candidate, verdict, and nonempty supporting evidence.
+
+The exact installed a41 artifact additionally replays the actual pre-fix request with adapter execution forbidden, returns invocation `5c556b5c-a3c1-43c9-8540-13eee3561371`, rejects an altered request, and preserves all 62 prior receipts. Evidence is retained in `.agent-ops/pre-backlog-a41/installed-retained-request.json` and its executable verification script. The public reconciliation command then succeeds without a replacement review. This establishes upgrade recovery; provider closure is a separate protected transition.
+
+
+`tests/test_system_retained_cache_delivery.py` adds three installed-wheel cache regressions (all passed in 44.92 seconds). An unrecognizable legacy observer with missing provenance incurs one refresh. After that refresh, source-only advancement, model/effort edits, integration reconciliation, Completed delivery, and replay add zero inventory observations. Missing capability metadata in a current cache is recovered from the exact saved invocation without a new call; changed native-tool configuration requires one new observation and then reuses it. These checks do not reconstruct missing historical semantic provenance or prove the actual live scan was substantively necessary.
