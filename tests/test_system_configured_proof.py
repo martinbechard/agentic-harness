@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from system_support import InstalledHarness, install_wheel
+from system_support import InstalledHarness
 
 
 @pytest.fixture(scope="session")
-def configured_proof_python(tmp_path_factory):
-    return install_wheel(tmp_path_factory)
+def configured_proof_python(installed_package_python):
+    return installed_package_python
 
 
 def digest(value):
@@ -30,7 +30,6 @@ def calls(root):
         "invalid",
         "generic",
         "verification-valid",
-        "verification-graph",
         "verification-missing",
         "verification-reject",
         "verification-tamper",
@@ -49,10 +48,6 @@ def test_installed_configured_proof_completion_and_replay(configured_proof_pytho
         "allowed_roots": ["answer.txt"],
         "check_commands": config["workflow"]["checks"],
     }
-    if fault == "verification-graph":
-        config["workflow"]["items"] = {
-            "item-one": {"engine": "langgraph", "allowed_paths": ["answer.txt"]}
-        }
     harness.config_path.write_text(yaml.safe_dump(config))
     packet = {
         "allowed_paths": ["answer.txt"],
@@ -87,16 +82,6 @@ def test_installed_configured_proof_completion_and_replay(configured_proof_pytho
             },
         }
     }
-    if fault == "verification-graph":
-        config["workflow"]["items"]["item-one"].update(
-            engine="langgraph",
-            design_review={
-                "provider_revision": saved["item"]["revision"],
-                "preparation_digest": digest(saved["decision"]),
-                "canonical_reference": "item-one#design",
-                "acceptance_text": "Independently review design before implementation",
-            },
-        )
     if fault and fault.startswith("verification-"):
         config["workflow"]["items"]["item-one"]["proof_requirements"]["verification_required"] = (
             True
@@ -105,30 +90,9 @@ def test_installed_configured_proof_completion_and_replay(configured_proof_pytho
     if fault:
         harness.env["CONFIGURED_PROOF_FAULT"] = fault
     result = harness.run("run-item", "item-one")
-    if fault in (None, "verification-valid", "verification-graph"):
+    if fault in (None, "verification-valid"):
         assert result.returncode == 0, result.stdout + result.stderr
         assert (harness.repo / "answer.txt").read_text() == "done\n"
-        if fault == "verification-graph":
-            inputs = json.loads(
-                next(tmp_path.rglob("acceptance-verification-inputs.json")).read_text()
-            )
-            assert {"design-acceptance", "accepted-design"} <= inputs["receipts"].keys()
-            assert next(tmp_path.rglob("design-acceptance.json")).is_file()
-            prompts = [
-                json.loads(line)["prompt"]
-                for line in (tmp_path / "agent-calls.jsonl").read_text().splitlines()
-            ]
-            design_index = next(
-                i
-                for i, p in enumerate(prompts)
-                if "Prepare only a preimplementation design artifact" in p
-            )
-            source_index = next(
-                i
-                for i, p in enumerate(prompts)
-                if "Implement only the assigned candidate paths" in p
-            )
-            assert design_index < source_index
         assert (
             "Status: Completed" in next((harness.repo / "backlog").rglob("item-one.md")).read_text()
         )

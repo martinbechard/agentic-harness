@@ -311,3 +311,45 @@ def test_ready_recovery_rejects_malformed_execution_receipt(tmp_path, defect):
     preserved["receipt"]["sha256"] = sha256(path.read_bytes()).hexdigest()
     with pytest.raises(TransitionBlocked):
         validate_packet(packet, item, repository)
+
+
+@pytest.mark.parametrize(
+    "fault", ["uuid", "jsonl", "initial-read", "final-read", "non-json", "unrelated-base"]
+)
+def test_invalid_or_disappearing_recovery_evidence_blocks_without_mutation(
+    tmp_path, monkeypatch, fault
+):
+    packet, item, repository, runtime = _recovery_case(tmp_path)
+    head = git(repository, "rev-parse", "HEAD")
+    if fault == "uuid":
+        packet["runtime_records"][0]["native_session_id"] = "not-a-uuid"
+        message = "Invalid native session ID"
+    elif fault == "jsonl":
+        runtime.write_bytes(b"invalid json\n")
+        packet["runtime_records"][0]["sha256"] = sha256(runtime.read_bytes()).hexdigest()
+        message = "not valid JSONL"
+    elif fault == "non-json":
+        packet["remaining_high"] = float("nan")
+        message = "JSON-compatible"
+    elif fault == "unrelated-base":
+        tree = git(repository, "rev-parse", "HEAD^{tree}")
+        packet["candidate"]["base"] = git(repository, "commit-tree", tree, "-m", "Unrelated root")
+        message = "not an ancestor"
+    else:
+        read = Path.read_bytes
+        calls = 0
+
+        def disappearing(path):
+            nonlocal calls
+            if path == runtime:
+                calls += 1
+                if calls == (1 if fault == "initial-read" else 2):
+                    raise OSError("evidence became unreadable")
+            return read(path)
+
+        monkeypatch.setattr(Path, "read_bytes", disappearing)
+        message = "Cannot read runtime" if fault == "initial-read" else "Evidence changed during"
+    with pytest.raises(TransitionBlocked, match=message):
+        validate_packet(packet, item, repository)
+    assert git(repository, "rev-parse", "HEAD") == head
+    assert git(repository, "status", "--porcelain") == ""

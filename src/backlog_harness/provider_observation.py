@@ -1,4 +1,4 @@
-"""Pure fingerprints for provider meaning versus native discovery capabilities.
+"""Provider interpretation fingerprints and retained observation compatibility.
 
 The caller resolves source bytes and supplies their hashes. These helpers neither
 read files nor update caches. Backlog revision/manifest validation remains a
@@ -15,13 +15,10 @@ from .contracts import digest
 MANAGEMENT_SKILLS = (
     "manage-work-items",
     "manage-work-items-file",
-    "resource-claim",
-    "resource-claim-helper",
-    "resource-claim-helper-mcp",
 )
 
 
-LEGACY_PROVIDER_OBSERVATION_PROMPT = (
+_PROVIDER_INVENTORY_PROMPT = (
     "Observe the authoritative file provider using its selected management skills. "
     "Do not mutate or dispatch. Classify groups and historical archive debt; return only "
     "actual work items, preserving canonical ownership and unknown estimates. "
@@ -44,20 +41,9 @@ LEGACY_PROVIDER_OBSERVATION_PROMPT = (
     "Do not copy document contents: the harness reads the referenced bytes and computes "
     "revision hashes. Classify every existing backlog Markdown file "
     "exactly once as an item or non_item with a reason. Omit Future Ideas entirely. "
-    "If resource claims are selected, report helper:{discovery:native_tool_catalog, "
-    "available:boolean,tools:[exact_exposed_tool_names]} based on tools actually exposed "
-    "in this invocation. Do not infer availability from configuration text and do not "
-    "invoke any claim operation as a probe. Report unavailable when unproven."
 )
 
-# This exact predecessor identifies the one compatible cache contract that policy
-# reassessment may upgrade after it replaces invalid authority. Other observation
-# contract changes still require a complete provider refresh.
-LEGACY_POLICY_VALIDATOR_DIGEST = (
-    "49aa3d1eded81bc201330027f2211e626a5b9b8fb267559e8eae9b5037593730"
-)
-
-PROVIDER_OBSERVATION_PROMPT = LEGACY_PROVIDER_OBSERVATION_PROMPT + (
+PROVIDER_OBSERVATION_PROMPT = _PROVIDER_INVENTORY_PROMPT + (
     " Harness operational outputs and cached projections, including run.json, report "
     "runtime state but never establish mode, admission, or coordination authority. "
     "Preserve an explicit pause or stop from canonical authority; do not infer one from "
@@ -137,24 +123,6 @@ def effective_skill_sources(current):
     return {name: source_digest(root / name / "SKILL.md") for name in sorted(names)}
 
 
-def helper_capability_sources(current):
-    """Return helper-relevant CLI/auth/tool inputs without model or effort selection."""
-    binding = current.binding("coordinator")
-    cli = current.data["agent_clis"][binding.cli_name]
-    options = cli.get("adapter_options", {})
-    config_path = Path(binding.auth_context) / "config.toml"
-    return {
-        "origin": list(binding.origin),
-        "permission_digest": binding.permission_digest,
-        "load_user_config": bool(options.get("load_user_config", False)),
-        "user_config_capability_digest": (
-            user_config_semantic_digest(config_path)
-            if options.get("load_user_config", False)
-            else None
-        ),
-    }
-
-
 def _sources(values, label):
     if not isinstance(values, dict) or any(
         not isinstance(name, str)
@@ -216,54 +184,3 @@ def semantic_observation_fingerprint(
             "schema": schema,
         }
     )
-
-
-def capability_fingerprint(current_binding, semantic_fingerprint, capability_sources=None):
-    """Discovery stays bound to the exact full binding, never just semantic reuse."""
-    if not current_binding.relevant_digest or not semantic_fingerprint:
-        raise ValueError("Current full binding and semantic fingerprint are required")
-    sources = capability_sources or {
-        "origin": list(current_binding.origin),
-        "permission_digest": current_binding.permission_digest,
-    }
-    return digest(
-        {
-            "version": "provider-capability-v1",
-            "binding": sources,
-            "observation": semantic_fingerprint,
-        }
-    )
-
-
-def migrate_legacy_fingerprint(
-    cached_fingerprint,
-    current,
-    current_binding,
-    semantic_fingerprint,
-    *,
-    policy_validated,
-    source_validated,
-):
-    """Return a migration value only for an exactly current historical formula.
-
-    Validation flags are assertions from the owning provider validator, not a
-    substitute for validation. This cannot migrate a cache produced under an old
-    binding after that binding changes. No capability receipt is migrated here.
-    """
-    if policy_validated is not True or source_validated is not True:
-        return None
-    old_full = digest(
-        [
-            str(current.repository),
-            current.data.get("methodology_root"),
-            current.data.get("provider"),
-            current.data.get("provider_interaction"),
-            current_binding.relevant_digest,
-        ]
-    )
-    older_config = digest([current.file_digest, current_binding.relevant_digest])
-    if cached_fingerprint not in {old_full, older_config}:
-        return None
-    if not semantic_fingerprint:
-        raise ValueError("Semantic fingerprint is required")
-    return semantic_fingerprint

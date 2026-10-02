@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import inspect
 import json
 import os
 import re
@@ -79,34 +78,21 @@ class Application:
             semantic_observation_fingerprint,
         )
 
-        schema = {
-            **PROVIDER_OBSERVATION_SCHEMA,
-            "validators": {
-                "inventory": digest(inspect.getsource(AgentProvider.validate_inventory)),
-                "policy": digest(inspect.getsource(AgentProvider.validate_policy)),
-                "acceptance": digest(inspect.getsource(Application._accept_provider_observation)),
-            },
-        }
+        # The explicit contract version changes when interpretation changes.
+        # Wording and validator refactors do not require another inventory call;
+        # every reused inventory still passes the current validators.
         return semantic_observation_fingerprint(
             current,
-            prompt=PROVIDER_OBSERVATION_PROMPT,
-            schema=schema,
+            prompt=PROVIDER_OBSERVATION_SCHEMA["version"],
+            schema=PROVIDER_OBSERVATION_SCHEMA,
             instruction_sources=effective_instruction_sources(current),
             skill_sources=effective_skill_sources(current),
-        )
-
-    @staticmethod
-    def provider_capability_digest(current, observer):
-        from .provider_observation import capability_fingerprint, helper_capability_sources
-
-        return capability_fingerprint(
-            current.binding("coordinator"), observer, helper_capability_sources(current)
         )
 
     def _validate_cached_provider_observation(
         self, cached, revision, manifest, *, require_revision=True
     ):
-        """Prove retained source, inventory and policy before cache reuse or migration."""
+        """Prove retained source, inventory and policy before cache reuse."""
         require(
             (not require_revision or cached.get("source_revision") == revision)
             and cached.get("source_manifest") == manifest,
@@ -137,45 +123,18 @@ class Application:
             revision = self.provider.source_revision()
             current = load_config(self.config_path)
             observer = self.provider_observer_digest(current)
-            capability = self.provider_capability_digest(current, observer)
             manifest = self.provider.source_manifest()
             if self.provider.cache_path.exists():
                 cached = json.loads(self.provider.cache_path.read_text())
-                if cached.get("observer_digest") != observer:
-                    from .provider_observation import migrate_legacy_fingerprint
-
-                    migrated = None
-                    try:
-                        self._validate_cached_provider_observation(cached, revision, manifest)
-                        migrated = migrate_legacy_fingerprint(
-                            cached.get("observer_digest"),
-                            current,
-                            current.binding("coordinator"),
-                            observer,
-                            policy_validated=True,
-                            source_validated=True,
-                        )
-                    except (KeyError, TypeError, ValueError, OSError, TransitionBlocked):
-                        # An ambiguous legacy cache is never rewritten as current evidence.
-                        migrated = None
-                    if migrated is not None:
-                        cached.update(
-                            observer_digest=migrated,
-                            capability_digest=capability,
-                            observer_binding_digest=current.binding("coordinator").relevant_digest,
-                        )
-                        atomic_json(self.provider.cache_path, cached)
                 if (
                     cached["source_revision"] == revision
                     and cached.get("observer_digest") == observer
-                    and cached.get("capability_digest") == capability
                 ):
                     self._validate_cached_provider_observation(cached, revision, manifest)
                     return
                 if (
                     cached.get("source_manifest") == manifest
                     and cached.get("observer_digest") == observer
-                    and cached.get("capability_digest") == capability
                 ):
                     self._validate_cached_provider_observation(
                         cached, revision, manifest, require_revision=False
@@ -224,9 +183,7 @@ class Application:
         path = Path(observation)
         expected = self._stage_path("provider-inventory", stage)
         require(
-            path.is_file()
-            and not path.is_symlink()
-            and path.resolve() == expected.resolve(),
+            path.is_file() and not path.is_symlink() and path.resolve() == expected.resolve(),
             "Retained provider observation does not match the current source and observer",
         )
         result = json.loads(path.read_text())
@@ -245,8 +202,7 @@ class Application:
             and not invocation_path.is_symlink()
             and invocation_path.resolve().is_relative_to(self.root.resolve())
             and all(
-                (invocation_path / name).is_file()
-                and not (invocation_path / name).is_symlink()
+                (invocation_path / name).is_file() and not (invocation_path / name).is_symlink()
                 for name in required
             ),
             "Retained provider observation terminal evidence is incomplete",
@@ -266,8 +222,7 @@ class Application:
             and result.get("request_digest") == request_digest
             and result.get("role") == "coordinator"
             and result.get("purpose") == "provider"
-            and context
-            == {"purpose": "provider", "provider_operation": None, "read_only": True},
+            and context == {"purpose": "provider", "provider_operation": None, "read_only": True},
             "Retained provider observation identity differs",
         )
         binding = current.binding("coordinator")
@@ -299,7 +254,9 @@ class Application:
             row.setdefault("content", content.decode("utf-8"))
             row.setdefault("revision", sha256(row["path"].encode() + b"\0" + content).hexdigest())
             item = Item(**row)
-            require(item_path.read_bytes() == item.content.encode(), "Observed item content differs")
+            require(
+                item_path.read_bytes() == item.content.encode(), "Observed item content differs"
+            )
             require(
                 sha256(item.path.encode() + b"\0" + item.content.encode()).hexdigest()
                 == item.revision,
@@ -320,8 +277,6 @@ class Application:
             "source_revision": revision,
             "source_manifest": self.provider.source_manifest(),
             "observer_digest": observer,
-            "capability_digest": self.provider_capability_digest(current, observer),
-            "observer_binding_digest": binding.relevant_digest,
             "invocation_id": result["invocation_id"],
         }
 
@@ -335,7 +290,6 @@ class Application:
             revision = self.provider.source_revision()
             manifest = self.provider.source_manifest()
             observer = self.provider_observer_digest(current)
-            capability = self.provider_capability_digest(current, observer)
             binding = current.binding("coordinator")
             observed = (
                 self._retained_provider_observation(observation, revision, observer, current)
@@ -343,8 +297,7 @@ class Application:
                 else self.provider.policy_reassessment_observation()
             )
             require(
-                observed["source_revision"] == revision
-                and observed["source_manifest"] == manifest,
+                observed["source_revision"] == revision and observed["source_manifest"] == manifest,
                 "Provider changed before policy reassessment",
             )
             result = await self.invoke(
@@ -383,54 +336,15 @@ class Application:
                 self.provider.source_revision() == revision,
                 "Provider changed during policy reassessment",
             )
-            from .provider_observation import (
-                LEGACY_POLICY_VALIDATOR_DIGEST,
-                LEGACY_PROVIDER_OBSERVATION_PROMPT,
-                PROVIDER_OBSERVATION_SCHEMA,
-                effective_instruction_sources,
-                effective_skill_sources,
-                semantic_observation_fingerprint,
-            )
-
-            legacy_schema = {
-                **PROVIDER_OBSERVATION_SCHEMA,
-                "validators": {
-                    "inventory": digest(inspect.getsource(AgentProvider.validate_inventory)),
-                    "policy": LEGACY_POLICY_VALIDATOR_DIGEST,
-                    "acceptance": digest(
-                        inspect.getsource(Application._accept_provider_observation)
-                    ),
-                },
-            }
-            legacy_observer = semantic_observation_fingerprint(
-                current,
-                prompt=LEGACY_PROVIDER_OBSERVATION_PROMPT,
-                schema=legacy_schema,
-                instruction_sources=effective_instruction_sources(current),
-                skill_sources=effective_skill_sources(current),
-            )
             observed["policy"] = answer["policy"]
             observed["policy_reassessment"] = {
                 "invocation_id": result["invocation_id"],
                 "reason": answer["reason"],
             }
-            # Revalidate the complete retained inventory with the accepted replacement
-            # policy before persisting it. Only the exact predecessor contract can move
-            # to the clarified observer fingerprint without another inventory invocation.
+            # A fresh policy decision and current inventory validation replace stale
+            # projection metadata; historical prompt or validator bytes add no authority.
             self._validate_cached_provider_observation(observed, revision, manifest)
-            legacy_capability = self.provider_capability_digest(current, legacy_observer)
-            if (
-                observed.get("observer_digest") == legacy_observer
-                and observed.get("capability_digest") == legacy_capability
-                and observed.get("observer_binding_digest")
-                == current.binding("coordinator").relevant_digest
-            ):
-                observer = self.provider_observer_digest(current)
-                observed.update(
-                    observer_digest=observer,
-                    capability_digest=self.provider_capability_digest(current, observer),
-                    observer_binding_digest=current.binding("coordinator").relevant_digest,
-                )
+            observed["observer_digest"] = observer
             latest = load_config(self.config_path)
             latest_binding = latest.binding("coordinator")
             require(
@@ -439,7 +353,6 @@ class Application:
                 and self.provider.source_revision() == revision
                 and self.provider.source_manifest() == manifest
                 and self.provider_observer_digest(latest) == observer
-                and self.provider_capability_digest(latest, observer) == capability
                 and latest_binding.origin == binding.origin
                 and latest_binding.permission_digest == binding.permission_digest,
                 "Provider authority changed during policy reassessment",
@@ -495,7 +408,6 @@ class Application:
                 and observed_binding.permission_digest == binding.permission_digest,
                 "Provider observation capability binding changed",
             )
-        capability = self.provider_capability_digest(current, observer)
         value = self.result_json(result) if value is None else value
         self.provider.validate_inventory(value)
         for row in value["items"]:
@@ -535,8 +447,6 @@ class Application:
                 **value,
                 "source_revision": revision,
                 "observer_digest": observer,
-                "capability_digest": capability,
-                "observer_binding_digest": binding.relevant_digest,
                 "invocation_id": result["invocation_id"],
                 "source_manifest": self.provider.source_manifest(),
             },
@@ -546,33 +456,23 @@ class Application:
     def _stage_path(self, item_id, stage):
         return self.root / "workflow-evidence" / component(item_id) / (stage + ".json")
 
-    def execution_engine(self, item_id, *, bind=False):
-        """Fence a pilot from legacy sequencing for its entire execution lifetime."""
-        current = load_config(self.config_path)
-        selected = (
-            current.data["workflow"].get("items", {}).get(item_id, {}).get("engine", "legacy")
-        )
+    def require_legacy_execution(self, item_id):
+        """Do not reinterpret retained pilot checkpoints as a new execution."""
         path = self.root / "execution-engines" / (component(item_id) + ".json")
-        value = {"item_id": item_id, "repository": str(current.repository), "engine": selected}
         if path.exists():
             require(
-                json.loads(path.read_text()) == value,
-                "Execution engine cannot change after binding",
+                json.loads(path.read_text())
+                == {
+                    "item_id": item_id,
+                    "repository": str(self.config.repository),
+                    "engine": "legacy",
+                },
+                "Retired engine execution requires explicit reconciliation; not restarted",
             )
-        elif selected == "langgraph":
-            require(
-                not any(self._stage_path(item_id, "unused").parent.glob("*.json"))
-                and not (self.root / "runs" / component("item:" + item_id)).exists(),
-                "Graph pilot requires a fresh execution; legacy evidence cannot be imported",
-            )
-            if bind:
-                atomic_json(path, value, exclusive=True)
-        elif bind:
-            atomic_json(path, value, exclusive=True)
-        return selected
-
-    def require_legacy_execution(self, item_id):
-        require(self.execution_engine(item_id) == "legacy", "Use graph resume for this execution")
+        require(
+            not (self.root / "item-graphs" / component(item_id)).exists(),
+            "Retired engine checkpoints require explicit reconciliation; not restarted",
+        )
 
     def item_workflow(self, item_id):
         admission = self.scope_admission(item_id)
@@ -619,9 +519,7 @@ class Application:
                 "remaining_high",
             }
             require(
-                isinstance(receipt, dict)
-                and set(receipt) == required
-                and receipt["version"] == 1,
+                isinstance(receipt, dict) and set(receipt) == required and receipt["version"] == 1,
                 "Scope admission receipt is invalid",
             )
             value = receipt["input"]
@@ -641,10 +539,7 @@ class Application:
             operation = receipt["provider_receipt"].get("operation")
             require(isinstance(operation, str), "Scope admission provider operation is missing")
             request_path = (
-                self.root
-                / "provider-agent-operations"
-                / component(operation)
-                / "requested.json"
+                self.root / "provider-agent-operations" / component(operation) / "requested.json"
             )
             require(request_path.is_file(), "Scope admission provider operation is missing")
             provider_request = json.loads(request_path.read_text())
@@ -665,8 +560,7 @@ class Application:
             self.validate_invocation_result(receipt["decision"])
             decision, _ = validate_decision_contract(self, value, receipt["decision"])
             require(
-                decision.get("operation") == "amend-content"
-                and decision.get("authorized") is True,
+                decision.get("operation") == "amend-content" and decision.get("authorized") is True,
                 "Scope admission authority differs",
             )
             expected = effective_workflow(
@@ -727,7 +621,9 @@ class Application:
         project = yaml.safe_load((snapshot.repository / "PROJECT.yaml").read_text())
         selected = project.get("resource_coordination", {}).get("selected")
         require(selected in {"none", "resource-claim"}, "Unsupported resource coordination route")
-        claims_required = selected == "resource-claim" and policy.get("claims_required") is not False
+        claims_required = (
+            selected == "resource-claim" and policy.get("claims_required") is not False
+        )
         context = {
             "version": 1,
             "config_digest": snapshot.file_digest,
@@ -742,37 +638,6 @@ class Application:
         require(
             self.provider.source_revision() == revision,
             "Provider changed while binding claim coordination",
-        )
-        return context
-
-    def invocation_coordination_context(self, result):
-        """Recover the originating claim context, preserving proven pre-change receipts."""
-        evidence = Path(result["evidence_path"]).resolve()
-        require(
-            evidence.is_relative_to(self.root.resolve()) and not evidence.is_symlink(),
-            "Invocation coordination evidence escaped the operational root",
-        )
-        intent = json.loads((evidence / "intent.json").read_text())
-        require(
-            intent.get("invocation_id") == result.get("invocation_id")
-            and intent.get("request_digest") == result.get("request_digest")
-            and (evidence / "requested.json").is_file(),
-            "Invocation coordination origin is incomplete",
-        )
-        context_path = evidence / "coordination-context.json"
-        recorded = intent.get("coordination_digest")
-        require(
-            context_path.exists() == (recorded is not None),
-            "Invocation coordination context is incomplete",
-        )
-        if not context_path.exists():
-            return None
-        require(not context_path.is_symlink(), "Invocation coordination context is unsafe")
-        context = json.loads(context_path.read_text())
-        require(
-            digest(context) == recorded
-            and context.get("config_digest") == intent.get("config_digest"),
-            "Invocation coordination context differs from its intent",
         )
         return context
 
@@ -794,10 +659,6 @@ class Application:
             ):
                 retained.append(record)
         require(len(retained) <= 1, "Provider operation is ambiguous")
-        if not retained:
-            self.validate_management_readiness(
-                "coordinator" if authority["role"] == "operator" else authority["role"]
-            )
         item = Item(**retained[0]["item"]) if retained else self.provider.item(item_id)
         require(item.revision == expected_revision, "Stale provider revision")
         validate(item, target, authority)
@@ -878,69 +739,6 @@ class Application:
         )
         atomic_json(self.provider.cache_path, value)
 
-    def validate_management_readiness(self, role):
-        """Check management capabilities and only applicable agent-owned claim capabilities."""
-        import yaml
-
-        current = load_config(self.config_path)
-        binding = current.binding(role)
-        profile = current.data["profiles"][binding.profile_name]
-        require(
-            tuple(profile["permissions"]) == ("workspace-write",),
-            "Provider management role needs workspace-write permission",
-        )
-        required = {"manage-work-items", "manage-work-items-file"}
-        project = yaml.safe_load((current.repository / "PROJECT.yaml").read_text())
-        claims_required = (
-            project.get("resource_coordination", {}).get("selected") == "resource-claim"
-        )
-        if (
-            claims_required
-            and isinstance(self.provider, AgentProvider)
-            and self.provider.cache_path.is_file()
-        ):
-            policy = self.provider.observation().get("policy", {})
-            if policy.get("claims_required") is False:
-                # Validate current cited bytes; neither SOLO nor a stale cached exemption suffices.
-                self.provider.validate_policy(policy)
-                claims_required = False
-        if claims_required:
-            required |= {"resource-claim", "resource-claim-helper", "resource-claim-helper-mcp"}
-            require(
-                project.get("agent_claim_transport", {}).get("selected") == "mcp",
-                "Selected claim helper needs a supported native CLI capability",
-            )
-            options = current.data["agent_clis"][binding.cli_name].get("adapter_options", {})
-            require(
-                options.get("load_user_config") is True,
-                "Configured native MCP helper is not loaded by this CLI",
-            )
-            observer = current.binding("coordinator")
-            require(
-                binding.origin == observer.origin,
-                "Management CLI has no matching helper discovery binding",
-            )
-            observation = self.provider.observation()
-            require(
-                observation.get("capability_digest")
-                == self.provider_capability_digest(current, self.provider_observer_digest(current)),
-                "Helper discovery configuration is stale",
-            )
-            helper = observation.get("helper", {})
-            required_tools = {"claim_acquire", "claim_release", "claim_heartbeat", "claim_status"}
-            observed = {name.rsplit("__", 1)[-1] for name in helper.get("tools", [])}
-            require(
-                helper.get("discovery") == "native_tool_catalog"
-                and helper.get("available") is True
-                and required_tools <= observed,
-                "Selected claim helper has no native tool-discovery evidence",
-            )
-        root = Path(current.data["methodology_root"])
-        require(
-            all((root / "skills" / name / "SKILL.md").is_file() for name in required),
-            "Provider management skills are missing",
-        )
-
     def admission_path(self, item_id):
         original = self._stage_path(item_id, "admit")
         confirmed = self._stage_path(item_id, "admit-confirmed")
@@ -975,7 +773,10 @@ class Application:
             validate_retained_usage,
         )
 
-        require(isinstance(self.provider, AgentProvider), "Scope amendment requires agent provider management")
+        require(
+            isinstance(self.provider, AgentProvider),
+            "Scope amendment requires agent provider management",
+        )
         self.require_legacy_execution(item_id)
         current = load_config(self.config_path)
         require(
@@ -997,9 +798,7 @@ class Application:
                 require(retained_request == supplied, "Scope amendment replay input changed")
                 return existing_admission
         approved_matches = []
-        for path in self._stage_path(item_id, "unused").parent.glob(
-            "scope-admission-input-*.json"
-        ):
+        for path in self._stage_path(item_id, "unused").parent.glob("scope-admission-input-*.json"):
             value = json.loads(path.read_text())
             if value.get("authority", {}).get("operator_request_digest") == supplied_digest:
                 approved_matches.append(value)
@@ -1029,7 +828,9 @@ class Application:
         request_digest = digest(request)
         request_path = self._stage_path(item_id, "scope-amendment-request-" + request_digest)
         if request_path.exists():
-            require(json.loads(request_path.read_text()) == request, "Scope amendment request changed")
+            require(
+                json.loads(request_path.read_text()) == request, "Scope amendment request changed"
+            )
         else:
             atomic_json(request_path, request, exclusive=True)
         usage = validate_retained_usage(self.usage_view(item_id, observed_item=item))
@@ -1102,7 +903,10 @@ class Application:
             "scope": request["scope"],
             "amended_content_sha256": sha256(request["amended_content"].encode()).hexdigest(),
         }
-        require(all(answer.get(key) == value for key, value in expected.items()), "Coordinator did not authorize the exact scope amendment")
+        require(
+            all(answer.get(key) == value for key, value in expected.items()),
+            "Coordinator did not authorize the exact scope amendment",
+        )
         if scope_answer:
             require(
                 answer.get("question_digest") == scope_answer["question_digest"]
@@ -1136,7 +940,9 @@ class Application:
         }
         approved_path = self._stage_path(item_id, "scope-admission-input-" + digest(approved))
         if approved_path.exists():
-            require(json.loads(approved_path.read_text()) == approved, "Scope admission input changed")
+            require(
+                json.loads(approved_path.read_text()) == approved, "Scope admission input changed"
+            )
         else:
             atomic_json(approved_path, approved, exclusive=True)
         latest = load_config(self.config_path)
@@ -1157,18 +963,24 @@ class Application:
             "Scope amendment authority changed before provider dispatch",
         )
         require(
-            latest_answer == scope_answer
-            and latest_added_reviews == added_review_requirements,
+            latest_answer == scope_answer and latest_added_reviews == added_review_requirements,
             "Scope amendment answer or review selection changed before dispatch",
         )
         before = json.loads(self.provider.cache_path.read_text())
-        manifest = retained_record["source_manifest"] if retained_record else self.provider.source_manifest()
+        manifest = (
+            retained_record["source_manifest"]
+            if retained_record
+            else self.provider.source_manifest()
+        )
         receipt = await self.invoke_provider_amendment(item, approved, decision, workflow)
         self.advance_provider_projection(before, manifest, receipt, [item.path])
         after = self.provider.item(item_id)
         require(asdict(after) == receipt["after"], "Provider amendment projection differs")
         final_config = load_config(self.config_path)
-        require(final_config.file_digest == current.file_digest, "Scope amendment configuration changed during publication")
+        require(
+            final_config.file_digest == current.file_digest,
+            "Scope amendment configuration changed during publication",
+        )
         # The provider revision changes, but the candidate, owner and native execution must not.
         from .scope_admission import validate_current_candidate
 
@@ -1195,7 +1007,9 @@ class Application:
         }
         destination = self._stage_path(item_id, "scope-admission-receipt-" + digest(approved))
         if destination.exists():
-            require(json.loads(destination.read_text()) == admission, "Scope admission receipt changed")
+            require(
+                json.loads(destination.read_text()) == admission, "Scope admission receipt changed"
+            )
         else:
             atomic_json(destination, admission, exclusive=True)
         return admission
@@ -1344,7 +1158,6 @@ class Application:
 
     async def invoke_provider_amendment(self, item, admission, decision, workflow):
         """Submit one exact content append through the existing provider evidence boundary."""
-        self.validate_management_readiness("coordinator")
         content = admission["amended_content"]
         stage = "provider-amend-" + digest(admission)
         async with async_operation_lock(self.config.repository / ".git/agentic-provider.lock"):
@@ -1357,34 +1170,11 @@ class Application:
                     blob(self.config.repository, head, item.path) == item.content.encode(),
                     "Observed provider content differs from committed source",
                 )
-                prompt = (
-                    "Perform only this authorized provider content amendment using the project's selected "
-                    "management skills. Manage configured claims yourself. Recheck the exact before revision "
-                    "at the write boundary. Do not change lifecycle state, owner, original estimate, identity, "
-                    "path, or any other provider file. Replace the item with amended_content verbatim and make "
-                    "one commit containing only the declared path. This is not a Running-to-Running transition. "
-                    "If the outcome is uncertain, report it and do not repeat the mutation. Return only JSON "
-                    "with operation_id, before_revision, commit, and after {item_id,path,state,owner,original_high}. "
-                    "Omit content and revision; the harness hydrates them from exact committed bytes.\n"
-                    + json.dumps(
-                        {
-                            "operation_id": item.item_id + ":" + stage,
-                            "item": asdict(item),
-                            "admission_input_digest": digest(admission),
-                            "amended_content": content,
-                            "amended_content_sha256": sha256(content.encode()).hexdigest(),
-                            "paths": [item.path],
-                        },
-                        sort_keys=True,
-                    )
-                )
                 record = {
                     "kind": "amend-content",
                     "repository": str(self.config.repository),
                     "head": head,
                     "stage_operation": item.item_id + ":" + stage,
-                    "prompt_digest": digest(prompt),
-                    "prompt": prompt,
                     "item": asdict(item),
                     "target": item.state,
                     "target_owner": item.owner,
@@ -1405,28 +1195,32 @@ class Application:
             evidence = self.root / "provider-agent-operations" / component(operation)
             if not (evidence / "requested.json").exists():
                 atomic_json(evidence / "requested.json", record, exclusive=True)
-            result = await self.invoke(
-                item.item_id,
-                stage,
-                "coordinator",
-                record["prompt"],
-                read_only=False,
-                purpose="provider",
-                provider_operation=operation,
-                scope_workflow=workflow,
+            from .provider import commit_content_amendment
+
+            if "prompt" in record:
+                return self.reconcile_agent_provider(evidence / "requested.json")
+
+            self.provider.policy()
+            commit = commit_content_amendment(self.config.repository, record)
+            receipt = self.verify_provider_receipt(
+                record,
+                {
+                    "operation_id": record["stage_operation"],
+                    "before_revision": item.revision,
+                    "commit": commit,
+                    "after": {
+                        key: value
+                        for key, value in record["item"].items()
+                        if key not in {"content", "revision"}
+                    },
+                },
             )
-            receipt = self.verify_provider_receipt(record, self.result_json(result))
             receipt.update(
                 decision_owner=decision["invocation_id"],
-                executing_invocation=result["invocation_id"],
-                executing_session=result["session"],
-                usage_evidence=result["evidence_path"],
+                execution="deterministic",
                 advancement_verified=False,
             )
             atomic_json(evidence / "receipt.json", receipt)
-            self.validate_call_limits(
-                result, load_config(self.config_path).data["administrative_review_limits"]
-            )
             previous_policy = json.loads(self.provider.cache_path.read_text())["policy"]
             self.provider.validate_policy(previous_policy)
             receipt["policy"] = previous_policy
@@ -1435,7 +1229,7 @@ class Application:
             return receipt
 
     async def invoke_provider_transition(self, item, target, authority, paths):
-        """Submit one agent-managed operation; verify its commit before returning a receipt."""
+        """Apply the observed agent decision locally and verify the immutable effect."""
         validate_transition(item, target, authority)
         if authority.get("recovery", {}).get("no_source_changes") is True and not authority[
             "recovery"
@@ -1548,39 +1342,11 @@ class Application:
         )
         if authority["role"] == "operator":
             question, answer = authority["question"], authority["answer"]
-            if "graph_answer_evidence" in authority:
-                require(
-                    self.execution_engine(item.item_id) == "langgraph"
-                    and (
-                        self.root / "execution-engines" / (component(item.item_id) + ".json")
-                    ).is_file(),
-                    "Graph answer requires a bound graph execution",
-                )
-                path = (
-                    self.root
-                    / "item-graphs"
-                    / component(item.item_id)
-                    / ("answer-" + digest(answer) + ".json")
-                )
-                require(
-                    not path.is_symlink()
-                    and Path(authority["graph_answer_evidence"]).resolve() == path.resolve(),
-                    "Graph answer evidence path differs",
-                )
-            else:
-                self.require_legacy_execution(item.item_id)
-                key = digest([question["question_id"], item.revision, answer["text"]])
-                path = self._stage_path(item.item_id, "answer-operation-" + key)
+            self.require_legacy_execution(item.item_id)
+            key = digest([question["question_id"], item.revision, answer["text"]])
+            path = self._stage_path(item.item_id, "answer-operation-" + key)
             require(path.exists(), "Persisted operator answer is missing")
             saved = json.loads(path.read_text())
-            if "graph_answer_evidence" in authority:
-                require(
-                    saved.get("engine") == "langgraph"
-                    and saved.get("item_id") == item.item_id
-                    and authority["invocation_id"] == "operator:" + digest(saved)
-                    and answer.get("question_revision") == item.revision,
-                    "Graph operator answer identity differs",
-                )
             require(
                 saved["before_revision"] == item.revision
                 and saved["question"] == question
@@ -1638,60 +1404,6 @@ class Application:
                     from .scope_admission import scoped_question_content
 
                     scoped_content = scoped_question_content(item.content, target, authority)
-                prompt = (
-                    "Perform only this authorized provider transition using the project's selected "
-                    "management skills. Manage configured claims yourself. Recheck the expected "
-                    "revision at the write boundary; reject a mismatch. Do not implement source work. "
-                    "You execute this decision on behalf of its recorded owner; you are not the canonical "
-                    "item session. Use the exact target owner supplied below; preserve former owners "
-                    "as history, not as the active Owner field. Make no additional lifecycle decisions. "
-                    "Commit only the declared provider paths. If the outcome is uncertain, report it; "
-                    "do not repeat the mutation. Return JSON with operation_id (the stage operation "
-                    "below), before_revision, commit, and after (item_id, path, state, owner, "
-                    "original_high). Omit document content and revision; the harness hydrates them "
-                    "from your exact committed bytes. Also return policy with eligible (GLOBAL NEW admission, "
-                    "never inferred solely from this item-local wait), "
-                    "For User Action Required, record the supplied question_id and text verbatim in the "
-                    "provider record and return question exactly as supplied in authority. "
-                    "For a Ready preparation question, replace only the Status: Ready header with "
-                    "Status: User Action Required and append the question after all existing content; "
-                    "preserve every other original byte, requirement, owner, history and candidate reference. "
-                    "Use ready_question_content exactly when supplied; append no other prose or history. "
-                    "Use scoped_question_content exactly when supplied; it preserves admitted scope and binds all lifecycle additions. "
-                    "mode, primary_branch, and evidence [{path,sha256,excerpt,supports:[mode/admission/coordination]}] "
-                    "for current source after your transition. Preserve source-backed claims_required and "
-                    "claim_exemption when still applicable, citing coordination authority; SOLO alone "
-                    "does not exempt claims. Preserve original_high and dependencies. "
-                    "For record-estimate, append the dated prospective estimate and exactly "
-                    "Prospective Execution High: N using authority.prospective_high for N; keep "
-                    "historical original estimate and historical usage explicitly unknown. "
-                    "The revision is SHA256(path UTF-8 + NUL + content UTF-8).\n"
-                    + json.dumps(
-                        {
-                            "operation_id": item.item_id + ":" + stage,
-                            "item": asdict(item),
-                            "target": target,
-                            "authority": authority,
-                            "paths": paths,
-                            "ready_question_content": preparation_question_content(
-                                item.content, authority["question"]
-                            )
-                            if item.state == "Ready" and target == "User Action Required"
-                            else None,
-                            **(
-                                {"scoped_question_content": scoped_content}
-                                if scoped_content is not None
-                                else {}
-                            ),
-                            "target_owner": "Unowned"
-                            if target == "Ready"
-                            else authority["session_id"]
-                            if target == "Running" and item.state == "Starting"
-                            else item.owner,
-                        },
-                        sort_keys=True,
-                    )
-                )
                 record = {
                     **(
                         {"scoped_question_content": scoped_content}
@@ -1701,8 +1413,7 @@ class Application:
                     "repository": str(self.config.repository),
                     "head": head,
                     "stage_operation": item.item_id + ":" + stage,
-                    "prompt_digest": digest(prompt),
-                    "prompt": prompt,
+                    "execution": "deterministic",
                     "item": asdict(item),
                     "target": target,
                     "authority": authority,
@@ -1716,52 +1427,21 @@ class Application:
             evidence = self.root / "provider-agent-operations" / component(operation)
             if not (evidence / "requested.json").exists():
                 atomic_json(evidence / "requested.json", record, exclusive=True)
-            result = await self.invoke(
-                item.item_id,
-                stage,
-                executing_role,
-                record["prompt"],
-                read_only=False,
-                purpose="provider",
-                provider_operation=operation,
-            )
-            value = self.result_json(result)
-            if (item.state, target) == ("Running", "Ready") and value.get("after", {}).get(
-                "owner"
-            ) == item.owner:
-                incomplete = self.verify_provider_receipt(record, value, preserved_owner=True)
-                incomplete["advancement_verified"] = False
-                incomplete["repair_required"] = "release_active_owner"
-                atomic_json(evidence / "incomplete-effect.json", incomplete)
-                self.validate_call_limits(
-                    result, load_config(self.config_path).data["administrative_review_limits"]
-                )
-                corrected = {
-                    **authority,
-                    "recovery": {**authority["recovery"], "repair_effect": incomplete["commit"]},
-                }
-            else:
-                receipt = self.verify_provider_receipt(record, value)
-                receipt["decision_owner"] = authority.get("session_id", authority["invocation_id"])
-                receipt["executing_invocation"] = result["invocation_id"]
-                receipt["executing_session"] = result["session"]
-                receipt["usage_evidence"] = result["evidence_path"]
-                receipt["advancement_verified"] = False
-                atomic_json(evidence / "receipt.json", receipt)
-                self.validate_call_limits(
-                    result, load_config(self.config_path).data["administrative_review_limits"]
-                )
-                if "policy" in receipt:
-                    self.validate_receipt_policy(evidence, receipt)
-                receipt["advancement_verified"] = True
-                atomic_json(evidence / "receipt.json", receipt)
-                return receipt
+            from .provider import commit_transition
 
-        corrected_receipt = await self.invoke_provider_transition(
-            Item(**incomplete["after"]), target, corrected, paths
-        )
-        atomic_json(evidence / "resolution.json", {"corrected_by": corrected_receipt["operation"]})
-        return corrected_receipt
+            if "prompt" in record:
+                return self.reconcile_agent_provider(evidence / "requested.json")
+
+            self.provider.policy()
+            value = commit_transition(self.config.repository, record)
+            receipt = self.verify_provider_receipt(record, value)
+            receipt.update(
+                decision_owner=authority.get("session_id", authority["invocation_id"]),
+                execution="deterministic",
+                advancement_verified=True,
+            )
+            atomic_json(evidence / "receipt.json", receipt)
+            return receipt
 
     def validate_receipt_policy(self, evidence, receipt):
         """Reuse current source authority when only a repeated policy citation is defective."""
@@ -1857,6 +1537,43 @@ class Application:
                 },
             )
             return receipt
+        if record.get("execution") == "deterministic":
+            from .provider import commit_transition
+
+            require(
+                git(self.config.repository, "rev-parse", "HEAD") != record["head"],
+                "Provider operation is not committed; explicit completion is required",
+            )
+            receipt = self.verify_provider_receipt(
+                record, commit_transition(self.config.repository, record)
+            )
+            receipt.update(execution="deterministic", advancement_verified=False)
+            atomic_json(destination, receipt, exclusive=True)
+            return receipt
+        if record.get("kind") == "amend-content" and "prompt" not in record:
+            from .provider import commit_content_amendment
+
+            require(
+                git(self.config.repository, "rev-parse", "HEAD") != record["head"],
+                "Provider amendment is not committed; explicit completion is required",
+            )
+            commit = commit_content_amendment(self.config.repository, record)
+            receipt = self.verify_provider_receipt(
+                record,
+                {
+                    "operation_id": record["stage_operation"],
+                    "before_revision": record["item"]["revision"],
+                    "commit": commit,
+                    "after": {
+                        key: value
+                        for key, value in record["item"].items()
+                        if key not in {"content", "revision"}
+                    },
+                },
+            )
+            receipt.update(execution="deterministic", advancement_verified=False)
+            atomic_json(destination, receipt, exclusive=True)
+            return receipt
         item_id = record["item"]["item_id"]
         stage = record["stage_operation"][len(item_id) + 1 :]
         saved = self._stage_path(item_id, stage)
@@ -1924,13 +1641,6 @@ class Application:
         require(
             after.owner == expected_owner or unowned_estimate,
             "Provider operation changed canonical owner",
-        )
-        expected_path = record.get("expected_path", record["item"]["path"])
-        require(after.path == expected_path, "Provider result path differs from destination")
-        commit = value.get("commit")
-        require(
-            isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40,64}", commit),
-            "Provider commit identity is missing",
         )
         require(
             git(self.config.repository, "rev-parse", commit + "^") == record["head"],
@@ -2361,7 +2071,9 @@ class Application:
                 "Claim coordination binding requires an agent-provider orchestrator invocation",
             )
             intents = list(operation_path.glob("invocations/*/intent.json"))
-            require(len(intents) <= 1, "Invocation intent is absent or ambiguous; reconcile storage")
+            require(
+                len(intents) <= 1, "Invocation intent is absent or ambiguous; reconcile storage"
+            )
             if intents:
                 intent_path = intents[0]
                 intent = json.loads(intent_path.read_text())
@@ -2402,22 +2114,22 @@ class Application:
             if purpose != "implementation"
             else digest(prompt)
         )
+        context = {
+            "purpose": purpose,
+            "provider_operation": provider_operation,
+            "read_only": read_only,
+        }
+        if review_candidate is not None:
+            context["integration_review_stage"] = stage
+        if integration_resolution is not None:
+            context["integration_stage"] = "resolution"
+            context["integration_binding"] = digest(integration_resolution)
         if saved.exists() and continuation is None:
             result = json.loads(saved.read_text())
-            if (result.get("request_digest") != request_hash
-                    and stage.startswith("scope-continuation-")
-                    and purpose == "implementation" and role == "orchestrator"
-                    and not read_only and session is not None):
-                from .scope_admission import retained_scope_question_prompt
-
-                prompt = retained_scope_question_prompt(
-                    self, item_id, stage, prompt, result, coordination_context
+            if result.get("request_digest") != request_hash:
+                self.validate_completed_stage(
+                    result, item_id, stage, operation, role, binding, session, context
                 )
-                request_hash = digest(prompt)
-            require(
-                result["request_digest"] == request_hash,
-                "Stage request changed; reconcile prior evidence",
-            )
             require(result["outcome"] == "returned", "Previous invocation is unresolved or failed")
             self.validate_invocation_result(result)
             return result
@@ -2467,7 +2179,6 @@ class Application:
             if candidates:
                 path = candidates[0]
                 prior = EvidenceStore.reconcile(path)
-                require(prior["request_digest"] == request_hash, "Continuation request differs")
                 invocation_id = prior["invocation_id"]
                 if prior["outcome"] != "not_submitted":
                     recovered = self.recover_invocation(path)
@@ -2475,11 +2186,17 @@ class Application:
                         recovered is not None,
                         "Provider observation continuation is unresolved; replacement is prohibited",
                     )
+                    recovered["continuation_request_digest"] = recovered["request_digest"]
                     recovered["request_digest"] = continuation["semantic_request_digest"]
                     recovered["continuation"] = continuation
+                    if prior["request_digest"] != request_hash:
+                        self.validate_completed_stage(
+                            recovered, item_id, stage, operation, role, binding, session, context
+                        )
                     atomic_json(saved, recovered)
                     self.validate_invocation_result(recovered)
                     return recovered
+                require(prior["request_digest"] == request_hash, "Continuation request differs")
                 require(
                     prior["config_digest"] == snapshot.file_digest,
                     "Unsubmitted continuation configuration changed",
@@ -2506,7 +2223,6 @@ class Application:
             )
             path = candidates[0].parent
             prior = EvidenceStore.reconcile(path)
-            require(prior["request_digest"] == request_hash, "Recovered request differs")
             invocation_id = prior["invocation_id"]
             if prior["outcome"] != "not_submitted":
                 recovered = self.recover_invocation(path)
@@ -2514,9 +2230,14 @@ class Application:
                     recovered is not None,
                     "Requested invocation is unresolved; replacement is prohibited",
                 )
+                if prior["request_digest"] != request_hash:
+                    self.validate_completed_stage(
+                        recovered, item_id, stage, operation, role, binding, session, context
+                    )
                 atomic_json(saved, recovered, exclusive=True)
                 self.validate_invocation_result(recovered)
                 return recovered
+            require(prior["request_digest"] == request_hash, "Recovered request differs")
             require(
                 prior["binding"] == asdict(binding),
                 "Unsubmitted intent binding changed; explicit reconciliation required",
@@ -2769,6 +2490,143 @@ class Application:
             ).get("context"),
         )
 
+    def validate_completed_stage(
+        self, result, item_id, stage, operation, role, binding, session, context
+    ):
+        """Replay recorded work, not today's rendering of the instructions that produced it.
+
+        This only reads a terminal result. Provider/candidate/approval validators still
+        decide whether that historical result permits the requested next transition.
+        """
+        path = Path(result.get("evidence_path", ""))
+        expected = (
+            self.root
+            / "runs"
+            / component("item:" + item_id)
+            / "operations"
+            / component(operation)
+            / "invocations"
+            / component(result.get("invocation_id", ""))
+        )
+        require(
+            path.is_absolute() and path.resolve() == expected and path == expected,
+            "Completed stage evidence belongs to another operation",
+        )
+        files = (
+            "intent.json",
+            "config.json",
+            "execution-context.json",
+            "session.json",
+            "requested.json",
+            "outcomes.jsonl",
+            "events.jsonl",
+            "telemetry.json",
+            "telemetry-report.json",
+        )
+        require(
+            all((path / name).is_file() and not (path / name).is_symlink() for name in files),
+            "Completed stage evidence is incomplete",
+        )
+        prior = EvidenceStore.reconcile(path)
+        continuation = result.get("continuation")
+        action = stage
+        request_digest = result.get("request_digest")
+        if continuation is not None:
+            receipt = path / "continuation.json"
+            require(
+                role == "coordinator"
+                and context["purpose"] == "provider"
+                and context["read_only"] is True
+                and isinstance(continuation, dict)
+                and receipt.is_file()
+                and not receipt.is_symlink()
+                and json.loads(receipt.read_text()) == continuation,
+                "Completed observation continuation differs",
+            )
+            original_path = path.parent / component(continuation.get("original_invocation_id", ""))
+            original = EvidenceStore.reconcile(original_path)
+            require(
+                original.get("action") == stage
+                and original.get("operation_id") == operation
+                and original.get("run_id") == "item:" + item_id
+                and original.get("invocation_id") == continuation.get("original_invocation_id")
+                and original.get("request_digest")
+                == continuation.get("semantic_request_digest")
+                == result.get("request_digest")
+                and continuation.get("native_session_id")
+                == (result.get("session") or {}).get("native_session_id"),
+                "Completed observation original request differs",
+            )
+            action = "resume-provider-observation"
+            request_digest = result.get("continuation_request_digest")
+        require(
+            prior["outcome"] == result.get("outcome") == "returned"
+            and not prior["partial"]
+            and prior.get("action") == action
+            and prior.get("item_id") == (None if role == "coordinator" else item_id)
+            and prior.get("run_id") == "item:" + item_id
+            and prior.get("operation_id") == operation
+            and prior.get("invocation_id") == result.get("invocation_id")
+            and isinstance(prior.get("request_digest"), str)
+            and len(prior["request_digest"]) == 64
+            and prior["request_digest"] == request_digest,
+            "Completed stage identity or terminal evidence differs",
+        )
+
+        def read(name):
+            return json.loads((path / name).read_text())
+
+        try:
+            recorded_binding = AgentBinding(**result["binding"])
+            original_session = SessionHandle(
+                **{**result["session"], "binding": AgentBinding(**result["session"]["binding"])}
+            )
+        except (KeyError, TypeError) as error:
+            raise TransitionBlocked("Completed stage binding is invalid") from error
+        require(
+            result.get("role") == recorded_binding.role == role
+            and result.get("purpose") == context["purpose"]
+            and prior.get("binding") == result["binding"]
+            and resume_binding_compatible(recorded_binding, binding)
+            and resume_binding_compatible(original_session.binding, recorded_binding)
+            and (session is None or original_session == session)
+            and read("config.json")
+            == {"version": 1, "digest": prior["config_digest"], "binding": result["binding"]}
+            and read("execution-context.json") == context
+            and read("session.json")
+            == {
+                "version": 1,
+                "session_id": original_session.session_id,
+                "native_session_id": original_session.native_session_id,
+                "binding": result["binding"],
+            },
+            "Completed stage role, session, permissions or execution context differs",
+        )
+        if session is not None or original_session.binding != recorded_binding:
+            audit = path / "resume-binding.json"
+            require(
+                audit.is_file()
+                and not audit.is_symlink()
+                and read("resume-binding.json")
+                == {
+                    "session_id": original_session.session_id,
+                    "native_session_id": original_session.native_session_id,
+                    "previous_binding": asdict(original_session.binding),
+                    "current_binding": result["binding"],
+                    "current_config_digest": prior["config_digest"],
+                },
+                "Completed stage resume binding differs",
+            )
+        # Returned + existing report makes the established recovery path read-only.
+        reconstructed = self.recover_invocation(path)
+        require(reconstructed is not None, "Completed stage cannot be reconstructed")
+        reconstructed["session"] = asdict(original_session)
+        if continuation is not None:
+            reconstructed["continuation_request_digest"] = reconstructed["request_digest"]
+            reconstructed["request_digest"] = continuation["semantic_request_digest"]
+            reconstructed["continuation"] = continuation
+        require(reconstructed == result, "Completed stage result differs from recorded output")
+
     def validate_invocation_result(self, result):
         require(
             result["outcome"] == "returned",
@@ -2780,9 +2638,11 @@ class Application:
             from .adapters.codex.completion_evidence import validate_recovered_accounting
 
             validate_recovered_accounting(result)
+        # Trace completeness controls further spending, not reuse of returned work.
+        # Keep the retained receipt/content checks even for empty or rejected exports.
         require(
-            report["span_count"] > 0 and (report["rejected_exports"] == 0 or recovered),
-            "Telemetry is missing or rejected; next generation is fenced",
+            isinstance(result.get("telemetry_path"), str) and result["telemetry_path"],
+            "Telemetry receipt path is missing",
         )
         from .telemetry import Sink
 
@@ -2871,10 +2731,6 @@ class Application:
             telemetry_path.resolve().is_relative_to(self.root.resolve()),
             "Telemetry evidence escaped root",
         )
-        from .telemetry import Sink
-
-        sink = Sink(telemetry_path, {})
-        require(sink.seen, "Recovered telemetry is missing")
         messages = [e["text"] for e in events if e.get("item_type") == "agent_message"]
         result = {
             "version": 1,
@@ -3035,17 +2891,31 @@ class Application:
             not path.is_symlink() and not execution.is_symlink(),
             "Check evidence cannot be symlinked",
         )
-        intent = {
+        commands = [list(argv) for argv in self.item_workflow(item_id)["checks"]]
+        inputs = {
             "item_id": item_id,
             "stage": stage,
             "candidate": candidate,
-            "commands": [list(argv) for argv in self.item_workflow(item_id)["checks"]],
-            "execution_id": str(uuid4()),
-            "at": utcnow(),
+            "commands": commands,
+            "repository": str(Path(repository).resolve()),
+            "tree": git(repository, "rev-parse", "HEAD^{tree}"),
+            "clean": not git(repository, "status", "--porcelain"),
         }
+        if path.is_file() and execution.is_file():
+            previous = json.loads(execution.read_text())
+            if inputs["clean"] and all(previous.get(key) == value for key, value in inputs.items()):
+                receipts = json.loads(path.read_text())
+                require(isinstance(receipts, list), "Recorded checks are invalid")
+                if receipts and all(row.get("returncode") == 0 for row in receipts):
+                    from .integration_flow import validate_checks
+
+                    self.validate_check_execution(item_id, stage, candidate, receipts)
+                    validate_checks(receipts, candidate, commands)
+                    return receipts
+        intent = {**inputs, "execution_id": str(uuid4()), "at": utcnow()}
         atomic_json(execution, intent)
         receipts = []
-        for argv in self.item_workflow(item_id)["checks"]:
+        for argv in commands:
             proc = subprocess.run(
                 list(argv), cwd=repository, capture_output=True, check=False, timeout=60
             )
@@ -3282,12 +3152,7 @@ class Application:
 
     async def review_hold(self, item_id, *, requested_ceiling=None, reference=None):
         """One bounded Coordinator review of a particular durable guard incident."""
-        if self.execution_engine(item_id) == "langgraph":
-            require(
-                requested_ceiling is None and reference is None,
-                "Graph hold review assesses remaining work instead of a preselected ceiling",
-            )
-            return await self.run_item(item_id, graph_hold_review=True)
+        self.require_legacy_execution(item_id)
         item = self.provider.item(item_id)
         require(item.state == "Holding", "Item is not Holding")
         require(self.item_quiescent(item_id), "Item execution is not proven quiescent")
@@ -3406,18 +3271,6 @@ class Application:
     async def answer(
         self, item_id, question_id, expected_revision, text, *, retained_delivery=None
     ):
-        if self.execution_engine(item_id) == "langgraph":
-            require(
-                retained_delivery is None, "Legacy delivery approval cannot answer a graph question"
-            )
-            return await self.run_item(
-                item_id,
-                graph_answer={
-                    "question_id": question_id,
-                    "revision": expected_revision,
-                    "text": text,
-                },
-            )
         self.require_legacy_execution(item_id)
         with operation_lock(self.root / "item-locks" / (component(item_id) + ".lock")):
             operation_path = self._stage_path(
@@ -3963,7 +3816,7 @@ class Application:
                 )
         return results
 
-    async def run_item(self, item_id, *, graph_answer=None, graph_hold_review=False):
+    async def run_item(self, item_id):
         async with async_operation_lock(self.root / "item-locks" / (component(item_id) + ".lock")):
             mode = self.config.data["workflow"]["mode"]
             with (
@@ -3971,16 +3824,10 @@ class Application:
                 if mode == "SOLO"
                 else nullcontext()
             ):
-                engine = self.execution_engine(item_id, bind=True)
-                require(
-                    engine == "langgraph" or (graph_answer is None and not graph_hold_review),
-                    "Graph resume requires graph engine",
-                )
+                self.require_legacy_execution(item_id)
                 if isinstance(self.provider, AgentProvider):
                     await self.refresh_provider()
                     project_mode = self.execution_policy(item_id)["mode"]
-                    self.validate_management_readiness("coordinator")
-                    self.validate_management_readiness("orchestrator")
                 else:
                     self.provider.policy()
                     import yaml
@@ -3991,22 +3838,12 @@ class Application:
                     project_mode == mode,
                     "Configuration execution mode differs from provider policy",
                 )
-                if engine == "langgraph":
-                    from .estimation import prepare_item
-
-                    await prepare_item(self, self.provider.item(item_id))
                 if mode == "MULTITASK":
                     mine = set(self.item_workflow(item_id)["allowed_paths"])
                     for other in self.provider.snapshot():
                         if other.item_id != item_id and other.state in {"Starting", "Running"}:
                             theirs = set(self.item_workflow(other.item_id)["allowed_paths"])
                             require(not mine & theirs, "Concurrent assignment scopes overlap")
-                if engine == "langgraph":
-                    from .item_graph import run_item_graph
-
-                    return await run_item_graph(
-                        self, item_id, answer=graph_answer, hold_review=graph_hold_review
-                    )
                 return await self._run_item(item_id)
 
     def assignment_estimate(self, item):
@@ -4574,7 +4411,9 @@ class Application:
                     candidate,
                 )
             except TransitionBlocked as exc:
-                raise TransitionBlocked("Admitted candidate is not preserved in final lineage") from exc
+                raise TransitionBlocked(
+                    "Admitted candidate is not preserved in final lineage"
+                ) from exc
         if self._stage_path(item_id, "proof-continuation").exists():
             from .recovery_flow import validated_auxiliary_proof
 
@@ -4587,11 +4426,6 @@ class Application:
                 value.get("proof_reviewer_session"),
                 candidate,
                 self.native_sessions_root(produced["binding"]),
-                **(
-                    {"coordination_context": self.invocation_coordination_context(produced)}
-                    if isinstance(self.provider, AgentProvider)
-                    else {}
-                ),
             )
             require(
                 proof_review.get("proof_result_digest") == digest(proof_result),
@@ -4617,21 +4451,12 @@ class Application:
                 checks = json.loads(self._stage_path(item_id, "source-checks").read_text())
             else:
                 checks = self.checks(candidate_repo, item_id, candidate, "source-checks")
-        source_context = (
-            source_review_context(candidate_repo, candidate, workflow, effective_assignment, checks)
-            if selected_source_review
-            else None
-        )
+        source_context = source_review_context(workflow, checks) if selected_source_review else None
         review = verify_native_review(
             produced["session"]["native_session_id"],
             value.get("reviewer_session"),
             candidate,
             self.native_sessions_root(produced["binding"]),
-            **(
-                {"coordination_context": self.invocation_coordination_context(produced)}
-                if isinstance(self.provider, AgentProvider)
-                else {}
-            ),
             **({"source_review": source_context} if source_context else {}),
         )
         review = retain_review(self, item_id, review)

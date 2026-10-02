@@ -38,11 +38,6 @@ def main(argv=None):
     submit_answer.add_argument("--text", required=True)
     answer = commands.add_parser("resume-answer")
     answer.add_argument("item_id")
-    graph_answer = commands.add_parser("graph-answer")
-    graph_answer.add_argument("item_id")
-    graph_answer.add_argument("--question-id", required=True)
-    graph_answer.add_argument("--revision", required=True)
-    graph_answer.add_argument("--text", required=True)
     recover = commands.add_parser("recover-provider")
     recover.add_argument("operation_id")
     effect = commands.add_parser("reconcile-provider-effect")
@@ -162,34 +157,11 @@ def main(argv=None):
                     authorize_retained_delivery(app, args.item_id, args.authorization)
                 )
             elif args.command == "answer":
-                if app.execution_engine(args.item_id) == "langgraph":
-                    result = asyncio.run(
-                        app.run_item(
-                            args.item_id,
-                            graph_answer={
-                                "question_id": args.question_id,
-                                "revision": args.revision,
-                                "text": args.text,
-                            },
-                        )
-                    )
-                else:
-                    result = asyncio.run(
-                        app.answer(args.item_id, args.question_id, args.revision, args.text)
-                    )
+                result = asyncio.run(
+                    app.answer(args.item_id, args.question_id, args.revision, args.text)
+                )
             elif args.command == "resume-answer":
                 result = asyncio.run(app.resume_answer(args.item_id))
-            elif args.command == "graph-answer":
-                result = asyncio.run(
-                    app.run_item(
-                        args.item_id,
-                        graph_answer={
-                            "question_id": args.question_id,
-                            "revision": args.revision,
-                            "text": args.text,
-                        },
-                    )
-                )
             elif args.command == "recover-provider":
                 result = app.recover_provider(args.operation_id)
             elif args.command == "reconcile-provider-effect":

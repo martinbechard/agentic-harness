@@ -243,9 +243,6 @@ class ConfigSnapshot:
             for name in (
                 "manage-work-items",
                 "manage-work-items-file",
-                "resource-claim",
-                "resource-claim-helper",
-                "resource-claim-helper-mcp",
             ):
                 path = root / "skills" / name / "SKILL.md"
                 management_skills[name] = (
@@ -296,7 +293,6 @@ class ConfigSnapshot:
                     ),
                     "permissions": profile["permissions"],
                     "tools": profile["tools"],
-                    **({"artifact_output": True} if profile.get("artifact_output", False) else {}),
                 }
             ),
         )
@@ -468,8 +464,8 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
                     identifiers.add(requirement["id"])
             if "review_requirements" in selected:
                 validate_review_requirements(selected["review_requirements"])
-            if selected.get("engine", "legacy") not in {"legacy", "langgraph"}:
-                raise ConfigError("Item workflow engine must be legacy or langgraph")
+            if selected.get("engine", "legacy") != "legacy":
+                raise ConfigError("The optional workflow engine has been removed; use the standard workflow")
             if not isinstance(selected.get("allowed_paths"), list) or not selected["allowed_paths"]:
                 raise ConfigError("Item scope needs allowed_paths")
             for value in selected["allowed_paths"]:
@@ -546,10 +542,6 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
                     not isinstance(v, str) or not v for v in profile[key]
                 ):
                     raise ConfigError(f"profile.{key} must be a list of strings")
-            if type(profile.get("artifact_output", False)) is not bool:
-                raise ConfigError("profile.artifact_output must be a boolean")
-            if profile.get("artifact_output") and profile["permissions"] != ["workspace-write"]:
-                raise ConfigError("Artifact output requires workspace-write permission")
             if profile["tools"] != ["native"]:
                 raise ConfigError(
                     "Codex supports the native tool set; arbitrary tool filtering is unsupported"

@@ -320,3 +320,16 @@ def test_bounded_correction_retains_each_attempt_and_replays(conflict, monkeypat
     assert not any(name.endswith("-3") for name in calls)
     if first == "unknown":
         assert calls == ["integration-resolve"]
+
+
+def test_conflict_can_be_resolved_by_authorized_deletion_without_duplicate_commit(conflict):
+    repo, work, evidence, args, record = conflict
+    git(work, "rm", "a")
+    result = finalize_resolution(repo, work, evidence, record, "reviewed-deletion")
+    candidate = git(work, "rev-parse", "HEAD")
+    assert result["candidate"] == candidate
+    assert not (work / "a").exists()
+    assert (work / "unrelated").read_text() == "preserve\n"
+    assert git(repo, "rev-parse", "HEAD") == args["primary"]
+    assert finalize_resolution(repo, work, evidence, record, "reviewed-deletion") == result
+    assert git(work, "rev-parse", "HEAD") == candidate

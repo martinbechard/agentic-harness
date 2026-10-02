@@ -12,12 +12,12 @@ from types import SimpleNamespace
 
 import pytest
 import yaml
-from system_support import InstalledHarness, install_wheel
+from system_support import InstalledHarness
 
 
 @pytest.fixture(scope="session")
-def installed_harness(tmp_path_factory):
-    return SimpleNamespace(python=install_wheel(tmp_path_factory))
+def installed_harness(installed_package_python):
+    return SimpleNamespace(python=installed_package_python)
 
 
 def clean_env():
@@ -211,6 +211,22 @@ with TelemetryReceiver(root) as receiver:
     assert Sink(dest.path, {}).evidence_digest() == report['evidence_sha256']
     result = {'outcome':'returned','telemetry':report,'telemetry_path':str(dest.path)}
     app.validate_invocation_result(result)
+    # A rejected export cannot erase returned work; its usage stays unknown.
+    request = Request(dest.endpoint, data=b'not json', headers={'x-harness-invocation':dest.token})
+    try:
+        urlopen(request, timeout=5)
+        raise AssertionError('malformed export accepted')
+    except HTTPError as error:
+        assert error.code == 400
+    result['telemetry'] = receiver.report(dest)
+    assert result['telemetry']['rejected_exports'] > 0
+    app.validate_invocation_result(result)
+    from backlog_harness.analytics import observed_invocation_usage
+    assert observed_invocation_usage(result) is None
+    empty = receiver.register(run_id='run',invocation_id='empty',role='worker',adapter='codex',item_id='item',provider_id='file:fixture')
+    empty_result = {'outcome':'returned','telemetry':receiver.report(empty),'telemetry_path':str(empty.path)}
+    app.validate_invocation_result(empty_result)
+    assert observed_invocation_usage(empty_result) is None
     dest.path.write_text(dest.path.read_text().replace('handle_responses','corrupted_name'))
     assert Sink(dest.path, {}).evidence_digest() != report['evidence_sha256']
     try:
@@ -226,7 +242,7 @@ print(json.dumps({'http':True,'deduplicated':True,'attribution':True,'corruption
     assert json.loads(result.stdout)["corruption_detected"] is True
 
 
-def test_s12_installed_wheel_source_parity_and_acp_permissions(
+def test_s12_installed_wheel_source_parity_and_supported_adapter(
     installed_harness, config_file, provider
 ):
     path, data = fixture_config(config_file, provider)
@@ -246,7 +262,7 @@ import asyncio, hashlib, json, sys
 from pathlib import Path
 import backlog_harness
 from backlog_harness.application import Application
-from backlog_harness.adapters.codex.acp_adapter import CodexAcpAdapter
+from backlog_harness.adapters.registry import AdapterRegistry
 from backlog_harness.runtime import AgentRequest
 from backlog_harness.telemetry import TelemetryDestination
 from backlog_harness.provider import TransitionBlocked
@@ -256,17 +272,16 @@ assert root.resolve() != source.resolve(), 'source checkout imported instead of 
 files = sorted(source.rglob('*.py'))
 for path in files:
     assert (root / path.relative_to(source)).read_bytes() == path.read_bytes(), str(path)
-app = Application(Path(sys.argv[2]))
-request = AgentRequest('op','inv',app.config,app.config.binding('orchestrator'),'fixture',app.root,TelemetryDestination('inv','http://localhost','secret',app.root/'trace'),read_only=False)
-adapter = CodexAcpAdapter()
-assert adapter.validate_profile(request)['production_ready'] is False
+registry = AdapterRegistry()
+assert set(registry.factories) == {'codex'}
+assert registry.resolve('codex').__class__.__name__ == 'CodexAdapter'
 try:
-    asyncio.run(adapter.start_session(request))
-    raise AssertionError('unsupported ACP write launched')
-except TransitionBlocked as error:
-    assert 'writable filesystem scope' in str(error), str(error)
-assert not adapter.processes
-print(json.dumps({'installed_modules':len(files),'acp_writes':'fenced','production_ready':False}))
+    registry.resolve('codex-acp')
+except ValueError:
+    pass
+else:
+    raise AssertionError('retired transport remained available')
+print(json.dumps({'installed_modules':len(files),'adapter':'codex'}))
 """,
         source,
         path,

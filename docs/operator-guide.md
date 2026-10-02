@@ -97,9 +97,9 @@ If an item is blocked, inspect its provider record, `scheduling-blocks.json`, in
 
 ## Tested Native Export Failure Boundary
 
-On Codex 0.159.2, no retry was observed in the tested first-export 503 scenario. The first 512 spans were lost while 1200 later spans and all 11 measured output tokens arrived. Matching usage and later spans did not restore the rejected batch. The generation gate rejected the result. Shutdown establishes observed drain/process exit with stable retained spans; it does not prove complete flush while an export is missing. See [native exporter evidence](verification/native-exporter-evidence.json).
+On Codex 0.159.2, no retry was observed in the tested first-export 503 scenario. The first 512 spans were lost while 1200 later spans and all 11 measured output tokens arrived. Matching usage and later spans did not restore the rejected batch. The harness version used for that experiment rejected the result. Current behavior preserves returned work with an intact receipt even when spans are missing or exports were rejected; unknown usage still fences further generation. Receipt-path, count and content validation remain required. Shutdown establishes observed drain/process exit with stable retained spans; it does not prove complete flush while an export is missing. See [native exporter evidence](verification/native-exporter-evidence.json).
 
-The receiver does not promise lossless export or introduce a separate durable spool. If the original validated batch is available, re-ingest those exact bytes through the existing authenticated receiver/correlation boundary and verify persistence before clearing its incident. If it was not retained, keep the gap and affected transition held. The operator must use the selected provider management workflow for an explicit nondelivery disposition; a larger allowance, a fabricated span or another paid invocation cannot substitute for the missing evidence. Inspection, other safe items and operator controls remain available.
+The receiver does not promise lossless export or introduce a separate durable spool. If the original validated batch is available, re-ingest those exact bytes through the existing authenticated receiver/correlation boundary and verify persistence before clearing its incident. If it was not retained, keep usage unknown and further spending held. A larger allowance, a fabricated span or another paid invocation cannot substitute for missing accounting evidence. Reusing returned work does not establish review, acceptance or delivery; those transitions retain their own evidence requirements. Inspection, other safe items and operator controls remain available.
 
 The dashboard caches complete trace records by file identity and byte offset, reads appended records once, exposes a partial tail as uncertainty, and orders the displayed recent spans by native timestamp. Counts and item details use the same captured provider revisions; a changed provider snapshot is rejected for refresh. Display configuration reload does not replace an executing invocation’s snapshot. Legacy receipts from the earlier completed acceptance remain historical display evidence; they cannot authorize new advancement without the current content binding.
 
@@ -129,7 +129,7 @@ pause for a later run. Policy evidence must cite the current canonical authority
 files inside the harness operational root cannot supply it. Actual operator
 pause/stop controls, execution locks, and item-local restrictions still apply.
 
-An active workflow may explicitly exempt agents from claims. The policy then records `claims_required: false`, a `claim_exemption` naming the authority, and current hashed source evidence supporting `coordination`. The harness validates that evidence before skipping helper discovery for management operations. SOLO alone does not establish an exemption; missing applicability fields retain the project's default claim requirements. Before a new production or native-review invocation, the harness binds the current validated coordination context to the invocation request and tells native delegates to carry the exact context. Agents operate the helper when claims apply and perform no claim operation when the bound context prohibits claims. Historical invocation replay retains its original request and coordination context.
+An active workflow may explicitly exempt agents from claims. The policy then records `claims_required: false`, a `claim_exemption` naming the authority, and current hashed source evidence supporting `coordination`. The harness validates that policy evidence; agents select and operate their own claim helpers. SOLO alone does not establish an exemption; missing applicability fields retain the project's default claim requirements. Before a new production or native-review invocation, the harness binds the current validated coordination context to the invocation request and instructs native delegates to follow the applicable coordination policy. Agents operate the helper when claims apply and perform no claim operation when the bound context prohibits claims. Historical invocation replay retains its original request and coordination context.
 
 If a committed provider update repeats a policy with a defective citation, the harness may reuse the previous policy only when its cited sources still validate and every control field matches. It retains the original receipt and separate reconciliation evidence. Changed decisions or stale prior authority still block advancement; recovery never repeats the committed mutation.
 
@@ -140,16 +140,14 @@ Recovery hashes have different domains: the provider revision hashes `path + NUL
 
 ## Scoped Proof Artifacts
 
-`profiles.<name>.artifact_output: true` explicitly enables invocation-local operational
-output for that profile. The default is disabled. The adapter records the exact path,
-invocation identity and permission fingerprint in `artifact-output.json` beside the
-invocation receipt. Only its `artifacts` child directory becomes writable; the rest of
-the operational root, including harness receipts, remains read-only. A read-only or
-provider invocation never receives this grant. Symlink redirects and changed contracts
-are rejected. Enabling output changes the permission fingerprint and cannot silently
-resume an existing session.
+An explicitly selected writable proof invocation receives one fixed `artifacts`
+directory beside its invocation receipt. The adapter records that directory and its
+invocation identity in `artifact-output.json`. The rest of the operational root,
+including harness receipts, remains read-only. Implementation, read-only and provider
+invocations receive no proof-output grant. Symlink redirects and changed receipt
+contracts are rejected. The retired `artifact_output` profile setting is ignored;
+no output-location setting is needed.
 
-For a preserved Running item whose existing bounded continuation returned blocked,
 For ordinary items with retained preparation, an explicitly reviewed
 `workflow.items.<id>.proof_requirements` selection can require visual proof before
 delivery. It contains `provider_revision`, `preparation_digest` (the complete saved
@@ -159,7 +157,7 @@ and `acceptance_text`. Independently review coverage of the full preparation
 packet before enabling this selection; the harness does not interpret free-form
 gate text as a workflow. Existing scope and check authority must remain unchanged.
 
-With artifact output enabled, the harness collects confined proof once and asks
+For an explicitly selected proof requirement, the harness collects confined proof once and asks
 the owning agent to arrange a fresh native child review. Each requirement needs
 supporting artifact hashes, a passing result, and an independent accepted
 assessment bound to the candidate, proof result and complete requirement set.
@@ -169,9 +167,8 @@ Existing browser/server restrictions still apply. These mechanics establish
 evidence integrity and reviewer identity; the reviewer judges visual acceptance.
 
 Set `candidate_approval_required: true` only when the item's authority requires
-explicit approval of the exact candidate. The legacy workflow uses the existing
-operator question/answer route; the graph workflow currently rejects this option
-before dispatch. A normal clarification answer does not grant candidate approval.
+explicit approval of the exact candidate. The standard workflow uses the existing
+operator question/answer route. A normal clarification answer does not grant candidate approval.
 The actual dev-methodology selections remain disabled pending their separate
 [coverage review](verification/dev-methodology-proof-coverage.md).
 

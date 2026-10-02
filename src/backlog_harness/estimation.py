@@ -17,6 +17,8 @@ PREPARATION_METADATA_FIELDS = {
     "verification_limit",
 }
 
+# Validated configuration supports one route: file provider, main-branch delivery,
+# and nonempty checks. Its enforced obligations do not vary per preparation.
 PREPARATION_RUNTIME_OBLIGATIONS = {
     "reservation_acceptance",
     "bounded_scope",
@@ -119,18 +121,6 @@ def configured_workflow(config, item_id):
     return selected
 
 
-def available_preparation_obligations(selected, config):
-    """Name only runtime obligations that the selected workflow already enforces."""
-    available = {"reservation_acceptance", "bounded_scope", "authority_analysis"}
-    if selected.get("checks"):
-        available.add("configured_verification")
-    if selected.get("completion") == "main-branch":
-        available.update({"independent_review", "main_branch_delivery"})
-    if config.data.get("provider") == "file":
-        available.add("provider_completion")
-    return available
-
-
 def effective_preparation_decision(app, item_id, saved, selected, config):
     """Resolve and validate an optional linked correction without replacing original evidence."""
     from .contracts import digest
@@ -175,7 +165,7 @@ def effective_preparation_decision(app, item_id, saved, selected, config):
         app.result_json(corrected),
         digest(original),
         resolution["schema_error"],
-        available_preparation_obligations(selected, config),
+        PREPARATION_RUNTIME_OBLIGATIONS,
     )
     return corrected
 
@@ -576,7 +566,7 @@ async def correct_preparation_contract(app, item, saved, config, schema_error):
         "Preparation lacks supporting authority evidence",
     )
     validate_preparation_sources(app, config, item, authority)
-    available = available_preparation_obligations(selected, config)
+    available = PREPARATION_RUNTIME_OBLIGATIONS
     prompt = (
         "Correct one retained preparation response representation. Read only; do not implement, "
         "mutate, delegate, invoke claims, change authority, or delete an obligation. Return the "

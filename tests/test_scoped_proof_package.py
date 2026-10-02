@@ -184,3 +184,21 @@ def test_invalid_original_package_never_reaches_applicability_review(scoped, fau
         atomic_json(root / "proof-input-inventory.json", inventory)
     with pytest.raises(TransitionBlocked):
         verify(scoped)
+
+
+def test_package_preserves_non_json_artifact_hashes(scoped):
+    _app, _instruction, _record, root, _binding, _committed, value, *_ = scoped
+    artifact = root / "rendered-output.txt"
+    artifact.write_text("Retained visual inspection output\n")
+    package_path = root / "proof-result.json"
+    package = json.loads(package_path.read_text())
+    package["artifacts"].append(
+        {"path": str(artifact), "sha256": sha256(artifact.read_bytes()).hexdigest()}
+    )
+    atomic_json(package_path, package)
+    value["artifacts"][0]["sha256"] = sha256(package_path.read_bytes()).hexdigest()
+    result = verify(scoped)
+    assert result["disposition"] == "review-required"
+    artifact.write_text("Changed output\n")
+    with pytest.raises(TransitionBlocked):
+        verify(scoped)

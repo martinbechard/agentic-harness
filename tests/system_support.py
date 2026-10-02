@@ -41,6 +41,16 @@ def install_wheel(tmp_path_factory):
         ["uv", "pip", "install", "--python", python, *list((root / "dist").glob("*.whl"))]
     )
     assert install.returncode == 0, install.stderr
+    if os.environ.get("COVERAGE_PROCESS_CONFIG"):
+        # The temporary installed environment needs its own coverage startup hook.
+        # Instrument the installed package, never substitute checkout imports.
+        from importlib.metadata import version
+
+        measured = command([
+            "uv", "pip", "install", "--python", python,
+            "coverage==" + version("coverage"),
+        ])
+        assert measured.returncode == 0, measured.stderr
     wheel = next((root / "dist").glob("*.whl"))
     with zipfile.ZipFile(wheel) as archive:
         wheel_files = {

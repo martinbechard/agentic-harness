@@ -113,6 +113,7 @@ def test_returned_observations_rebuild_missing_stage(config_file, tmp_path):
         "before_merge",
         "after_merge",
         "after_checks",
+        "after_checks_primary_advanced",
         "collision",
         "exact_collision",
         "ancestor_collision",
@@ -158,7 +159,10 @@ def test_delivery_crash_boundaries_reconcile_once(
     def check(repo, item, commit, name):
         result = [{**checks[0], "candidate": commit}]
         atomic_json(stage(item, name), result)
-        if crash == "after_checks" and not stage(item, "crashed").exists():
+        if (
+            crash in {"after_checks", "after_checks_primary_advanced"}
+            and not stage(item, "crashed").exists()
+        ):
             atomic_json(stage(item, "crashed"), True)
             raise RuntimeError("crash after checks")
         return result
@@ -203,6 +207,12 @@ def test_delivery_crash_boundaries_reconcile_once(
         return
     with pytest.raises(RuntimeError, match="crash"):
         integrate(app, "item-one", candidate_repo, candidate, base, review, checks)
+    advanced = None
+    if crash == "after_checks_primary_advanced":
+        (primary / "unrelated.txt").write_text("Independent later work\n")
+        git(primary, "add", "unrelated.txt")
+        git(primary, "commit", "-m", "Independent later work")
+        advanced = git(primary, "rev-parse", "HEAD")
     result = integrate(app, "item-one", candidate_repo, candidate, base, review, checks)
     assert result["disposition"] == "READY"
     if untracked:
@@ -210,7 +220,7 @@ def test_delivery_crash_boundaries_reconcile_once(
         assert (primary / "existing-link").is_symlink()
         assert set(result["preserved_untracked"]) == {"existing-plan.md", "existing-link"}
     commits = git(primary, "rev-list", "--first-parent", base + "..HEAD").splitlines()
-    assert commits == [result["main_commit"]]
+    assert commits == ([advanced] if advanced else []) + [result["main_commit"]]
     assert integrate(app, "item-one", candidate_repo, candidate, base, review, checks) == result
     if untracked:
         (primary / "existing-plan.md").write_text("changed externally\n")
@@ -390,7 +400,8 @@ def test_prepared_provider_recovery_is_explicit_and_commits_once(provider, monke
     assert git(provider.repository, "rev-parse", "HEAD") == receipt["provider_commit"]
 
 
-def test_prepared_provider_recovery_rejects_conflicting_bytes(provider, monkeypatch):
+@pytest.mark.parametrize("fault", ["bytes", "identity", "merge", "unrelated", "symlink", "index"])
+def test_prepared_provider_recovery_rejects_conflicting_bytes(provider, monkeypatch, fault):
     from backlog_harness import provider as module
 
     item = provider.item("item-one")
@@ -413,9 +424,37 @@ def test_prepared_provider_recovery_rejects_conflicting_bytes(provider, monkeypa
     monkeypatch.setattr(module, "git", native_git)
     record = next((provider.evidence_root / "provider-operations").glob("*/requested.json")).parent
     head = git(provider.repository, "rev-parse", "HEAD")
-    (provider.repository / item.path).write_text("unrelated replacement")
-    with pytest.raises(TransitionBlocked, match="bytes conflict"):
+    import json
+
+    source = provider.repository / item.path
+    message = "bytes conflict"
+    if fault == "bytes":
+        source.write_text("unrelated replacement")
+    elif fault == "identity":
+        request = json.loads((record / "requested.json").read_text())
+        request["item_id"] = "other"
+        atomic_json(record / "requested.json", request)
+        message = "identity or bytes changed"
+    elif fault == "merge":
+        (provider.repository / ".git/MERGE_HEAD").write_text(head + "\n")
+        message = "unresolved merge"
+    elif fault == "unrelated":
+        (provider.repository / "unrelated.txt").write_text("preserve this")
+        message = "Unrelated checkout changes"
+    elif fault == "symlink":
+        source.unlink()
+        source.symlink_to(provider.repository / "PROJECT.yaml")
+        message = "Unsafe prepared provider path"
+    else:
+        intended = source.read_bytes()
+        source.write_text("different staged work")
+        git(provider.repository, "add", "--", item.path)
+        source.write_bytes(intended)
+        message = "index bytes conflict"
+    before = git(provider.repository, "status", "--porcelain")
+    with pytest.raises(TransitionBlocked, match=message):
         provider.recover_prepared(record, validate=validate_transition)
+    assert git(provider.repository, "status", "--porcelain") == before
     assert git(provider.repository, "rev-parse", "HEAD") == head
 
 

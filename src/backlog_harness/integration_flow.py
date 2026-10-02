@@ -113,7 +113,8 @@ async def reconcile_integration(app, item_id, instruction_path, amendment_path=N
             )
             return load_integration(app, item_id, context["original_candidate"])
         previous_feedback = None
-        for attempt in range(1, MAX_INTEGRATION_ATTEMPTS + 1):
+        attempt = 1
+        while True:
             attempt_context = dict(context)
             if attempt == 2:
                 require(app.item_quiescent(item_id), "Correction requires quiescent execution")
@@ -160,6 +161,7 @@ async def reconcile_integration(app, item_id, instruction_path, amendment_path=N
                     "Integration correction exhausted two attempts; review cause and re-estimate remaining work: "
                     + json.dumps(previous_feedback, sort_keys=True),
                 )
+                attempt += 1
 
 
 class CorrectionFeedback(TransitionBlocked):

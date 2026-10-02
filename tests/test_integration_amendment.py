@@ -162,3 +162,19 @@ def test_amendment_binds_executed_script_after_bytecode_flag(amendment_case, exe
         assert seen == []
     else:
         assert apply_amendment(app, "item", instruction, amendment, feedback, context)
+
+
+def test_amendment_does_not_duplicate_existing_generator_declarations(amendment_case):
+    app, instruction, amendment, feedback, context, seen = amendment_case
+    for field in ("generators", "generated_paths", "generator_inputs"):
+        instruction[field] = deepcopy(amendment[field])
+    amendment["instruction_digest"] = digest(instruction)
+    apply_amendment(app, "item", instruction, amendment, feedback, context)
+    assert seen == [instruction]
+
+
+def test_unknown_correction_feedback_cannot_authorize_an_attempt():
+    from backlog_harness.integration_flow import validate_previous_feedback
+
+    with pytest.raises(TransitionBlocked, match="Unknown integration correction feedback"):
+        validate_previous_feedback(SimpleNamespace(), "item", {"kind": "invented"})

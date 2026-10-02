@@ -434,3 +434,59 @@ def test_child_usage_cannot_cover_later_unaccounted_parent_output(
     with pytest.raises(TransitionBlocked, match="uncovered model output"):
         asyncio.run(app.resume_provider_observation(operation, SESSION_ID))
     assert adapter.calls == 0
+
+
+@pytest.mark.parametrize("fault", [None, "semantic", "transport", "original", "session", "receipt"])
+def test_completed_observation_continuation_survives_prompt_wording_change(
+    config_file, provider, monkeypatch, fault
+):
+    app, operation, inventory = prepare_interrupted_observation(config_file, provider)
+    adapter = ReturningResumeAdapter(inventory)
+    monkeypatch.setattr("backlog_harness.application.AdapterRegistry.resolve", lambda *_: adapter)
+    asyncio.run(app.resume_provider_observation(operation, SESSION_ID))
+    stage = operation.split(":", 1)[1]
+    saved = app._stage_path("provider-inventory", stage)
+    # The second resume reconstructs the durable result; its envelope must remain
+    # identical to the normal completion, including the transport request digest.
+    before = saved.read_bytes()
+    asyncio.run(app.resume_provider_observation(operation, SESSION_ID))
+    assert saved.read_bytes() == before
+    if fault:
+        result = json.loads(before)
+        if fault == "semantic":
+            result["request_digest"] = "f" * 64
+        elif fault == "transport":
+            result["continuation_request_digest"] = "f" * 64
+        elif fault == "original":
+            result["continuation"]["original_invocation_id"] = "another-invocation"
+        elif fault == "session":
+            result["session"]["native_session_id"] = "another-session"
+        else:
+            (Path(result["evidence_path"]) / "continuation.json").unlink()
+        atomic_json(saved, result)
+        with pytest.raises(TransitionBlocked, match="Completed"):
+            asyncio.run(
+                app.invoke(
+                    "provider-inventory",
+                    stage,
+                    "coordinator",
+                    "Updated observation wording",
+                    read_only=True,
+                    purpose="provider",
+                )
+            )
+        assert adapter.calls == 1
+        return
+    replayed = asyncio.run(
+        app.invoke(
+            "provider-inventory",
+            stage,
+            "coordinator",
+            "Updated observation wording",
+            read_only=True,
+            purpose="provider",
+        )
+    )
+    assert replayed == json.loads(before)
+    assert saved.read_bytes() == before
+    assert adapter.calls == 1

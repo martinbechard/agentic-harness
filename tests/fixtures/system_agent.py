@@ -17,6 +17,9 @@ if "--version" in sys.argv:
 if sys.argv[1:3] == ["login", "status"]:
     print("Logged in using ChatGPT")
     raise SystemExit
+if "--help" in sys.argv:
+    print("--json --model --config")
+    raise SystemExit
 prompt = sys.stdin.read()
 with (Path(os.environ["HARNESS_SYSTEM_REPO"]).parent / "agent-calls.jsonl").open("a") as stream:
     stream.write(json.dumps({"argv": sys.argv, "prompt": prompt}) + "\n")

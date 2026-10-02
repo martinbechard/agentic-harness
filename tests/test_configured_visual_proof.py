@@ -159,6 +159,7 @@ def test_configured_proof_replay_and_delivery_revalidation(tmp_path, contract, m
     acceptance = {"session": {"session_id": "owner", "native_session_id": "owner-native"}}
 
     class App:
+        provider = None  # This fixture exercises the direct-provider workflow.
         root = tmp_path
         config = SimpleNamespace(
             binding=lambda _: binding, data={"profiles": {"worker": {"artifact_output": True}}}

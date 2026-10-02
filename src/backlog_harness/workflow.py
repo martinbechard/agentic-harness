@@ -225,10 +225,7 @@ def validate_candidate(
 ):
     require(git(repository, "rev-parse", "HEAD") == candidate, "Candidate HEAD changed")
     require(not git(repository, "status", "--porcelain"), "Candidate is dirty")
-    if preserved:
-        require(git(repository, "merge-base", base, candidate) == base, "Candidate base changed")
-    else:
-        require(git(repository, "rev-parse", candidate + "^") == base, "Candidate base changed")
+    require(git(repository, "merge-base", base, candidate) == base, "Candidate base changed")
     changed = git(repository, "diff", "--name-only", base, candidate).splitlines()
     require(
         changed and set(changed) <= set(allowed_paths), "Candidate changes exceed accepted scope"

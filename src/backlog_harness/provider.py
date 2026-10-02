@@ -67,6 +67,170 @@ def blob(repo, commit, path):
     )
 
 
+def commit_provider_files(repository, record, intended):
+    """Apply approved provider bytes once; recover commits without repeating mutations."""
+    from .workflow import require
+
+    require(set(intended) == set(record["paths"]), "Provider write paths differ")
+    before = {}
+    for name in intended:
+        path = repository / name
+        require(
+            not Path(name).is_absolute()
+            and ".." not in Path(name).parts
+            and path.resolve().is_relative_to(repository / "backlog")
+            and not path.is_symlink(),
+            "Unsafe provider write path",
+        )
+        exists = git(repository, "ls-tree", "--name-only", record["head"], "--", name)
+        before[name] = blob(repository, record["head"], name) if exists else None
+    require(
+        before[record["item"]["path"]] == record["item"]["content"].encode(),
+        "Provider source differs from approved revision",
+    )
+    changed = {name for name in intended if intended[name] != before[name]}
+    require(changed, "Provider operation has no change")
+    head = git(repository, "rev-parse", "HEAD")
+    if head != record["head"]:
+        for commit in git(
+            repository, "rev-list", "--first-parent", record["head"] + ".." + head
+        ).splitlines():
+            if git(repository, "rev-parse", commit + "^") != record["head"]:
+                continue
+            actual = set(
+                git(
+                    repository, "diff", "--no-renames", "--name-only", record["head"], commit
+                ).splitlines()
+            )
+            require(actual == changed, "Provider committed paths conflict with intent")
+            for name, content in intended.items():
+                exists = git(repository, "ls-tree", "--name-only", commit, "--", name)
+                require(
+                    (blob(repository, commit, name) if exists else None) == content,
+                    "Provider committed bytes conflict with intent",
+                )
+            return commit
+        raise TransitionBlocked("Provider operation has no matching committed effect")
+    require(not (repository / ".git/MERGE_HEAD").exists(), "Provider merge is unresolved")
+    for name, content in intended.items():
+        path = repository / name
+        require(not path.exists() or path.is_file(), "Provider path is not a regular file")
+        working = path.read_bytes() if path.exists() else None
+        indexed = git(repository, "ls-files", "--", name)
+        staged = blob(repository, "", name) if indexed else None
+        require(
+            working in {before[name], content} and staged in {before[name], content},
+            "Provider working or staged bytes conflict with intent",
+        )
+    for name, content in intended.items():
+        path = repository / name
+        if content is None:
+            path.unlink(missing_ok=True)
+            git(repository, "rm", "--cached", "--ignore-unmatch", "--", name)
+            continue
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(dir=path.parent)
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(content)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, path)
+            fsync_directory(path.parent)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+        git(repository, "add", "--", name)
+    git(
+        repository,
+        "commit",
+        "--only",
+        "-m",
+        record["item"]["item_id"] + ": " + record["target"],
+        "--",
+        *sorted(changed),
+    )
+    return git(repository, "rev-parse", "HEAD")
+
+
+def commit_content_amendment(repository, record):
+    from .workflow import validate_content_amendment_request
+
+    validate_content_amendment_request(Item(**record["item"]), record)
+    return commit_provider_files(
+        repository, record, {record["expected_path"]: record["amended_content"].encode()}
+    )
+
+
+def transition_content(record):
+    """Render the supported file-provider header and preserve the remaining document."""
+    from .workflow import preparation_question_content, require
+
+    item, authority, target = record["item"], record["authority"], record["target"]
+    if "scoped_question_content" in record:
+        return record["scoped_question_content"]
+    if item["state"] == "Ready" and target == "User Action Required":
+        return preparation_question_content(item["content"], authority["question"])
+    header, separator, body = item["content"].partition("\n## ")
+    header, count = re.subn(r"(?m)^Status: .*?$", "Status: " + target, header)
+    require(count == 1, "Provider record requires one Status header")
+    owner = (
+        "Unowned"
+        if target == "Ready" and authority.get("operation") == "redispatch"
+        else authority["session_id"]
+        if item["state"] == "Starting" and target == "Running"
+        else item["owner"]
+    )
+    if owner != item["owner"]:
+        header, count = re.subn(r"(?m)^Owner: .*?$", "Owner: " + owner, header)
+        require(count == 1, "Provider ownership change requires one Owner header")
+    content = header + separator + body
+    if authority.get("operation") == "record-estimate":
+        content += "\n\nProspective Execution High: " + str(authority["prospective_high"])
+        content += "\nHistorical Original Estimate: unknown\nHistorical Usage: unknown\n"
+        content += json.dumps(authority["estimate"], sort_keys=True) + "\n"
+    return (
+        content
+        + "\n\n## Harness Transition Evidence\n\n```json\n"
+        + json.dumps({"authority": authority}, sort_keys=True)
+        + "\n```\n"
+    )
+
+
+def commit_transition(repository, record):
+    from .workflow import require, validate_transition
+
+    validate_transition(Item(**record["item"]), record["target"], record["authority"])
+    source, destination = record["item"]["path"], record["expected_path"]
+    intended = {destination: transition_content(record).encode()}
+    if source != destination:
+        require(
+            not git(repository, "ls-tree", "--name-only", record["head"], "--", destination),
+            "Provider archive destination already exists",
+        )
+        intended[source] = None
+    for name in set(record["paths"]) - {source, destination}:
+        content = blob(repository, record["head"], name).decode()
+        old_link = "](" + Path(source).name + ")"
+        new_link = "](" + os.path.relpath(destination, str(Path(name).parent)) + ")"
+        require(old_link in content, "Provider series link is missing")
+        intended[name] = content.replace(old_link, new_link).encode()
+    commit = commit_provider_files(repository, record, intended)
+    after = {**record["item"], "path": destination, "state": record["target"]}
+    after.pop("content")
+    after.pop("revision")
+    if record["target"] == "Ready" and record["authority"].get("operation") == "redispatch":
+        after["owner"] = "Unowned"
+    elif record["item"]["state"] == "Starting" and record["target"] == "Running":
+        after["owner"] = record["authority"]["session_id"]
+    return {
+        "operation_id": record["stage_operation"],
+        "before_revision": record["item"]["revision"],
+        "commit": commit,
+        "after": after,
+    }
+
+
 @dataclass(frozen=True)
 class Item:
     item_id: str
@@ -394,7 +558,11 @@ class FileProvider:
             finally:
                 if os.path.exists(tmp):
                     os.unlink(tmp)
-            git(self.repository, "add", "--", *request["paths"])
+            # The archive deletion may already be staged when the supervisor stops.
+            # Re-staging an absent, no-longer-indexed path fails; removal is idempotent.
+            if source != destination:
+                git(self.repository, "rm", "--cached", "--ignore-unmatch", "--", source_path)
+            git(self.repository, "add", "--", target_path)
             git(
                 self.repository,
                 "commit",
@@ -610,7 +778,6 @@ class AgentProvider:
 
     def policy(self):
         policy = self.observation()["policy"]
-        self.validate_policy(policy)
         if policy["eligible"] is not True:
             raise TransitionBlocked("Provider agent did not establish eligible execution policy")
         return policy

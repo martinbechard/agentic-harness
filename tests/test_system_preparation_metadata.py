@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from system_support import InstalledHarness, install_wheel
+from system_support import InstalledHarness
 
 
 @pytest.fixture(scope="session")
-def preparation_python(tmp_path_factory):
-    return install_wheel(tmp_path_factory)
+def preparation_python(installed_package_python):
+    return installed_package_python
 
 
 def calls(harness):

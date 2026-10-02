@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
 
 from .contracts import AgentBinding, ConfigSnapshot
 from .telemetry import TelemetryDestination
@@ -41,15 +39,3 @@ class InvocationHandle:
     session: SessionHandle | None = None
     outcome: str = "requested"
     events: list[dict] = field(default_factory=list)
-
-
-class AgentCliAdapter(Protocol):
-    def validate_profile(self, request: AgentRequest) -> dict: ...
-    async def prepare_telemetry(self, request: AgentRequest) -> dict: ...
-    async def start_session(self, request: AgentRequest) -> InvocationHandle: ...
-    async def resume_session(
-        self, session: SessionHandle, request: AgentRequest
-    ) -> InvocationHandle: ...
-    def observe_events(self, invocation: InvocationHandle) -> AsyncIterator[dict]: ...
-    async def reconcile(self, invocation: InvocationHandle) -> dict: ...
-    async def request_interrupt(self, invocation: InvocationHandle) -> dict: ...

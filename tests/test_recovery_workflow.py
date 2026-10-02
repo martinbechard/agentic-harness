@@ -70,7 +70,8 @@ def test_recovery_authority_does_not_open_other_admission(config_file, provider,
     assert policy["eligible"] is False
 
 
-def test_preserved_candidate_checks_entire_ancestry(provider):
+@pytest.mark.parametrize("preserved", [False, True])
+def test_candidate_checks_entire_ancestry(provider, preserved):
     repo = provider.repository
     base = git(repo, "rev-parse", "HEAD")
     for path in ["page.html", "check.py"]:
@@ -90,12 +91,12 @@ def test_preserved_candidate_checks_entire_ancestry(provider):
     checks = [{"candidate": head, "returncode": 0, "argv": ["check"], "evidence_sha256": "hash"}]
     assert set(
         validate_candidate(
-            repo, head, base, ["page.html", "check.py"], "producer", review, checks, preserved=True
+            repo, head, base, ["page.html", "check.py"], "producer", review, checks, preserved=preserved
         )
     ) == {"page.html", "check.py"}
     with pytest.raises(TransitionBlocked, match="scope"):
         validate_candidate(
-            repo, head, base, ["check.py"], "producer", review, checks, preserved=True
+            repo, head, base, ["check.py"], "producer", review, checks, preserved=preserved
         )
 
 
@@ -763,7 +764,6 @@ def test_normal_question_transition_routes_or_replays(config_file, provider, mon
     monkeypatch.setattr(app.provider, "item", lambda _: item)
     monkeypatch.setattr(app.provider, "observation", dict)
     monkeypatch.setattr(app.provider, "source_manifest", dict)
-    monkeypatch.setattr(app, "validate_management_readiness", lambda _: None)
     atomic_json(app.provider.cache_path, {})
 
     class Captured(Exception):

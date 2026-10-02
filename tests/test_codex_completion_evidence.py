@@ -133,6 +133,8 @@ def test_exact_retained_completed_turn_recovers_without_prompt_or_mutation(retai
         "wrong-invocation",
         "malformed-text",
         "wrong-turn",
+        "invalid-start-turn",
+        "malformed-content",
         "missing-response",
     ],
 )
@@ -144,6 +146,10 @@ def test_missing_ambiguous_failed_or_live_evidence_cannot_advance(retained, faul
         rows[3]["payload"]["content"][0]["text"] += " changed"
     elif fault == "malformed-text":
         rows[3]["payload"]["content"][0]["text"] = None
+    elif fault == "invalid-start-turn":
+        rows[1]["payload"]["turn_id"] = "not-a-uuid"
+    elif fault == "malformed-content":
+        rows[3]["payload"]["content"] = "not a content list"
     elif fault == "wrong-turn":
         rows[-1]["payload"]["turn_id"] = str(uuid4())
     elif fault == "missing-response":
@@ -221,3 +227,51 @@ def test_changed_native_evidence_during_quiescence_blocks(retained, monkeypatch)
     monkeypatch.setattr(os, "kill", append_after_read)
     with pytest.raises(TransitionBlocked, match="changed during"):
         reconcile_native_completion(path)
+
+
+@pytest.mark.parametrize("fault", ["malformed-receipt", "invalid-session", "uninspectable-process"])
+def test_unreadable_completion_authority_cannot_be_recovered(retained, monkeypatch, fault):
+    path, *_ = retained
+    if fault == "malformed-receipt":
+        (path / "native-request.json").write_text("invalid json")
+        message = "malformed"
+    elif fault == "invalid-session":
+        atomic_json(path / "session.json", {"native_session_id": "not-a-uuid"})
+        message = "identity is invalid"
+    else:
+
+        def denied(pid, sig):
+            raise PermissionError("inspection denied")
+
+        monkeypatch.setattr(os, "kill", denied)
+        message = "Cannot establish native process quiescence"
+    with pytest.raises(TransitionBlocked, match=message):
+        reconcile_native_completion(path)
+    assert not (path / "result.json").exists()
+
+
+def test_matching_retained_request_reuses_marker_but_changed_prompt_is_rejected(retained):
+    path, *_ = retained
+    before = (path / "native-request.json").read_bytes()
+    assert prepare_native_request(path, "Exact supplied answer").endswith("Exact supplied answer")
+    assert (path / "native-request.json").read_bytes() == before
+    with pytest.raises(TransitionBlocked, match="marker differs"):
+        prepare_native_request(path, "Different request")
+    assert (path / "native-request.json").read_bytes() == before
+
+
+@pytest.mark.parametrize("change", ["deleted", "partial"])
+def test_native_evidence_lost_during_quiescence_blocks(retained, monkeypatch, change):
+    path, native, *_ = retained
+
+    def change_after_read(pid, signal):
+        if change == "deleted":
+            native.unlink(missing_ok=True)
+        else:
+            native.write_text("{invalid json}\n")
+        raise ProcessLookupError()
+
+    monkeypatch.setattr(os, "kill", change_after_read)
+    with pytest.raises(TransitionBlocked, match="changed during|absent or ambiguous"):
+        reconcile_native_completion(path)
+    assert not (path / "result.json").exists()

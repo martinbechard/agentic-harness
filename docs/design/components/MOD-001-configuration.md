@@ -52,7 +52,7 @@ Recheck this design when configuration keys, supported adapters, role permission
 | Requirement source and ID | Claim mode | Required outcome | Satisfying contract | Status | Out-of-scope authority, rationale, and owning artifact | Verification |
 | --- | --- | --- | --- | --- | --- | --- |
 | Plan: configuration and adapter contracts | CURRENT_BEHAVIOR | Reload applicable configuration before each CLI invocation and keep in-flight values immutable. | `load_config`, `ConfigSnapshot`, and `Application._invoke` | DEFINED | Not applicable | `test_reload_is_deeply_immutable`; `test_accepted_workflow_remains_frozen_and_changed_scope_blocks_invocation` |
-| Plan: configurable bindings | CURRENT_BEHAVIOR | Bind every role through a common interface; support Codex first. | `AgentBinding`, `AgentCliAdapter`, and `AdapterRegistry.resolve` | DEFINED | Additional production adapters are outside version 1. | `test_duplicate_keys_and_unsupported_adapter`; `test_effective_authentication_context_is_bound_to_session` |
+| Plan: configurable bindings | CURRENT_BEHAVIOR | Bind every role through a common interface; support Codex first. | `AgentBinding` and `AdapterRegistry.resolve` | DEFINED | Additional production adapters are outside version 1. | `test_duplicate_keys_and_unsupported_adapter`; `test_effective_authentication_context_is_bound_to_session` |
 | Plan: read-only inspection | CURRENT_BEHAVIOR | Keep provider and evidence inspection available when generation configuration is invalid. | `load_control_config` and `Application(config_path, control_only=True)` | DEFINED | Control loading cannot authorize generation. | `test_control_storage_remains_inspectable_when_generation_profile_is_missing`; `test_long_lived_view_observes_invalid_configuration_without_reusing_generation_settings` |
 | Selected file/main route | CURRENT_BEHAVIOR | Require file persistence, main-branch completion, agent-owned resource coordination, and SOLO or approved MULTITASK. | `load_config` validates the harness route; `FileProvider.policy` validates `PROJECT.yaml`. | DEFINED | Agents use the configured claim helper; no provider framework or claim transport is added. | `test_agent_owned_claim_policy_is_preserved`; selected-mode tests |
 
@@ -84,7 +84,7 @@ Symbol and placement ledger:
 | `runtime.py` | `SessionHandle(session_id: str, native_session_id: str, binding: AgentBinding)` | Binds portable and native session identity to the originating binding. |
 | `runtime.py` | `AgentRequest(operation_id: str, invocation_id: str, snapshot: ConfigSnapshot, binding: AgentBinding, prompt: str, evidence_path: Path, telemetry: TelemetryDestination, timeout_seconds: float = 90, capability_probe: bool = False, read_only: bool = True)` | Supplies one immutable adapter request. |
 | `runtime.py` | `InvocationHandle(invocation_id: str, evidence_path: Path, session: SessionHandle | None = None, outcome: str = "requested", events: list[dict] = field(default_factory=list))` | Carries normalized adapter observations. |
-| `runtime.py` | `class AgentCliAdapter(Protocol)` | Requires the seven adapter operations listed under Public Contracts. |
+| `adapters/registry.py` | `AdapterRegistry.resolve` | Checks the seven callable adapter operations listed under Public Contracts. |
 | `registry.py` | `AdapterRegistry(factories=None)`; `resolve(name)` | Instantiates only registered adapters and verifies every protocol method is callable. |
 
 ## Parent Context
@@ -132,7 +132,7 @@ flowchart LR
 
 `load_control_config(path: Path) -> ConfigSnapshot` first attempts full validation. If generation configuration is invalid, it validates only the file-provider storage identity and records `generation_configuration_error`. The returned snapshot is read-only evidence context and cannot authorize generation.
 
-`AgentCliAdapter` defines these exact methods:
+`AdapterRegistry.resolve` checks these required callable methods:
 
 ```python
 def validate_profile(self, request: AgentRequest) -> dict
@@ -199,7 +199,7 @@ The root file requires version 1, absolute repository, methodology, workspace, a
 
 ## External Interfaces
 
-The external input is the operator-selected YAML file. The adapter interface is the Python `AgentCliAdapter` protocol. No network configuration service, dynamic adapter import, or environment-discovered project route exists.
+The external input is the operator-selected YAML file. The adapter interface is enforced by `AdapterRegistry.resolve`; the unused parallel protocol declaration was removed. No network configuration service, dynamic adapter import, or environment-discovered project route exists.
 
 ## UI And Notification Behavior
 

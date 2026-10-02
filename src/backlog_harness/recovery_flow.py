@@ -798,10 +798,6 @@ async def run_artifact_proof(app, item_id, instruction_path, *, prepare_only=Fal
             data["workspace"] = str(app.candidate_repository(item_id))
             snapshot = replace(app.config, data=freeze(data))
             binding = snapshot.binding("orchestrator")
-            require(
-                snapshot.data["profiles"][binding.profile_name].get("artifact_output") is True,
-                "Proof requires explicitly configured artifact_output permission",
-            )
             request = {
                 "item_id": item_id,
                 "revision": item.revision,
@@ -1257,10 +1253,6 @@ def configured_proof_request(app, item_id, candidate, acceptance):
         "Configured proof differs from original preparation",
     )
     binding = app.config.binding("orchestrator")
-    require(
-        app.config.data["profiles"][binding.profile_name].get("artifact_output") is True,
-        "Configured proof requires artifact_output permission",
-    )
     request = {
         "item_id": item_id,
         "revision": contract["provider_revision"],
@@ -1375,11 +1367,7 @@ async def ensure_configured_proof(app, item_id, candidate, acceptance):
         value.get("proof_reviewer_session"),
         candidate,
         app.native_sessions_root(reviewed["binding"]),
-        **(
-            {"coordination_context": app.invocation_coordination_context(reviewed)}
-            if isinstance(app.provider, AgentProvider)
-            else {}
-        ),
+
     )
     validate_requirement_review(request["proof_requirements"], result, proof, review)
     from .acceptance_verification import validate as validate_verification
@@ -1491,10 +1479,6 @@ def design_request(app, item_id, base, acceptance):
         "Design selection differs from original preparation",
     )
     binding = app.config.binding("orchestrator")
-    require(
-        app.config.data["profiles"][binding.profile_name].get("artifact_output") is True,
-        "Design review requires artifact_output permission",
-    )
     return {
         "item_id": item_id,
         "owner": acceptance["session"]["session_id"],
@@ -1525,11 +1509,7 @@ def validated_design_attempt(app, item_id, request, acceptance, attempt):
         request["candidate"],
         app.native_sessions_root(result["binding"]),
         accepted_verdicts=("ACCEPT", "REJECT"),
-        **(
-            {"coordination_context": app.invocation_coordination_context(result)}
-            if isinstance(app.provider, AgentProvider)
-            else {}
-        ),
+
     )
     require(
         review.get("candidate") == request["candidate"]

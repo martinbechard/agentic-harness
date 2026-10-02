@@ -80,3 +80,11 @@ def provider(tmp_path):
     git(repo, "add", "--", "PROJECT.yaml", "backlog/feature-backlog/item-one.md")
     git(repo, "commit", "-m", "Initial")
     return FileProvider(repo, tmp_path / "evidence")
+
+
+@pytest.fixture(scope="session")
+def installed_package_python(tmp_path_factory):
+    """Build once; each system test still creates its own repository and native home."""
+    from system_support import install_wheel
+
+    return install_wheel(tmp_path_factory)

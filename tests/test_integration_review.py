@@ -91,7 +91,22 @@ def test_preseeded_check_receipt_cannot_substitute_for_harness_execution(config_
     atomic_json(app._stage_path("item", "integration-checks"), forged)
     with pytest.raises(TransitionBlocked, match="execution intent"):
         app.validate_check_execution("item", "integration-checks", "candidate", forged)
-    actual = app.checks(Path(data["workspace"]), "item", "candidate", "integration-checks")
+    from backlog_harness.provider import git
+
+    repository = Path(data["workspace"])
+    git(repository, "init")
+    git(
+        repository,
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.invalid",
+        "commit",
+        "--allow-empty",
+        "-m",
+        "Candidate",
+    )
+    actual = app.checks(repository, "item", "candidate", "integration-checks")
     app.validate_check_execution("item", "integration-checks", "candidate", actual)
     assert actual[0]["output"] == "verified\n"
     intent = app._stage_path("item", "integration-checks-execution")
@@ -343,7 +358,9 @@ def test_frozen_pre_fix_review_request_replays_without_new_invocation(
     # Receipt validation has its own native/telemetry tests. This isolates replay admission.
     monkeypatch.setattr(app, "validate_invocation_result", lambda result: verified.append(result))
     if changed:
-        with pytest.raises(TransitionBlocked, match="Stage request changed"):
+        with pytest.raises(
+            TransitionBlocked, match="Completed stage evidence belongs to another operation"
+        ):
             asyncio.run(
                 app.invoke("retained-item", "integration-review-2", "coordinator", requested_prompt)
             )

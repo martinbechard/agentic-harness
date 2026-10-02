@@ -85,14 +85,30 @@ class CodexAdapter:
             timeout=10,
             env=env,
         )
+        # Probe the commands we use, without starting a model invocation.
+        interfaces = {}
+        for command in (("exec",), ("exec", "resume")):
+            probe = subprocess.run(
+                [request.binding.executable, *command, "--help"],
+                capture_output=True,
+                check=False,
+                timeout=10,
+                env=env,
+            )
+            help_text = probe.stdout.decode(errors="replace")
+            interfaces[" ".join(command)] = probe.returncode == 0 and all(
+                option in help_text for option in ("--json", "--model", "--config")
+            )
         supported = (
             version.returncode == 0
-            and version.stdout.decode().strip() == "codex-cli 0.159.2"
+            and version.stdout.decode(errors="replace").strip().startswith("codex-cli ")
             and authentication.returncode == 0
+            and all(interfaces.values())
         )
         return {
             "binding_digest": request.binding.relevant_digest,
             "production_ready": supported,
+            "command_interfaces": interfaces,
             "cli_version": version.stdout.decode().strip(),
             "authenticated": authentication.returncode == 0,
             "supported_controls": [
@@ -156,14 +172,9 @@ class CodexAdapter:
         return await self._invoke(request, session)
 
     @staticmethod
-    def prepare_artifact_output(request):
-        """Expose only an explicitly enabled invocation-local output directory."""
-        profile = request.snapshot.data["profiles"][request.binding.profile_name]
-        if (
-            not profile.get("artifact_output", False)
-            or request.read_only
-            or request.purpose not in {"implementation", "proof"}
-        ):
+    def prepare_proof_output(request):
+        """A writable proof gets one fixed directory; source and receipts stay read-only."""
+        if request.read_only or request.purpose != "proof":
             return None
         root = request.snapshot.operational_root.resolve()
         evidence = request.evidence_path
@@ -226,8 +237,8 @@ class CodexAdapter:
             and (cwd == request.snapshot.repository or not (cwd / ".git").is_dir())
         ):
             raise ValueError("Writable invocation requires a separate candidate repository")
-        if request.purpose == "proof" and (request.read_only or not profile.get("artifact_output")):
-            raise ValueError("Proof invocation requires explicit artifact output permission")
+        if request.purpose == "proof" and request.read_only:
+            raise ValueError("Proof invocation requires write permission")
         filesystem = {":root": "read"}
         if not request.read_only and request.purpose != "proof":
             if request.purpose == "provider":
@@ -237,7 +248,7 @@ class CodexAdapter:
                 filesystem[str(cwd)] = "write"
             filesystem[str(cwd / ".git")] = "write"
             filesystem[str(cwd / ".codex")] = "read"
-        artifact_output = self.prepare_artifact_output(request)
+        artifact_output = self.prepare_proof_output(request)
         if artifact_output:
             filesystem[artifact_output["path"]] = "write"
         permissions = (
@@ -298,9 +309,6 @@ class CodexAdapter:
                 for name in (
                     "manage-work-items",
                     "manage-work-items-file",
-                    "resource-claim",
-                    "resource-claim-helper",
-                    "resource-claim-helper-mcp",
                 )
                 if (root / name / "SKILL.md").is_file()
             ]

@@ -372,9 +372,7 @@ def test_agent_observation_refresh_is_cached_and_never_parses_headers(
     async def observe(*args, **kwargs):
         calls.append(kwargs)
         compact = {
-            key: value
-            for key, value in asdict(item).items()
-            if key not in {"content", "revision"}
+            key: value for key, value in asdict(item).items() if key not in {"content", "revision"}
         }
         compact["state"] = "READY"
         return {
@@ -405,15 +403,18 @@ def test_agent_observation_refresh_is_cached_and_never_parses_headers(
     assert app.provider.cache_path.read_bytes() == cached_bytes
     assert calls[0]["purpose"] == "provider"
     assert app.provider.policy()["mode"] == "SOLO"
-    from backlog_harness.contracts import digest
-
-    cached = json.loads(app.provider.cache_path.read_text())
-    cached["observer_digest"] = digest(
-        [app.config.file_digest, app.config.binding("coordinator").relevant_digest]
-    )
-    app.provider.cache_path.write_text(json.dumps(cached))
-    asyncio.run(app.refresh_provider())
-    assert len(calls) == 1
+    # Helper discovery is agent-owned: absent/stale metadata cannot cause re-observation.
+    for capability in (None, "old-helper-discovery"):
+        retained = json.loads(app.provider.cache_path.read_text())
+        if capability is None:
+            retained.pop("capability_digest", None)
+        else:
+            retained["capability_digest"] = capability
+        app.provider.cache_path.write_text(json.dumps(retained))
+        before = app.provider.cache_path.read_bytes()
+        asyncio.run(app.refresh_provider())
+        assert len(calls) == 1
+        assert app.provider.cache_path.read_bytes() == before
     data["workflow"]["allowed_paths"] = ["another.py"]
     data["workflow"]["checks"] = [["python3", "-m", "unittest"]]
     config.write_text(yaml.safe_dump(data))
@@ -897,52 +898,6 @@ def test_policy_reassessment_retains_inventory_across_source_only_head_advance(p
     assert observed["items"] == [asdict(item)]
 
 
-def test_management_readiness_rejects_readonly_and_missing_skills(config_file, provider):
-    import yaml
-
-    from backlog_harness.application import Application
-
-    config, data = config_file
-    data.update(repository=str(provider.repository), provider_interaction="agent")
-    config.write_text(yaml.safe_dump(data))
-    app = Application(config)
-    with pytest.raises(TransitionBlocked, match="workspace-write"):
-        app.validate_management_readiness("coordinator")
-    data["profiles"]["control"]["permissions"] = ["workspace-write"]
-    config.write_text(yaml.safe_dump(data))
-    with pytest.raises(TransitionBlocked, match="skills are missing"):
-        app.validate_management_readiness("coordinator")
-
-
-def test_helper_discovery_cannot_cross_cli_bindings(config_file, provider, tmp_path):
-    import copy
-
-    import yaml
-
-    from backlog_harness.application import Application
-
-    config, data = config_file
-    data.update(repository=str(provider.repository), provider_interaction="agent")
-    home = tmp_path / "native-home"
-    home.mkdir()
-    (home / "config.toml").write_text("")
-    data["agent_clis"]["primary"]["adapter_options"] = {
-        "codex_home": str(home),
-        "load_user_config": True,
-    }
-    data["agent_clis"]["other"] = copy.deepcopy(data["agent_clis"]["primary"])
-    data["agents"]["orchestrator"]["cli"] = "other"
-    project = provider.repository / "PROJECT.yaml"
-    value = yaml.safe_load(project.read_text())
-    value["resource_coordination"] = {"selected": "resource-claim"}
-    value["agent_claim_transport"] = {"selected": "mcp"}
-    project.write_text(yaml.safe_dump(value))
-    config.write_text(yaml.safe_dump(data))
-    app = Application(config)
-    with pytest.raises(TransitionBlocked, match="matching helper discovery binding"):
-        app.validate_management_readiness("orchestrator")
-
-
 def test_explicit_unknown_dependencies_are_retained_but_block_execution(
     config_file, provider, monkeypatch
 ):
@@ -1045,7 +1000,6 @@ def test_policy_reassessment_repairs_rejected_cached_authority_without_inventory
     config_file, provider, monkeypatch, compatibility
 ):
     import asyncio
-    import inspect
     import json
     from dataclasses import asdict
     from hashlib import sha256
@@ -1053,17 +1007,8 @@ def test_policy_reassessment_repairs_rejected_cached_authority_without_inventory
     import yaml
 
     from backlog_harness.application import Application
-    from backlog_harness.contracts import digest, load_config
+    from backlog_harness.contracts import load_config
     from backlog_harness.evidence import atomic_json
-    from backlog_harness.provider import AgentProvider
-    from backlog_harness.provider_observation import (
-        LEGACY_POLICY_VALIDATOR_DIGEST,
-        LEGACY_PROVIDER_OBSERVATION_PROMPT,
-        PROVIDER_OBSERVATION_SCHEMA,
-        effective_instruction_sources,
-        effective_skill_sources,
-        semantic_observation_fingerprint,
-    )
 
     config, data = config_file
     operational_root = provider.repository / ".agent-ops/backlog-harness"
@@ -1076,21 +1021,7 @@ def test_policy_reassessment_repairs_rejected_cached_authority_without_inventory
     config.write_text(yaml.safe_dump(data))
     app = Application(config)
     current = load_config(config)
-    legacy_schema = {
-        **PROVIDER_OBSERVATION_SCHEMA,
-        "validators": {
-            "inventory": digest(inspect.getsource(AgentProvider.validate_inventory)),
-            "policy": LEGACY_POLICY_VALIDATOR_DIGEST,
-            "acceptance": digest(inspect.getsource(Application._accept_provider_observation)),
-        },
-    }
-    legacy_observer = semantic_observation_fingerprint(
-        current,
-        prompt=LEGACY_PROVIDER_OBSERVATION_PROMPT,
-        schema=legacy_schema,
-        instruction_sources=effective_instruction_sources(current),
-        skill_sources=effective_skill_sources(current),
-    )
+    legacy_observer = "historical-contract"
     run = operational_root / "run.json"
     run.write_text('{"admission_open": false}\n')
     item = provider.item("item-one")
@@ -1115,7 +1046,7 @@ def test_policy_reassessment_repairs_rejected_cached_authority_without_inventory
             legacy_observer if compatibility != "observer-drift" else "unrelated-contract"
         ),
         "capability_digest": (
-            app.provider_capability_digest(current, legacy_observer)
+            "retired-helper-metadata"
             if compatibility != "capability-drift"
             else "changed-capability"
         ),
@@ -1154,17 +1085,8 @@ def test_policy_reassessment_repairs_rejected_cached_authority_without_inventory
     repaired = json.loads(app.provider.cache_path.read_text())
     assert repaired["items"] == inventory
     assert repaired["invocation_id"] == "original-inventory"
-    if compatibility == "exact":
-        assert repaired["observer_digest"] == app.provider_observer_digest(current)
-        assert repaired["capability_digest"] == app.provider_capability_digest(
-            current, repaired["observer_digest"]
-        )
-        asyncio.run(app.refresh_provider())
-    elif compatibility == "observer-drift":
-        assert repaired["observer_digest"] == "unrelated-contract"
-    else:
-        assert repaired["observer_digest"] == legacy_observer
-        assert repaired["capability_digest"] == "changed-capability"
+    assert repaired["observer_digest"] == app.provider_observer_digest(current)
+    asyncio.run(app.refresh_provider())
     assert len(calls) == 1
 
 
@@ -1317,8 +1239,8 @@ def test_retained_policy_reassessment_rejects_mismatched_observation_identity(
     assert json.loads(app.provider.cache_path.read_text()) == original
 
 
-@pytest.mark.parametrize("drift", ["observer", "capability", "binding"])
-def test_retained_policy_reassessment_rejects_midcall_authority_drift(
+@pytest.mark.parametrize("drift", ["observer", "binding"])
+def test_retained_policy_reassessment_distinguishes_authority_from_helper_discovery(
     config_file, provider, monkeypatch, drift
 ):
     import asyncio
@@ -1327,7 +1249,6 @@ def test_retained_policy_reassessment_rejects_midcall_authority_drift(
     import yaml
 
     from backlog_harness.application import Application
-    from backlog_harness.contracts import load_config
     from backlog_harness.evidence import EvidenceStore, atomic_json
 
     config, data = config_file
@@ -1346,12 +1267,7 @@ def test_retained_policy_reassessment_rejects_midcall_authority_drift(
     monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
     monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
     original_observer = app.provider_observer_digest
-    original_capability = app.provider_capability_digest
-    current = load_config(config)
-    stable_observer = original_observer(current)
-    stable_capability = original_capability(current, stable_observer)
     observer_calls = []
-    capability_calls = []
 
     if drift == "observer":
         monkeypatch.setattr(
@@ -1362,28 +1278,12 @@ def test_retained_policy_reassessment_rejects_midcall_authority_drift(
                 or (original_observer(current) if len(observer_calls) == 1 else "changed-observer")
             ),
         )
-    elif drift == "capability":
-        monkeypatch.setattr(
-            app,
-            "provider_capability_digest",
-            lambda current, observer: (
-                capability_calls.append(True)
-                or (
-                    original_capability(current, observer)
-                    if len(capability_calls) == 1
-                    else "changed-capability"
-                )
-            ),
-        )
 
     async def invoke(*args, **kwargs):
         if drift == "binding":
             changed = yaml.safe_load(config.read_text())
             changed["profiles"]["control"]["permissions"] = ["workspace-write"]
             config.write_text(yaml.safe_dump(changed))
-            monkeypatch.setattr(
-                app, "provider_capability_digest", lambda current, observer: stable_capability
-            )
         return {
             "invocation_id": "replacement-policy",
             "text": json.dumps(
@@ -1510,135 +1410,6 @@ def test_admission_uses_current_dependencies_and_retains_clarification(
         app.admission_path(item.item_id)
 
 
-def test_helper_discovery_uses_provider_fingerprint_after_workflow_change(
-    config_file, provider, monkeypatch, tmp_path
-):
-    from pathlib import Path
-
-    import yaml
-
-    from backlog_harness.application import Application
-
-    config, data = config_file
-    data.update(repository=str(provider.repository), provider_interaction="agent")
-    home = tmp_path / "native-home"
-    home.mkdir()
-    (home / "config.toml").write_text("")
-    data["agent_clis"]["primary"]["adapter_options"] = {
-        "codex_home": str(home),
-        "load_user_config": True,
-    }
-    data["profiles"]["control"]["permissions"] = ["workspace-write"]
-    project = provider.repository / "PROJECT.yaml"
-    value = yaml.safe_load(project.read_text())
-    value["resource_coordination"] = {"selected": "resource-claim"}
-    value["agent_claim_transport"] = {"selected": "mcp"}
-    project.write_text(yaml.safe_dump(value))
-    for name in [
-        "manage-work-items",
-        "manage-work-items-file",
-        "resource-claim",
-        "resource-claim-helper",
-        "resource-claim-helper-mcp",
-    ]:
-        skill = Path(data["methodology_root"]) / "skills" / name / "SKILL.md"
-        skill.parent.mkdir(parents=True, exist_ok=True)
-        skill.write_text("Fixture skill")
-    config.write_text(yaml.safe_dump(data))
-    app = Application(config)
-    observer = app.provider_observer_digest(app.config)
-    observed = {
-        "observer_digest": observer,
-        "capability_digest": app.provider_capability_digest(app.config, observer),
-        "helper": {
-            "discovery": "native_tool_catalog",
-            "available": True,
-            "tools": ["claim_acquire", "claim_release", "claim_heartbeat", "claim_status"],
-        },
-    }
-    import asyncio
-    import json
-    from dataclasses import asdict
-
-    from test_telemetry import payload
-
-    from backlog_harness.evidence import atomic_json
-    from backlog_harness.telemetry import Sink
-
-    item = provider.item("item-one")
-    predecessor_path = provider.repository / "backlog/feature-backlog/predecessor.md"
-    predecessor_path.write_text(
-        item.content.replace("item-one", "predecessor").replace(
-            "Status: Ready", "Status: Completed"
-        )
-    )
-    predecessor = provider.item("predecessor")
-    observed.update(
-        source_revision=app.provider.source_revision(),
-        source_manifest=app.provider.source_manifest(),
-        policy={
-            "eligible": True,
-            "mode": "SOLO",
-            "primary_branch": "main",
-            "evidence": policy_evidence(provider.repository),
-        },
-        items=[asdict(item), asdict(predecessor)],
-        dependencies={item.item_id: [predecessor.item_id], predecessor.item_id: []},
-    )
-    atomic_json(app.provider.cache_path, observed)
-    telemetry_path = app.root / "retained-admission-telemetry.jsonl"
-    sink = Sink(telemetry_path, {})
-    sink.write(payload())
-    binding = asdict(app.config.binding("coordinator"))
-    receipt = {
-        "invocation_id": "old-admission",
-        "role": "coordinator",
-        "outcome": "returned",
-        "session": {"session_id": "coordinator", "native_session_id": "native", "binding": binding},
-        "binding": binding,
-        "telemetry_path": str(telemetry_path),
-        "telemetry": {
-            "span_count": 1,
-            "rejected_exports": 0,
-            "evidence_sha256": sink.evidence_digest(),
-        },
-        "events": [{"type": "turn.completed", "usage": {"output_tokens": 10}}],
-        "text": json.dumps(
-            {"operation": "assess", "item_id": item.item_id, "provider_revision": item.revision}
-        ),
-        "request_digest": "historical-prompt",
-    }
-    admit = app._stage_path(item.item_id, "admit")
-    atomic_json(admit, receipt)
-    original = admit.read_bytes()
-    external_calls = []
-
-    async def invoke(item_id, stage, role, prompt, **kwargs):
-        external_calls.append(stage)
-        assert stage == "admit-confirmed"
-        assert kwargs["session"].native_session_id == "native"
-        assert '"state": "Completed"' in prompt
-        raise RuntimeError("reached retained-session clarification")
-
-    monkeypatch.setattr(app, "invoke", invoke)
-    data["workflow"]["allowed_paths"] = ["updated.py"]
-    config.write_text(yaml.safe_dump(data))
-    app.validate_management_readiness("coordinator")
-    app = Application(config)
-    monkeypatch.setattr(app, "invoke", invoke)
-    with pytest.raises(RuntimeError, match="reached retained-session clarification"):
-        asyncio.run(app.run_item(item.item_id))
-    assert external_calls == ["admit-confirmed"]
-    assert admit.read_bytes() == original
-    assert provider.item(item.item_id).state == "Ready"
-    data["profiles"]["control"]["model"] = "different-model"
-    config.write_text(yaml.safe_dump(data))
-    app.validate_management_readiness("coordinator")
-    (home / "config.toml").write_text("[mcp_servers.changed]\ncommand = 'changed'\n")
-    with pytest.raises(TransitionBlocked, match="discovery configuration is stale"):
-        app.validate_management_readiness("coordinator")
-
-
 @pytest.mark.parametrize("changed_word", [False, True])
 def test_policy_excerpt_allows_wrapping_but_not_different_words(provider, changed_word):
     from hashlib import sha256
@@ -1715,68 +1486,6 @@ def test_claim_exemption_requires_current_explicit_authority(provider, fault):
             view.validate_policy(policy)
     else:
         view.validate_policy(policy)
-
-
-def test_claim_free_management_ignores_irrelevant_helper_but_preserves_policy_gate(
-    config_file, provider
-):
-    from hashlib import sha256
-    from pathlib import Path
-
-    import yaml
-
-    from backlog_harness.application import Application
-    from backlog_harness.evidence import atomic_json
-
-    config, data = config_file
-    data.update(repository=str(provider.repository), provider_interaction="agent")
-    data["profiles"]["control"]["permissions"] = ["workspace-write"]
-    config.write_text(yaml.safe_dump(data))
-    for name in ("manage-work-items", "manage-work-items-file"):
-        skill = Path(data["methodology_root"]) / "skills" / name / "SKILL.md"
-        skill.parent.mkdir(parents=True, exist_ok=True)
-        skill.write_text("Management skill fixture\n")
-    project = provider.repository / "PROJECT.yaml"
-    value = yaml.safe_load(project.read_text())
-    value["resource_coordination"] = {"selected": "resource-claim"}
-    project.write_text(yaml.safe_dump(value))
-    source = provider.repository / "crisis.md"
-    source.write_text("Active recovery-one epoch is claim-free.\n")
-    app = Application(config)
-    policy = {
-        "eligible": True,
-        "mode": "SOLO",
-        "primary_branch": "main",
-        "claims_required": False,
-        "claim_exemption": "Active recovery-one epoch",
-        "evidence": policy_evidence(provider.repository)
-        + [
-            {
-                "path": "crisis.md",
-                "sha256": sha256(source.read_bytes()).hexdigest(),
-                "excerpt": source.read_text().strip(),
-                "supports": ["coordination"],
-            }
-        ],
-    }
-    observation = {
-        "source_revision": app.provider.source_revision(),
-        "policy": policy,
-        "observer_digest": "stale-unrelated-helper",
-        "helper": {"available": False},
-    }
-    atomic_json(app.provider.cache_path, observation)
-    app.validate_management_readiness("coordinator")
-    # SOLO by itself retains the default claim capability requirements.
-    del policy["claims_required"]
-    atomic_json(app.provider.cache_path, observation)
-    with pytest.raises(TransitionBlocked, match="Selected claim helper"):
-        app.validate_management_readiness("coordinator")
-    policy["claims_required"] = False
-    policy["evidence"][-1]["sha256"] = "stale"
-    atomic_json(app.provider.cache_path, observation)
-    with pytest.raises(TransitionBlocked, match="Stale policy evidence"):
-        app.validate_management_readiness("coordinator")
 
 
 @pytest.mark.parametrize("fault", [None, "changed-decision", "stale-authority", "missing-field"])

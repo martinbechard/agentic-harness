@@ -69,7 +69,9 @@ def configured_app(config_file, provider, *, selected, exempt=False):
     ("selected", "exempt", "required"),
     [("resource-claim", False, True), ("resource-claim", True, False), ("none", False, False)],
 )
-def test_coordination_context_preserves_current_policy(config_file, provider, selected, exempt, required):
+def test_coordination_context_preserves_current_policy(
+    config_file, provider, selected, exempt, required
+):
     app, policy = configured_app(config_file, provider, selected=selected, exempt=exempt)
     context = app.claim_coordination_context(load_config(app.config_path))
     assert context["resource_coordination"] == selected
@@ -117,9 +119,7 @@ def test_new_invocation_binds_context_to_intent_and_prompt(config_file, provider
 
 
 @pytest.mark.parametrize("drift", ["config", "source"])
-def test_coordination_drift_blocks_before_dispatch(
-    config_file, provider, monkeypatch, drift
-):
+def test_coordination_drift_blocks_before_dispatch(config_file, provider, monkeypatch, drift):
     app, _ = configured_app(config_file, provider, selected="resource-claim", exempt=True)
     started = []
 
@@ -154,9 +154,7 @@ def test_coordination_drift_blocks_before_dispatch(
     assert started == []
 
 
-def test_prechange_requested_invocation_keeps_original_prompt_hash(
-    config_file, provider
-):
+def test_prechange_requested_invocation_keeps_original_prompt_hash(config_file, provider):
     app, _ = configured_app(config_file, provider, selected="resource-claim", exempt=True)
     prompt = (
         "Continue recovery. Follow current claim-free crisis authority; do not invoke claims. "
@@ -217,7 +215,7 @@ def test_unsubmitted_prechange_intent_cannot_launch_without_context(config_file,
         )
 
 
-def test_invocation_context_reader_rejects_tampering(config_file, provider):
+def test_dispatch_rejects_tampered_coordination_authority(config_file, provider):
     app, _ = configured_app(config_file, provider, selected="resource-claim", exempt=True)
     snapshot = load_config(app.config_path)
     context = app.claim_coordination_context(snapshot)
@@ -234,13 +232,16 @@ def test_invocation_context_reader_rejects_tampering(config_file, provider):
     )
     atomic_json(path / "coordination-context.json", context)
     EvidenceStore.requested(path)
-    result = {
-        "evidence_path": str(path),
-        "invocation_id": "produced",
-        "request_digest": "request",
-    }
-    assert app.invocation_coordination_context(result) == context
     context["claims_required"] = True
     atomic_json(path / "coordination-context.json", context)
-    with pytest.raises(TransitionBlocked, match="differs from its intent"):
-        app.invocation_coordination_context(result)
+    with pytest.raises(TransitionBlocked, match="coordination context"):
+        asyncio.run(
+            app.invoke(
+                "item-one",
+                "produce-review",
+                "orchestrator",
+                "prompt",
+                read_only=False,
+                coordination=True,
+            )
+        )

@@ -268,3 +268,71 @@ def test_admission_recovery_rechecks_original_request_and_current_policy(
     assert calls == ([] if fault == "request" else ["recover"])
     assert json.loads((root / "receipt.json").read_text()) == receipt
     assert not app._stage_path("item", "provider").exists()
+
+
+@pytest.mark.parametrize("with_child", [False, True])
+def test_recovery_counts_only_current_turn_and_deduplicates_exports(recovery, with_child):
+    from copy import deepcopy
+    from uuid import uuid4
+
+    app, path, native, telemetry, rows, save = recovery
+
+    # Native counters are session-cumulative; the earlier three tokens are not
+    # spending by this invocation. A repeated final counter adds no usage.
+    def counter(amount):
+        return {
+            "type": "event_msg",
+            "payload": {
+                "type": "token_count",
+                "info": {"total_token_usage": {"output_tokens": amount}},
+            },
+        }
+
+    rows.insert(1, counter(3))
+    rows[-2] = counter(10)
+    rows.append(counter(10))
+    save()
+    events_path = path / "events.jsonl"
+    events = [json.loads(line) for line in events_path.read_text().splitlines()]
+    events[-1]["usage"]["output_tokens"] = 10
+    events_path.write_text("".join(json.dumps(event) + "\n" for event in events))
+    payload = json.loads(telemetry.read_text())
+    JsonlWriter(telemetry).append(payload)
+    diagnostic = deepcopy(payload)
+    span = diagnostic["resourceSpans"][0]["scopeSpans"][0]["spans"][0]
+    span["spanId"] = "c" * 16
+    span["attributes"] = [a for a in span["attributes"] if a["key"] != "gen_ai.usage.output_tokens"]
+    JsonlWriter(telemetry).append(diagnostic)
+    if with_child:
+        session = json.loads((path / "session.json").read_text())["native_session_id"]
+        child = str(uuid4())
+        child_records = [
+            {
+                "type": "session_meta",
+                "payload": {
+                    "id": child,
+                    "parent_thread_id": session,
+                    "timestamp": "2026-10-01T00:00:01+00:00",
+                },
+            },
+            counter(2),
+            {"type": "event_msg", "payload": {"type": "task_complete"}},
+        ]
+        (native.parent / f"rollout-{child}.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in child_records)
+        )
+        child_span = deepcopy(payload)
+        span = child_span["resourceSpans"][0]["scopeSpans"][0]["spans"][0]
+        span["spanId"] = "d" * 16
+        next(a for a in span["attributes"] if a["key"] == "gen_ai.usage.output_tokens")["value"] = {
+            "intValue": "2"
+        }
+        JsonlWriter(telemetry).append(child_span)
+    result = app.recover_invocation(path)
+    proof = json.loads((path / "native-accounting.json").read_text())
+    assert proof["parent_previous"] == 3
+    assert proof["child_output"] == (2 if with_child else 0)
+    assert invocation_usage(
+        result, previous_session_output=3, child_outputs=2 if with_child else 0
+    ) == (9 if with_child else 7)
+    assert app.recover_invocation(path) == result

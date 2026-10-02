@@ -10,16 +10,17 @@ requires-python = ">=3.12"
 dependencies = [
     "PyYAML>=6.0.2,<7",
     "prompt-toolkit>=3.0.48,<4",
-    "agent-client-protocol==0.12.1",
-    "langgraph==1.2.12",
-    "langgraph-checkpoint-sqlite==3.1.1",
 ]
 
 [project.scripts]
 agentic-harness = "backlog_harness.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8.3,<9", "ruff>=0.11,<1"]
+dev = [
+    "coverage>=7.10,<8",
+    "pytest>=8.3,<9",
+    "ruff>=0.11,<1",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/backlog_harness"]
@@ -29,3 +30,18 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
+
+[tool.coverage.run]
+branch = true
+source_pkgs = ["backlog_harness"]
+patch = ["subprocess"]
+parallel = true
+
+[tool.coverage.paths]
+source = ["src/backlog_harness", "*/site-packages/backlog_harness"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+precision = 2
+exclude_lines = []

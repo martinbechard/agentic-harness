@@ -47,18 +47,6 @@ def source_review_request(prompt):
     return None
 
 
-def coordination_block(prompt):
-    marker = "COORDINATION CONTEXT\n"
-    end = "\nEND COORDINATION CONTEXT"
-    if marker not in prompt:
-        return None
-    tail = prompt.split(marker, 1)[1]
-    value, offset = json.JSONDecoder().raw_decode(tail)
-    if not tail[offset:].startswith(end):
-        raise ValueError("Incomplete coordination context")
-    return marker + json.dumps(value, sort_keys=True, separators=(",", ":")) + end
-
-
 def native_review(
     native_home, producer, candidate, source_review=None, fault=None, coordination=None
 ):
@@ -72,107 +60,25 @@ def native_review(
     call_id = "review-" + reviewer
     parent_records = []
 
-    def native_call(call_id, command, workdir, output):
-        parent_records.extend(
-            [
-                {
-                    "type": "response_item",
-                    "payload": {
-                        "type": "function_call",
-                        "name": "exec_command",
-                        "call_id": call_id,
-                        "arguments": json.dumps({"cmd": command, "workdir": workdir}),
-                    },
-                },
-                {
-                    "type": "response_item",
-                    "payload": {
-                        "type": "function_call_output",
-                        "id": "output-" + call_id,
-                        "call_id": call_id,
-                        "output": output,
-                    },
-                },
-            ]
-        )
-
-    packet = None
     assessment = None
     if source_review:
-        workdir = source_review["candidate_worktree"]
-        anchor = "Process exited with code 0\nFinal output:\n" + candidate + "\n"
-        native_call("head-before", "git rev-parse HEAD", workdir, anchor)
-        receipts = []
-        for index, (argv, command) in enumerate(
-            zip(source_review["configured_checks"], source_review["configured_check_commands"])
-        ):
-            proc = subprocess.run(argv, cwd=workdir, capture_output=True, check=False)
-            body = (proc.stdout + proc.stderr).decode(errors="replace")
-            output = (
-                "Chunk ID: fixture\nProcess exited with code "
-                + str(proc.returncode)
-                + "\nFinal output:\n"
-                + body
-            )
-            receipt = {
-                "candidate": candidate,
-                "argv": argv,
-                "returncode": proc.returncode,
-                "output": output,
-                "output_sha256": sha256(output.encode()).hexdigest(),
-            }
-            receipts.append(receipt)
-            native_call("check-" + str(index), command, workdir, output)
-        native_call("head-after", "git rev-parse HEAD", workdir, anchor)
-        evidence = []
-        for name in source_review["allowed_source_paths"]:
-            content = subprocess.run(
-                ["git", "-C", workdir, "show", candidate + ":" + name],
-                check=True,
-                capture_output=True,
-            ).stdout
-            evidence.append({"path": name, "sha256": sha256(content).hexdigest()})
         contract = source_review["review_requirements"]
-        packet = {
-            "version": 1,
+        assessment = {
             "candidate": candidate,
-            "canonical_acceptance": source_review["canonical_acceptance"],
-            "preparation_evidence": source_review["preparation_evidence"],
-            "review_requirements": contract,
             "requirements_digest": canonical_digest(contract),
-            "source_evidence": evidence,
-            "pre_review_checks": receipts,
-            "check_receipt_hashes": [canonical_digest(row) for row in receipts],
-        }
-        conclusions = [
-            {
+            "unresolved_findings": ["Evaluation weakening remains unresolved"] if fault == "weakening" else [],
+            "conclusions": [{
                 "id": row["id"],
                 "canonical_reference": row["canonical_reference"],
                 "verdict": "REJECT" if fault == "weakening" else "ACCEPT",
-                "conclusion": (
-                    "Passing checks do not prove evaluation strength"
-                    if fault == "weakening"
-                    else "Canonical source, suite, generated effects, and evaluation strength agree"
-                ),
-                "evidence_paths": [item["path"] for item in evidence],
-            }
-            for row in contract["requirements"]
-        ]
-        assessment = {
-            "candidate": candidate,
-            "requirements_digest": packet["requirements_digest"],
-            "check_receipt_hashes": packet["check_receipt_hashes"],
-            "unresolved_findings": (
-                ["Evaluation weakening remains unresolved"] if fault == "weakening" else []
-            ),
-            "conclusions": conclusions,
+                "conclusion": "Candidate preserves the selected acceptance requirement",
+                "evidence_paths": source_review["allowed_source_paths"],
+            } for row in contract["requirements"]],
         }
 
     message = "Review exact candidate " + candidate
     if coordination:
         message += "\n" + coordination
-    if packet:
-        message += "\nSOURCE REVIEW PACKET\n" + json.dumps(packet)
     parent_records += [
         {
             "type": "response_item",
@@ -311,7 +217,7 @@ def handle_graph(prompt, cwd, native_home, session_id):
         candidate,
         source_review_request(prompt),
         os.environ.get("SOURCE_REVIEW_FAULT"),
-        coordination_block(prompt),
+        None,
     )
     return {
         "item_id": request["item_id"],

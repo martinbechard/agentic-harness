@@ -368,28 +368,6 @@ def _finish_candidate(workspace, evidence_dir, intent, *, cancellation_event=Non
     return result
 
 
-def proof_reuse(original_receipt, original_inputs, merged_inputs, *, manifest, verify_manifest):
-    """Reuse only a source-verified complete manifest, never an arbitrary equal subset."""
-    require(bool(original_receipt), "Original proof receipt required")
-    require(
-        manifest.get("receipt") == original_receipt
-        and manifest.get("complete") is True
-        and manifest.get("scope")
-        and manifest.get("inputs") == original_inputs,
-        "Complete original proof dependency manifest required",
-    )
-    require(verify_manifest(manifest) is True, "Proof manifest coverage unverified")
-    require(
-        bool(original_inputs) and original_inputs == merged_inputs,
-        "Proof input/config/generator identity changed or absent",
-    )
-    require(
-        all(isinstance(v, str) and len(v) == 64 for v in original_inputs.values()),
-        "Proof dependency hashes required",
-    )
-    return {"original_receipt": original_receipt, "manifest": manifest, "reused": True}
-
-
 def authorize_candidate(record, review, checks, authority, *, verify_review):
     """Bind existing task authority only after independent native review verification.
 

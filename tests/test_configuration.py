@@ -365,24 +365,13 @@ def test_source_review_contract_rejects_malformed_structured_gate(config_file, g
         load_config(path)
 
 
-@pytest.mark.parametrize("setting", ["true", 1, None])
-def test_artifact_output_requires_explicit_boolean(config_file, setting):
-    path, data = config_file
-    data["profiles"]["worker"]["artifact_output"] = setting
-    path.write_text(yaml.safe_dump(data))
-    with pytest.raises(ConfigError, match="artifact_output"):
-        load_config(path)
-
-
-def test_disabled_artifact_permission_preserves_existing_digest(config_file):
+@pytest.mark.parametrize("setting", [True, False, "obsolete", 1, None])
+def test_retired_output_option_does_not_change_permissions(config_file, setting):
     path, data = config_file
     before = load_config(path).binding("orchestrator")
-    data["profiles"]["worker"]["artifact_output"] = False
+    data["profiles"]["worker"]["artifact_output"] = setting
     path.write_text(yaml.safe_dump(data))
     assert load_config(path).binding("orchestrator").permission_digest == before.permission_digest
-    data["profiles"]["worker"]["artifact_output"] = True
-    path.write_text(yaml.safe_dump(data))
-    assert load_config(path).binding("orchestrator").permission_digest != before.permission_digest
 
 
 @pytest.mark.parametrize("target", ["project-one", "project-two"])
@@ -412,3 +401,257 @@ def test_explicit_evidence_override_is_preserved(config_file, tmp_path):
     data["operational_root"] = str(override)
     config.write_text(yaml.safe_dump(data))
     assert load_config(config).operational_root == override
+
+
+@pytest.mark.parametrize(
+    "keys,value",
+    [
+        (("version",), 2),
+        (("provider_interaction",), "unknown"),
+        (("operational_root",), "relative"),
+        (("workflow", "completion"), "unsupported"),
+        (("workflow", "allowed_paths"), []),
+        (("workflow", "checks"), []),
+        (("workflow", "preparation"), {"unexpected": True}),
+        (("workflow", "preparation"), {"allowed_roots": [], "check_commands": [["test"]]}),
+        (("workflow", "preparation"), {"allowed_roots": ["src"], "check_commands": []}),
+        (("workflow", "preparation"), {"allowed_roots": ["src"], "check_commands": [[]]}),
+        (("workflow", "items"), []),
+        (("workflow", "mode"), "MULTITASK"),
+        (("workflow", "items"), {"one": {"allowed_paths": []}}),
+        (("workflow", "items"), {"one": {"allowed_paths": ["src"], "checks": []}}),
+        (("workflow", "items"), {"one": {"allowed_paths": ["src"], "checks": [[]]}}),
+        (("generation_guard_multiplier",), float("inf")),
+        (("coordinator_limits", "turns"), 0),
+        (("administrative_review_limits", "generated_tokens"), True),
+        (("agent_clis", "primary", "adapter"), "unknown"),
+        (("agent_clis", "primary", "adapter_options"), []),
+        (("agent_clis", "primary", "adapter_options"), {"unexpected": True}),
+        (("agent_clis", "primary", "adapter_options"), {"disable_memories": "true"}),
+        (("agent_clis", "primary", "adapter_options"), {"load_user_config": "true"}),
+        (("agent_clis", "primary", "adapter_options"), {"native_max_threads": True}),
+        (("agent_clis", "primary", "auth_profile"), "unconfigured-account"),
+        (("profiles", "worker", "skills"), "skill"),
+        (("profiles", "worker", "permissions"), ["unrestricted"]),
+        (("agents", "orchestrator", "profile"), "absent"),
+    ],
+)
+def test_invalid_launch_configuration_is_rejected_before_any_invocation(config_file, keys, value):
+    path, data = config_file
+    parent = data
+    for key in keys[:-1]:
+        parent = parent[key]
+    parent[keys[-1]] = value
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError):
+        load_config(path)
+    assert not list(path.parent.rglob("intent.json"))
+
+
+def test_configuration_changed_during_read_cannot_launch(config_file, monkeypatch):
+    from pathlib import Path
+
+    path, _ = config_file
+    original = path.read_bytes()
+    read = Path.read_bytes
+    reads = 0
+
+    def changing(candidate):
+        nonlocal reads
+        if candidate == path.resolve():
+            reads += 1
+            return original if reads == 1 else original + b"\n# concurrent edit\n"
+        return read(candidate)
+
+    monkeypatch.setattr(Path, "read_bytes", changing)
+    with pytest.raises(ConfigError, match="changed while reading"):
+        load_config(path)
+    assert reads == 2
+    assert not list(path.parent.rglob("intent.json"))
+
+
+def test_guard_override_requires_exact_approved_value(config_file):
+    path, data = config_file
+    data["generation_guard_multiplier"] = 3
+    data["generation_guard_approval"] = {"value": 4, "reference": "operator-approval"}
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match="exact approved value"):
+        load_config(path)
+    data["generation_guard_approval"]["value"] = 3
+    path.write_text(yaml.safe_dump(data))
+    assert load_config(path).data["generation_guard_multiplier"] == 3
+
+
+def test_candidate_source_symlink_cannot_escape_workspace(config_file, tmp_path):
+    from pathlib import Path
+
+    path, data = config_file
+    target = tmp_path / "external.txt"
+    target.write_text("preserve")
+    workspace = Path(data["workspace"])
+    (workspace / "linked.txt").symlink_to(target)
+    data["workflow"]["allowed_paths"] = ["linked.txt"]
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match="escapes candidate"):
+        load_config(path)
+    assert target.read_text() == "preserve"
+
+
+@pytest.mark.parametrize(
+    "field,value,message",
+    [
+        ("version", 99, "Control storage identity is unsupported"),
+        ("provider", "unknown", "Control storage identity is unsupported"),
+        ("operational_root", "relative/evidence", "Control evidence root must be absolute"),
+    ],
+)
+def test_control_fallback_cannot_guess_storage_identity(config_file, field, value, message):
+    from backlog_harness.contracts import load_control_config
+
+    path, data = config_file
+    data[field] = value
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match=message):
+        load_control_config(path)
+
+
+def test_control_fallback_reports_unreadable_configuration(config_file):
+    from backlog_harness.contracts import load_control_config
+
+    path, _data = config_file
+    path.unlink()
+    with pytest.raises(ConfigError, match="Cannot resolve control storage"):
+        load_control_config(path)
+
+
+def test_control_fallback_detects_concurrent_edit(config_file, monkeypatch):
+    from pathlib import Path
+
+    from backlog_harness.contracts import load_control_config
+
+    path, data = config_file
+    data["profiles"] = {}
+    path.write_text(yaml.safe_dump(data))
+    original = Path.read_bytes
+    reads = 0
+
+    def changing_read(candidate):
+        nonlocal reads
+        value = original(candidate)
+        if candidate == path:
+            reads += 1
+            if reads == 4:
+                return value + b"\n# concurrent edit\n"
+        return value
+
+    monkeypatch.setattr(Path, "read_bytes", changing_read)
+    with pytest.raises(ConfigError, match="Control configuration changed while reading"):
+        load_control_config(path)
+
+
+@pytest.mark.parametrize("requirements", [[], None, "review"])
+def test_explicit_review_selection_cannot_be_empty(requirements):
+    from backlog_harness.contracts import validate_review_requirements
+
+    with pytest.raises(ConfigError, match="must be nonempty"):
+        validate_review_requirements(
+            {
+                "provider_revision": "revision",
+                "preparation_digest": "digest",
+                "requirements": requirements,
+            }
+        )
+
+
+@pytest.mark.parametrize("git_entry", ["missing", "file", "symlink"])
+def test_candidate_requires_independent_git_directory(config_file, git_entry, tmp_path):
+    from pathlib import Path
+
+    path, data = config_file
+    git_path = Path(data["workspace"]) / ".git"
+    git_path.rmdir()
+    if git_entry == "file":
+        git_path.write_text("gitdir: /another/checkout")
+    elif git_entry == "symlink":
+        target = tmp_path / "shared-git"
+        target.mkdir()
+        git_path.symlink_to(target, target_is_directory=True)
+    with pytest.raises(ConfigError, match="independent candidate Git checkout"):
+        load_config(path)
+
+
+def test_unknown_role_never_inherits_another_binding(config_file):
+    path, _data = config_file
+    snapshot = load_config(path)
+    with pytest.raises(ConfigError, match="No explicit binding for role unknown"):
+        snapshot.binding("unknown")
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "skill-name",
+        "missing-skill",
+        "candidate-root",
+        "design",
+        "proof-fields",
+        "proof-empty",
+        "proof-entry",
+        "bindings",
+    ],
+)
+def test_remaining_launch_contract_errors_are_actionable(config_file, fault):
+    path, data = config_file
+    if fault == "skill-name":
+        data["profiles"]["worker"]["skills"] = ["../external"]
+        message = "single path components"
+    elif fault == "missing-skill":
+        data["profiles"]["worker"]["skills"] = ["missing"]
+        message = "methodology skill is missing"
+    elif fault == "candidate-root":
+        data["candidate_root"] = data["repository"]
+        message = "candidate_root must be disjoint"
+    elif fault == "bindings":
+        del data["agents"]["coordinator"]
+        message = "bindings are required"
+    else:
+        selection = {}
+        data["workflow"]["items"] = {"one": selection}
+        if fault == "design":
+            selection["design_review"] = {"provider_revision": "revision"}
+            message = "Design review needs exact"
+        else:
+            proof = {
+                "provider_revision": "revision",
+                "preparation_digest": "digest",
+                "requirements": [],
+            }
+            selection["proof_requirements"] = proof
+            if fault == "proof-fields":
+                proof["extra"] = "unrecognized"
+                message = "Proof requirements need exact"
+            elif fault == "proof-empty":
+                message = "Proof requirements must be nonempty"
+            else:
+                proof["requirements"] = [{"id": "incomplete"}]
+                message = "Invalid explicit proof requirement"
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match=message):
+        load_config(path)
+
+
+def test_proof_verification_selection_requires_boolean(config_file):
+    path, data = config_file
+    data["workflow"]["items"] = {
+        "one": {
+            "proof_requirements": {
+                "provider_revision": "revision",
+                "preparation_digest": "digest",
+                "requirements": [],
+                "verification_required": "false",
+            }
+        }
+    }
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match="verification_required must be boolean"):
+        load_config(path)

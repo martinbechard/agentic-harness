@@ -91,9 +91,7 @@ def test_effective_workflow_allows_catalog_growth_and_safe_path_narrowing(config
     )
     config.write_text(yaml.safe_dump(data))
     app = Application(config)
-    frozen = {
-        key: value for key, value in data["workflow"].items() if key != "preparation"
-    }
+    frozen = {key: value for key, value in data["workflow"].items() if key != "preparation"}
     atomic_json(
         app._stage_path("one", "assignment"),
         {"workflow": frozen, "content": "original", "provider_path": "backlog/one.md"},
@@ -102,12 +100,13 @@ def test_effective_workflow_allows_catalog_growth_and_safe_path_narrowing(config
         "item_id": "one",
         "amended_content": "original\nexpanded",
         "review_requirements": None,
-        "scope": {"allowed_paths": ["src/changed.py", "tests/new.py"], "checks": [old_check, new_check]},
+        "scope": {
+            "allowed_paths": ["src/changed.py", "tests/new.py"],
+            "checks": [old_check, new_check],
+        },
     }
     current = load_config(config)
-    value = effective_workflow(
-        app, request, None, current, provider_path="backlog/one.md"
-    )
+    value = effective_workflow(app, request, None, current, provider_path="backlog/one.md")
     assert value["allowed_paths"] == ["src/changed.py", "tests/new.py"]
     assert value["checks"] == [old_check, new_check]
     request["scope"]["checks"] = [new_check]
@@ -165,9 +164,7 @@ def test_effective_workflow_appends_bound_review_requirements_across_admissions(
     config.write_text(yaml.safe_dump(data))
     app = Application(config)
     frozen = {
-        key: deepcopy(value)
-        for key, value in data["workflow"].items()
-        if key != "preparation"
+        key: deepcopy(value) for key, value in data["workflow"].items() if key != "preparation"
     }
     atomic_json(
         app._stage_path("one", "assignment"),
@@ -215,13 +212,16 @@ def test_effective_workflow_appends_bound_review_requirements_across_admissions(
         ],
     }
     request.update(amended_content=further, review_requirements=final)
-    assert effective_workflow(
-        app,
-        request,
-        {"workflow": selected},
-        load_config(config),
-        provider_path=provider_path,
-    )["review_requirements"] == final
+    assert (
+        effective_workflow(
+            app,
+            request,
+            {"workflow": selected},
+            load_config(config),
+            provider_path=provider_path,
+        )["review_requirements"]
+        == final
+    )
 
 
 def test_scope_admission_replays_the_validated_pre_extension_review_contract(
@@ -249,9 +249,7 @@ def test_scope_admission_replays_the_validated_pre_extension_review_contract(
     config.write_text(yaml.safe_dump(data))
     app = Application(config)
     frozen = {
-        key: deepcopy(value)
-        for key, value in data["workflow"].items()
-        if key != "preparation"
+        key: deepcopy(value) for key, value in data["workflow"].items() if key != "preparation"
     }
     assignment = {
         "workflow": frozen,
@@ -327,7 +325,17 @@ def test_scope_admission_replays_the_validated_pre_extension_review_contract(
         "decision": decision,
         "provider_receipt": {
             "operation": operation,
-            "after": asdict(Item("one", provider_path, "amended-revision", "Running", "owner", 100, approved["amended_content"])),
+            "after": asdict(
+                Item(
+                    "one",
+                    provider_path,
+                    "amended-revision",
+                    "Running",
+                    "owner",
+                    100,
+                    approved["amended_content"],
+                )
+            ),
         },
         "provider_revision": "amended-revision",
         "workflow": workflow,
@@ -455,9 +463,7 @@ def test_effective_workflow_rejects_nonadditive_review_selection(config_file, fa
     config.write_text(yaml.safe_dump(data))
     app = Application(config)
     frozen = {
-        key: deepcopy(value)
-        for key, value in data["workflow"].items()
-        if key != "preparation"
+        key: deepcopy(value) for key, value in data["workflow"].items() if key != "preparation"
     }
     atomic_json(
         app._stage_path("one", "assignment"),
@@ -661,8 +667,12 @@ def test_scope_answer_rejects_unrelated_older_answer_and_binds_latest_authority(
         )
 
 
-def test_scope_amendment_rejects_an_older_result_than_the_current_continuation(tmp_path, monkeypatch):
-    monkeypatch.setattr("backlog_harness.scope_admission.admitted_question_continuation", lambda *args: None)
+def test_scope_amendment_rejects_an_older_result_than_the_current_continuation(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "backlog_harness.scope_admission.admitted_question_continuation", lambda *args: None
+    )
     item_id = "one"
     root = tmp_path / item_id
     root.mkdir()
@@ -691,13 +701,9 @@ def test_scope_amendment_rejects_an_older_result_than_the_current_continuation(t
     atomic_json(root / "historical-result.json", older)
     atomic_json(root / ("scope-continuation-" + digest(previous_admission) + ".json"), latest)
     with pytest.raises(TransitionBlocked, match="stale production result"):
-        current_production_result(
-            app, item_id, previous_admission, acceptance, digest(older)
-        )
+        current_production_result(app, item_id, previous_admission, acceptance, digest(older))
     assert (
-        current_production_result(
-            app, item_id, previous_admission, acceptance, digest(latest)
-        )
+        current_production_result(app, item_id, previous_admission, acceptance, digest(latest))
         == latest
     )
 
@@ -794,8 +800,10 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
 
     config, data = config_file
     item_path = provider.repository / "backlog/feature-backlog/item-one.md"
-    running_content = item_path.read_text().replace("Status: Ready", "Status: Running").replace(
-        "Owner: Unowned", "Owner: owner-session"
+    running_content = (
+        item_path.read_text()
+        .replace("Status: Ready", "Status: Running")
+        .replace("Owner: Unowned", "Owner: owner-session")
     )
     item_path.write_text(running_content)
     (provider.repository / "src").mkdir()
@@ -894,9 +902,7 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
         "provider_path": "backlog/defect-backlog/item-one.md",
         "original_high": 100,
         "historical_original_high": 100,
-        "workflow": {
-            key: value for key, value in data["workflow"].items() if key != "preparation"
-        },
+        "workflow": {key: value for key, value in data["workflow"].items() if key != "preparation"},
         "candidate_root": str(candidate_root),
         "workspace": str(candidate),
     }
@@ -987,7 +993,8 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
             requested = payload["request"]
             excerpt = (
                 "Confirm sequential admission."
-                if "Confirm sequential admission." in requested["amended_content"][len(running.content) :]
+                if "Confirm sequential admission."
+                in requested["amended_content"][len(running.content) :]
                 else "Run the expanded check."
             )
             value = {
@@ -998,9 +1005,7 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
                 "previous_admission_digest": requested["previous_admission_digest"],
                 "candidate": requested["candidate"],
                 "scope": requested["scope"],
-                "amended_content_sha256": sha256(
-                    requested["amended_content"].encode()
-                ).hexdigest(),
+                "amended_content_sha256": sha256(requested["amended_content"].encode()).hexdigest(),
                 "remaining_high": 20,
                 "reason": "Current authority covers the complete remaining work.",
                 "coverage_complete": True,
@@ -1017,9 +1022,7 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
                             "kind": "review_requirement",
                             "value": row["id"],
                         }
-                        for row in payload["eligible_coverage_bindings"][
-                            "review_requirements"
-                        ]
+                        for row in payload["eligible_coverage_bindings"]["review_requirements"]
                     ],
                 ],
             }
@@ -1038,45 +1041,11 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
             if "operator_request_digest" in value:
                 retained_results[stage] = result
             return result
-        operation = kwargs["provider_operation"]
-        record = json.loads(
-            (
-                app.root
-                / "provider-agent-operations"
-                / component(operation)
-                / "requested.json"
-            ).read_text()
-        )
-        item_path.write_text(record["amended_content"])
-        git(provider.repository, "add", "--", record["item"]["path"])
-        git(provider.repository, "commit", "-m", "Amend provider item")
-        result = {
-            "role": "coordinator",
-            "invocation_id": stage,
-            "session": {"session_id": "provider", "native_session_id": "provider-native"},
-            "evidence_path": str(tmp_path / stage),
-            "text": json.dumps(
-                {
-                    "operation_id": record["stage_operation"],
-                    "before_revision": record["item"]["revision"],
-                    "commit": git(provider.repository, "rev-parse", "HEAD"),
-                    "after": {
-                        "item_id": running.item_id,
-                        "path": running.path,
-                        "state": running.state,
-                        "owner": running.owner,
-                        "original_high": running.original_high,
-                    },
-                }
-            ),
-        }
-        retained_results[stage] = result
-        return result
+        raise AssertionError("Mechanical provider amendments must not invoke an agent")
 
     monkeypatch.setattr(app, "invoke", invoke)
     monkeypatch.setattr(app, "validate_invocation_result", lambda result: None)
     monkeypatch.setattr(app, "validate_call_limits", lambda *args: None)
-    monkeypatch.setattr(app, "validate_management_readiness", lambda role: None)
     monkeypatch.setattr(app, "process_stopped", lambda path: True)
     monkeypatch.setattr(
         app,
@@ -1097,9 +1066,7 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
         for stage in ("preparation", "assignment", "accept", "produce-review")
     }
     old_request = {key: value for key, value in request.items() if key != "review_requirements"}
-    rejected_path = app._stage_path(
-        "item-one", "scope-admission-decision-" + digest(old_request)
-    )
+    rejected_path = app._stage_path("item-one", "scope-admission-decision-" + digest(old_request))
     atomic_json(rejected_path, {"authorized": False, "reason": "old contract rejected"})
     rejected_bytes = rejected_path.read_bytes()
     with pytest.raises(TransitionBlocked, match="exact scope amendment"):
@@ -1121,7 +1088,7 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
     with pytest.raises(OSError, match="publication failure"):
         asyncio.run(app.amend_scope("item-one", request_path))
     assert app.provider.item("item-one").content == amended
-    assert len(calls) == 3
+    assert len(calls) == 2
     assert not list(
         app._stage_path("item-one", "unused").parent.glob("scope-admission-receipt-*.json")
     )
@@ -1141,12 +1108,15 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
     assert assignment["provider_path"] != provider_request["item"]["path"]
     assert app.item_workflow("item-one")["allowed_paths"] == request["scope"]["allowed_paths"]
     assert git(candidate, "rev-parse", "HEAD") == candidate_head
-    assert all(app._stage_path("item-one", stage).read_bytes() == value for stage, value in originals.items())
+    assert all(
+        app._stage_path("item-one", stage).read_bytes() == value
+        for stage, value in originals.items()
+    )
     assert calls[0] == calls[1]
     assert calls[0].startswith("scope-admission")
-    assert calls[2].startswith("provider-amend")
+    assert all(stage.startswith("scope-admission-decision-") for stage in calls)
     assert asyncio.run(app.amend_scope("item-one", request_path)) == receipt
-    assert len(calls) == 3
+    assert len(calls) == 2
 
     retained_continuation = {
         **previous,
@@ -1168,8 +1138,7 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
         "expected_revision": receipt["provider_revision"],
         "previous_admission_digest": digest(receipt),
         "previous_result_digest": digest(retained_continuation),
-        "amended_content": amended
-        + "\n## Further requirement\n\nConfirm sequential admission. "
+        "amended_content": amended + "\n## Further requirement\n\nConfirm sequential admission. "
         "Review sequential source acceptance.\n",
     }
     sequential_requirement = {
@@ -1193,13 +1162,13 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
     second_path.write_text(json.dumps(second_request))
     second_receipt = asyncio.run(app.amend_scope("item-one", second_path))
     assert second_receipt["input"]["previous_admission_digest"] == digest(receipt)
-    assert second_receipt["workflow"]["review_requirements"] == second_request[
-        "review_requirements"
-    ]
+    assert (
+        second_receipt["workflow"]["review_requirements"] == second_request["review_requirements"]
+    )
     assert app.provider.item("item-one").content == second_request["amended_content"]
-    assert len(calls) == 5
+    assert len(calls) == 3
     assert asyncio.run(app.amend_scope("item-one", second_path)) == second_receipt
-    assert len(calls) == 5
+    assert len(calls) == 3
     receipt = second_receipt
     amended = second_request["amended_content"]
 
@@ -1251,3 +1220,52 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
     with pytest.raises(InspectedContinuation):
         asyncio.run(app._run_item("item-one"))
     assert all(path.read_bytes() == value for path, value in retained_continuations.items())
+
+
+@pytest.mark.parametrize("kind", ["work", "proof"])
+def test_scope_amendment_uses_latest_recovery_continuation(tmp_path, monkeypatch, kind):
+    acceptance = {"session": {"session_id": "owner"}}
+    followup = {"request": {"revision": "current"}}
+    monkeypatch.setattr(
+        "backlog_harness.recovery_flow.work_continuation",
+        lambda *args: followup if kind == "work" else None,
+    )
+    monkeypatch.setattr(
+        "backlog_harness.recovery_flow.proof_continuation",
+        lambda *args: followup if kind == "proof" else None,
+    )
+    app = SimpleNamespace(
+        _stage_path=lambda item, stage: tmp_path / (stage + ".json"),
+        process_stopped=lambda path: True,
+    )
+    result = {
+        "role": "orchestrator",
+        "session": acceptance["session"],
+        "evidence_path": str(tmp_path / "evidence"),
+    }
+    suffix = digest(followup if kind == "work" else followup["request"])
+    atomic_json(app._stage_path("one", "continue-" + kind + "-" + suffix), result)
+    assert current_production_result(app, "one", None, acceptance, digest(result)) == result
+    with pytest.raises(TransitionBlocked, match="stale production result"):
+        current_production_result(app, "one", None, acceptance, digest({"old": True}))
+
+
+@pytest.mark.parametrize("value", [{"bad": float("nan")}, {"bad": object()}])
+def test_scope_request_rejects_non_json_values_before_effects(value, tmp_path):
+    with pytest.raises(ValueError, match="must be JSON-compatible"):
+        validate_request(None, None, value, tmp_path / "input.json", None)
+
+
+def test_scope_candidate_rejects_unrelated_history(provider):
+    from backlog_harness.scope_admission import validate_current_candidate
+
+    repo = provider.repository
+    head = git(repo, "rev-parse", "HEAD")
+    tree = git(repo, "rev-parse", "HEAD^{tree}")
+    # A root commit with the same tree is still unrelated to this candidate.
+    unrelated = git(repo, "commit-tree", tree, "-m", "Unrelated root")
+    candidate = {"repository": str(repo), "base": unrelated, "head": head, "tree": tree}
+    with pytest.raises(TransitionBlocked, match="base is not an ancestor"):
+        validate_current_candidate(repo, candidate, [])
+    candidate["base"] = head
+    assert validate_current_candidate(repo, candidate, []) == []

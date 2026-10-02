@@ -98,9 +98,7 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
             "source_revision": app.provider.source_revision(),
             "source_manifest": app.provider.source_manifest(),
             "observer_digest": app.provider_observer_digest(app.config),
-            "capability_digest": app.provider_capability_digest(
-                app.config, app.provider_observer_digest(app.config)
-            ),
+            "capability_digest": "retired-helper-metadata",
             "policy": {
                 "eligible": True,
                 "mode": "SOLO",
@@ -175,14 +173,14 @@ def _public_case(config_file, provider, tmp_path, monkeypatch, completion=False)
             },
         )
         intent = {
-                "invocation_id": stage,
-                "request_digest": result["request_digest"],
-                "binding": binding,
-                "config_digest": app.config.file_digest,
-                "item_id": None if result["purpose"] == "provider" else item.item_id,
-                "action": stage,
-                "operation_id": item.item_id + ":" + stage,
-            }
+            "invocation_id": stage,
+            "request_digest": result["request_digest"],
+            "binding": binding,
+            "config_digest": app.config.file_digest,
+            "item_id": None if result["purpose"] == "provider" else item.item_id,
+            "action": stage,
+            "operation_id": item.item_id + ":" + stage,
+        }
         if kwargs.get("coordination"):
             context = app.claim_coordination_context(app.config)
             intent["coordination_digest"] = digest(context)
@@ -881,7 +879,7 @@ def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
                 read_only=False,
                 purpose="proof",
             )
-            contract = CodexAdapter.prepare_artifact_output(request)
+            contract = CodexAdapter.prepare_proof_output(request)
             output = Path(contract["path"]) / "proof.json"
             output.write_text(json.dumps({"candidate": packet["candidate"]["head"]}))
             # A reviewer can read the exact output; its presence is not an acceptance verdict.
@@ -1056,13 +1054,8 @@ def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
             asyncio.run(run_artifact_proof(app, item.item_id, instruction))
         assert proof_calls == []
     app._stage_path(item.item_id, registered["stage"]).write_bytes(original)
-    with pytest.raises(TransitionBlocked, match="explicitly configured"):
-        asyncio.run(run_artifact_proof(app, item.item_id, instruction))
-    assert proof_calls == []
+    # Explicit proof work uses the fixed evidence directory without an output flag.
     config, data = config_file
-    data["profiles"]["worker"]["artifact_output"] = True
-    config.write_text(yaml.safe_dump(data))
-    app.config = load_config(config)
     prepared = asyncio.run(run_artifact_proof(app, item.item_id, instruction, prepare_only=True))
     assert prepared == asyncio.run(
         run_artifact_proof(app, item.item_id, instruction, prepare_only=True)
@@ -1168,7 +1161,6 @@ def test_retained_blocked_continuation_can_run_scoped_proof_without_readmission(
     from backlog_harness.coordination import RunController
     from backlog_harness.recovery_flow import register_proof_continuation
 
-    data["profiles"]["worker"].pop("artifact_output")
     data["poll_seconds"] = 0.01
     config.write_text(yaml.safe_dump(data))
     app.config = load_config(config)

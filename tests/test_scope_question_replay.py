@@ -1,4 +1,4 @@
-"""Only an exact terminal a53 scoped question may replay its historical prompt bytes."""
+"""Completed operation evidence survives harmless changes to prompt wording."""
 
 import json
 from dataclasses import asdict
@@ -10,7 +10,6 @@ from backlog_harness.application import Application
 from backlog_harness.contracts import AgentBinding, digest
 from backlog_harness.evidence import atomic_json, component
 from backlog_harness.provider import TransitionBlocked
-from backlog_harness.scope_admission import retained_scope_question_prompt
 from backlog_harness.telemetry import Sink
 
 
@@ -164,196 +163,130 @@ def replay(tmp_path, monkeypatch):
     return app, stage, prompt, old_prompt, result, evidence
 
 
-def test_exact_terminal_question_reconstructs_historical_bytes_without_writing(replay):
-    app, stage, prompt, old_prompt, result, _evidence = replay
-    before = {path: path.read_bytes() for path in app.root.rglob("*") if path.is_file()}
-    assert retained_scope_question_prompt(app, "one", stage, prompt, result, None) == old_prompt
-    assert all(path.read_bytes() == value for path, value in before.items())
-    assert set(before) == {path for path in app.root.rglob("*") if path.is_file()}
+def validate(replay, **changes):
+    app, stage, _prompt, _old_prompt, result, _evidence = replay
+    from backlog_harness.runtime import SessionHandle
+
+    binding = AgentBinding(**result["binding"])
+    session = SessionHandle(
+        **{**result["session"], "binding": AgentBinding(**result["session"]["binding"])}
+    )
+    args = {
+        "item_id": "one",
+        "stage": stage,
+        "operation": "one:" + stage,
+        "role": "orchestrator",
+        "binding": binding,
+        "session": session,
+        "context": {"purpose": "implementation", "provider_operation": None, "read_only": False},
+    }
+    args.update(changes)
+    Application.validate_completed_stage(app, result, **args)
+
+
+def test_completed_result_reuses_recorded_output_without_prompt_reconstruction(replay):
+    app, _stage, _prompt, _old_prompt, _result, _evidence = replay
+    # Historical wording and an unrelated historical approval appendix are not authority.
+    app._stage_path("one", "continuation").unlink()
+    before = {p: p.read_bytes() for p in app.root.rglob("*") if p.is_file()}
+    validate(replay)
+    assert before == {p: p.read_bytes() for p in app.root.rglob("*") if p.is_file()}
+
+
+def test_completed_replay_preserves_returned_work_with_empty_trace_receipt(replay):
+    app, _stage, _prompt, _old_prompt, result, evidence = replay
+    telemetry = app.root / "telemetry.jsonl"
+    telemetry.write_text("")
+    report = {
+        "span_count": 0,
+        "rejected_exports": 0,
+        "evidence_sha256": Sink(telemetry, {}).evidence_digest(),
+    }
+    result["telemetry"] = report
+    atomic_json(evidence / "telemetry-report.json", report)
+    before = {p: p.read_bytes() for p in app.root.rglob("*") if p.is_file()}
+    validate(replay)
+    assert before == {p: p.read_bytes() for p in app.root.rglob("*") if p.is_file()}
 
 
 @pytest.mark.parametrize(
     "fault",
     [
-        "suffix",
+        "text",
+        "events",
+        "events-file",
+        "partial-events",
+        "report",
+        "path",
+        "metadata",
+        "extra",
         "digest",
         "failed",
         "partial",
-        "native",
-        "not-question",
-        "new-stage",
-        "active",
-        "new-answer",
+        "missing-report",
+        "missing-audit",
+        "symlink",
+        "role",
+        "session",
+        "permission",
+        "context",
+        "stage",
+        "item",
+        "operation",
     ],
 )
-def test_retained_question_replay_rejects_changed_or_nonterminal_evidence(
-    replay, monkeypatch, fault
-):
-    app, stage, prompt, _old_prompt, result, evidence = replay
-    if fault == "suffix":
-        atomic_json(app._stage_path("one", "continuation"), {"approval": {"changed": True}})
-    elif fault == "digest":
-        result["request_digest"] = "changed"
-    elif fault == "failed":
-        result["outcome"] = "failed"
-    elif fault == "partial":
-        (evidence / "outcomes.jsonl").write_text('{"classification":"returned"}\n{')
-    elif fault == "native":
-        result["session"] = {"session_id": "owner", "native_session_id": "other"}
-    elif fault == "not-question":
-        result["text"] = json.dumps({"item_id": "one", "request_completion": True})
-    elif fault == "new-stage":
-        stage = "scope-answer-continuation-new"
-    elif fault == "active":
-        app.process_stopped = lambda _: False
-    else:
-        monkeypatch.setattr(
-            "backlog_harness.scope_admission.admitted_question_continuation",
-            lambda *args: {"approved": True},
-        )
-    with pytest.raises(TransitionBlocked):
-        retained_scope_question_prompt(app, "one", stage, prompt, result, None)
-
-
-def test_retained_question_replays_optional_proof_and_ordered_review_tail(replay, monkeypatch):
-    app, stage, prompt, old_prompt, result, evidence = replay
-    proof = app._stage_path("one", "proof-review")
-    atomic_json(proof, {"candidate": "retained", "verdict": "ACCEPT"})
-    suffix = (
-        "\nReuse this retained fresh proof review; include its reviewer_task (or reviewer_session if absent) as "
-        "proof_reviewer_session in your response. Do not repeat proof or review: "
-        + proof.read_text()
-    )
-    monkeypatch.setattr(
-        "backlog_harness.native_evidence.source_review_instructions",
-        lambda *args: "\nexact review instructions",
-    )
-    monkeypatch.setattr(
-        "backlog_harness.native_evidence.coordination_instructions",
-        lambda *args: "\nexact retained coordination",
-    )
-    tail = "\nexact review instructions\nexact retained coordination"
-    expected = old_prompt + suffix + tail
-    result["request_digest"] = digest(expected)
-    intent = json.loads((evidence / "intent.json").read_text())
-    intent["request_digest"] = result["request_digest"]
-    atomic_json(evidence / "intent.json", intent)
-    assert retained_scope_question_prompt(app, "one", stage, prompt + tail, result, {}) == expected
-    proof.write_text('{"candidate":"changed"}')
-    with pytest.raises(TransitionBlocked, match="Stage request changed"):
-        retained_scope_question_prompt(app, "one", stage, prompt + tail, result, {})
-
-
-@pytest.mark.parametrize(
-    "file,field,value",
-    [
-        ("result", "binding", None),
-        ("result", "binding", {}),
-        ("result", "purpose", "provider"),
-        ("result", "version", 2),
-        ("intent.json", "binding", {}),
-        ("intent.json", "action", "different"),
-        ("intent.json", "item_id", "other"),
-        ("intent.json", "config_digest", "b" * 64),
-        ("config.json", "digest", "b" * 64),
-        ("session.json", "native_session_id", "other"),
-        ("session.json", "binding", {}),
-        ("execution-context.json", "read_only", True),
-        ("resume-binding.json", "current_config_digest", "b" * 64),
-        ("resume-binding.json", "previous_binding", {}),
-        ("resume-binding.json", "current_binding", {}),
-        ("resume-binding.json", "session_id", "other"),
-    ],
-)
-def test_replay_correlates_all_retained_invocation_identity(replay, file, field, value):
-    app, stage, prompt, _old_prompt, result, evidence = replay
-    record = result if file == "result" else json.loads((evidence / file).read_text())
-    if value is None:
-        record.pop(field)
-    else:
-        record[field] = value
-    if file != "result":
-        atomic_json(evidence / file, record)
-    with pytest.raises(TransitionBlocked):
-        retained_scope_question_prompt(app, "one", stage, prompt, result, None)
-
-
-def test_replay_accepts_recorded_launch_tuning_without_current_config_equality(replay):
-    app, stage, prompt, old_prompt, result, evidence = replay
-    actual = {
-        **result["binding"],
-        "profile_digest": "new-model-and-effort",
-        "relevant_digest": "new-launch",
-    }
-    result["binding"] = actual
-    for file in ("intent.json", "config.json", "session.json"):
-        record = json.loads((evidence / file).read_text())
-        record["binding"] = actual
-        if file == "intent.json":
-            record["config_digest"] = "b" * 64
-        if file == "config.json":
-            record["digest"] = "b" * 64
-        atomic_json(evidence / file, record)
-    audit = json.loads((evidence / "resume-binding.json").read_text())
-    audit.update(current_binding=actual, current_config_digest="b" * 64)
-    atomic_json(evidence / "resume-binding.json", audit)
-    assert retained_scope_question_prompt(app, "one", stage, prompt, result, None) == old_prompt
-
-
-@pytest.mark.parametrize(
-    "filename", ["config.json", "session.json", "resume-binding.json", "requested.json"]
-)
-def test_replay_rejects_missing_or_redirected_identity_files(replay, filename):
-    app, stage, prompt, _old_prompt, result, evidence = replay
-    path = evidence / filename
-    external = app.root / ("substitute-" + filename)
-    external.write_bytes(path.read_bytes())
-    path.unlink()
-    path.symlink_to(external)
-    with pytest.raises(TransitionBlocked, match="evidence is incomplete"):
-        retained_scope_question_prompt(app, "one", stage, prompt, result, None)
-
-
-@pytest.mark.parametrize(
-    "fault",
-    ["text", "events", "events-file", "partial-events", "report", "path", "metadata", "extra"],
-)
-def test_replay_rejects_result_output_not_bound_to_terminal_records(replay, fault):
-    app, stage, prompt, _old_prompt, result, evidence = replay
+def test_completed_replay_rejects_changed_identity_authority_or_evidence(replay, fault):
+    app, _stage, _prompt, _old_prompt, result, evidence = replay
+    changes = {}
     if fault == "text":
-        result["text"] = json.dumps(
-            {"item_id": "one", "question": {"question_id": "forged", "text": "Forged question"}}
-        )
+        result["text"] = "Forged result"
     elif fault == "events":
         result["events"] = []
     elif fault == "events-file":
         (evidence / "events.jsonl").write_text("")
     elif fault == "partial-events":
-        with (evidence / "events.jsonl").open("a") as stream:
-            stream.write('{"partial":')
+        with (evidence / "events.jsonl").open("a") as f:
+            f.write('{"partial":')
     elif fault == "report":
         report = json.loads((evidence / "telemetry-report.json").read_text())
         report["span_count"] = 2
         atomic_json(evidence / "telemetry-report.json", report)
     elif fault == "path":
-        result["telemetry_path"] = str(app.root / "different.jsonl")
+        result["telemetry_path"] = str(app.root / "other.jsonl")
     elif fault == "metadata":
-        atomic_json(evidence / "telemetry.json", {"path": "/outside/telemetry.jsonl"})
-    else:
-        result["extra"] = "not reconstructed"
+        atomic_json(evidence / "telemetry.json", {"path": "/outside/telemetry"})
+    elif fault == "extra":
+        result["extra"] = "Not in the recorded output"
+    elif fault == "digest":
+        result["request_digest"] = "0" * 64
+    elif fault == "failed":
+        result["outcome"] = "failed"
+    elif fault == "partial":
+        with (evidence / "outcomes.jsonl").open("a") as f:
+            f.write('{"partial":')
+    elif fault == "missing-report":
+        (evidence / "telemetry-report.json").unlink()
+    elif fault == "missing-audit":
+        (evidence / "resume-binding.json").unlink()
+    elif fault == "symlink":
+        path = evidence / "config.json"
+        target = app.root / "other-config.json"
+        target.write_bytes(path.read_bytes())
+        path.unlink()
+        path.symlink_to(target)
+    elif fault == "role":
+        changes["role"] = "coordinator"
+    elif fault == "session":
+        result["session"] = {**result["session"], "native_session_id": "other"}
+    elif fault == "permission":
+        changes["binding"] = AgentBinding(**{**result["binding"], "permission_digest": "widened"})
+    elif fault == "context":
+        changes["context"] = {"purpose": "provider", "provider_operation": None, "read_only": False}
+    elif fault == "stage":
+        changes["stage"] = "different-stage"
+    elif fault == "item":
+        changes["item_id"] = "other"
+    elif fault == "operation":
+        changes["operation"] = "other"
     with pytest.raises(TransitionBlocked):
-        retained_scope_question_prompt(app, "one", stage, prompt, result, None)
-
-
-def test_missing_report_blocks_before_reconstruction_and_does_not_write(replay):
-    app, stage, prompt, _old_prompt, result, evidence = replay
-    (evidence / "telemetry-report.json").unlink()
-
-    def forbidden(_path):
-        raise AssertionError("Missing report must not enter reconstruction")
-
-    app.recover_invocation = forbidden
-    before = {path: path.read_bytes() for path in app.root.rglob("*") if path.is_file()}
-    with pytest.raises(TransitionBlocked, match="evidence is incomplete"):
-        retained_scope_question_prompt(app, "one", stage, prompt, result, None)
-    assert before == {path: path.read_bytes() for path in app.root.rglob("*") if path.is_file()}
+        validate(replay, **changes)

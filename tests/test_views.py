@@ -206,3 +206,114 @@ def test_cold_projection_rejects_same_count_content_change(
     cold = Application(config)
     with pytest.raises(EvidenceError, match="receipt mismatch"):
         snapshot(cold)
+
+
+@pytest.mark.parametrize("change", ["shrink", "rewrite", "conflict", "replace", "remove"])
+def test_trace_cache_handles_changed_evidence_without_silent_stale_rows(tmp_path, change):
+    import os
+    from types import SimpleNamespace
+
+    from backlog_harness.evidence import EvidenceError, JsonlWriter
+    from backlog_harness.projections import trace_snapshot
+
+    app = SimpleNamespace(root=tmp_path, trace_cache={})
+    path = tmp_path / "telemetry/runs/run/invocation/spans.jsonl"
+    value = {
+        "resourceSpans": [
+            {
+                "scopeSpans": [
+                    {"spans": [{"traceId": "a" * 32, "spanId": "b" * 16, "name": "original"}]}
+                ]
+            }
+        ]
+    }
+    JsonlWriter(path).append(value)
+    assert trace_snapshot(app)[0] == 1
+    if change == "shrink":
+        path.write_bytes(b"")
+    elif change == "rewrite":
+        stat = path.stat()
+        path.write_text(path.read_text().replace("original", "modified"))
+        os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000))
+    elif change == "conflict":
+        value["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["name"] = "different"
+        JsonlWriter(path).append(value)
+    elif change == "replace":
+        replacement = path.with_name("replacement")
+        replacement.write_text(path.read_text().replace("original", "modified"))
+        replacement.replace(path)
+        assert trace_snapshot(app)[1][0]["name"] == "modified"
+        return
+    else:
+        path.unlink()
+        assert trace_snapshot(app) == (0, [], [])
+        assert not app.trace_cache
+        return
+    with pytest.raises(EvidenceError, match="shrank|rewritten|Conflicting"):
+        trace_snapshot(app)
+
+
+def test_cross_file_span_duplicates_are_not_double_counted_and_conflicts_are_visible(tmp_path):
+    from types import SimpleNamespace
+
+    from backlog_harness.evidence import JsonlWriter
+    from backlog_harness.projections import trace_snapshot
+
+    app = SimpleNamespace(root=tmp_path, trace_cache={})
+    value = {
+        "resourceSpans": [
+            {
+                "scopeSpans": [
+                    {"spans": [{"traceId": "a" * 32, "spanId": "b" * 16, "name": "original"}]}
+                ]
+            }
+        ]
+    }
+    for name in ("one", "two"):
+        JsonlWriter(tmp_path / f"telemetry/runs/run/{name}/spans.jsonl").append(value)
+    assert trace_snapshot(app)[0] == 1
+    assert not trace_snapshot(app)[2]
+    value["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["name"] = "different"
+    JsonlWriter(tmp_path / "telemetry/runs/run/three/spans.jsonl").append(value)
+    count, _, uncertainty = trace_snapshot(app)
+    assert count == 1
+    assert uncertainty == ["conflicting trace span:" + "b" * 16]
+
+
+@pytest.mark.parametrize("fault", ["missing-receipt", "rejected", "missing-file", "outside-root"])
+def test_missing_trace_receipts_are_reported_as_uncertainty(config_file, tmp_path, fault):
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import EvidenceStore, atomic_json
+    from backlog_harness.projections import snapshot
+
+    app = Application(config_file[0])
+    (app.config.repository / "backlog").mkdir()
+    store = EvidenceStore(app.root, "run")
+    path = store.begin("op", "inv", app.config, app.config.binding("coordinator"), action="test")
+    store.requested(path)
+    store.outcome(path, "returned")
+    if fault != "missing-receipt":
+        telemetry = app.root / "missing.jsonl"
+        if fault == "outside-root":
+            telemetry = tmp_path / "outside.jsonl"
+            telemetry.write_text("")
+        atomic_json(path / "telemetry.json", {"path": str(telemetry)})
+        atomic_json(path / "telemetry-report.json", {"rejected_exports": int(fault == "rejected")})
+    result = snapshot(app)
+    assert result["uncertainty"]
+    assert result["trace_span_count"] == 0
+
+
+def test_long_lived_view_rejects_storage_identity_change(config_file, tmp_path):
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import EvidenceError
+    from backlog_harness.projections import snapshot
+
+    path, data = config_file
+    app = Application(path)
+    data["operational_root"] = str(tmp_path / "different-storage")
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(EvidenceError, match="storage identity changed"):
+        snapshot(app)

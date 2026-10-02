@@ -33,6 +33,7 @@ def design_app(tmp_path, monkeypatch):
     }
 
     class App:
+        provider = None  # This fixture exercises the direct-provider workflow.
         root = tmp_path
         config = SimpleNamespace(
             binding=lambda _: Binding(), data={"profiles": {"worker": {"artifact_output": True}}}
@@ -74,7 +75,7 @@ def design_app(tmp_path, monkeypatch):
             path = self._stage_path(item, stage)
             if path.exists():
                 return json.loads(path.read_text())
-            assert kwargs == {"read_only": False, "purpose": "proof"}
+            assert kwargs == {"read_only": False, "purpose": "proof", "coordination": False}
             self.calls.append(stage)
             request = json.loads(self._stage_path(item, "design-request").read_text())
             operation = item + ":" + stage
@@ -294,18 +295,10 @@ def test_native_rejection_only_explicit_design_caller(monkeypatch, optional, fin
 def test_source_invocation_cannot_bypass_design(config_file, monkeypatch):
     from backlog_harness import estimation
     from backlog_harness.application import Application
-    from backlog_harness.contracts import load_config
 
     path, _ = config_file
-    config = load_config(path)
     workflow = {"design_review": {"required": True}}
-    app = SimpleNamespace(
-        config=config,
-        config_path=path,
-        root=config.operational_root,
-        recovery_record=lambda _: None,
-        item_workflow=lambda _: workflow,
-    )
+    app = Application(path)
     app._stage_path = lambda item, stage: app.root / "stages" / (stage + ".json")
     atomic_json(app._stage_path("item", "assignment"), {"workflow": workflow})
     monkeypatch.setattr(estimation, "prepared_workflow", lambda *_: workflow)

@@ -4,11 +4,11 @@ import json
 from pathlib import Path
 
 import yaml
-from system_support import InstalledHarness, command, install_wheel
+from system_support import InstalledHarness, command
 
 
-def test_installed_multitask_two_independent_items(tmp_path_factory, tmp_path):
-    python = install_wheel(tmp_path_factory)
+def test_installed_multitask_two_independent_items(installed_package_python, tmp_path):
+    python = installed_package_python
     harness = InstalledHarness.create(
         tmp_path, python, dispatcher=Path(__file__).parent / "fixtures/multitask_agent.py"
     )

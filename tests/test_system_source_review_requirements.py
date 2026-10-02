@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from system_support import InstalledHarness, install_wheel
+from system_support import InstalledHarness
 
 
 @pytest.fixture(scope="session")
-def source_review_python(tmp_path_factory):
-    return install_wheel(tmp_path_factory)
+def source_review_python(installed_package_python):
+    return installed_package_python
 
 
 def digest(value):
@@ -97,7 +97,9 @@ def test_installed_bound_source_review_accepts_or_blocks_and_replays(
             assert result.returncode == 0, result.stdout + result.stderr
             review = json.loads(next(harness.repo.rglob("review.json")).read_text())
             assert review["source_review_assessment"]["unresolved_findings"] == []
-            assert review["pre_review_checks"][0]["returncode"] == 0
+            checks = json.loads(next(harness.repo.rglob("source-checks.json")).read_text())
+            assert checks[0]["returncode"] == 0
+            assert "pre_review_checks" not in review
             assert (harness.repo / "answer.txt").read_text() == "done\n"
         else:
             assert result.returncode != 0
@@ -114,4 +116,5 @@ def test_installed_bound_source_review_accepts_or_blocks_and_replays(
             if "Running is now recorded for your exact session" in row["prompt"]
         ]
         assert len(producer_prompts) == 1
-        assert "SOURCE REVIEW PACKET" in producer_prompts[0]
+        assert "no duplicated command execution" in producer_prompts[0]
+        assert "SOURCE REVIEW PACKET" not in producer_prompts[0]

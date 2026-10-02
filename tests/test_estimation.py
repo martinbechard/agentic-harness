@@ -308,9 +308,7 @@ def test_real_document_without_owner_estimate_to_public_admission(
         app.provider.cache_path,
         {
             "observer_digest": app.provider_observer_digest(app.config),
-            "capability_digest": app.provider_capability_digest(
-                app.config, app.provider_observer_digest(app.config)
-            ),
+            "capability_digest": "retired-helper-metadata",
             "source_revision": app.provider.source_revision(),
             "source_manifest": app.provider.source_manifest(),
             "policy": policy,

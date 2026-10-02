@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from system_support import InstalledHarness, command, install_wheel
+from system_support import InstalledHarness, command
 
 
 @pytest.fixture(scope="session")
-def retained_cache_python(tmp_path_factory):
-    return install_wheel(tmp_path_factory)
+def retained_cache_python(installed_package_python):
+    return installed_package_python
 
 
 def test_legacy_refresh_then_retained_reconciliation_delivery_reuses_observation(
@@ -66,7 +66,7 @@ def test_legacy_refresh_then_retained_reconciliation_delivery_reuses_observation
     run("refresh-provider")
     assert len(observations()) == baseline + 1
     refreshed = json.loads(cache_path.read_text())
-    assert refreshed["capability_digest"] and refreshed["observer_binding_digest"]
+    assert "capability_digest" not in refreshed and "observer_binding_digest" not in refreshed
     assert refreshed["source_manifest"] == cache["source_manifest"]
 
     (harness.repo / "unrelated.txt").write_text("source-only advance\n")
@@ -102,7 +102,7 @@ def test_legacy_refresh_then_retained_reconciliation_delivery_reuses_observation
 
 
 @pytest.mark.parametrize("change", ["missing-receipt", "tool-configuration"])
-def test_capability_loss_replays_evidence_and_tool_change_refreshes(
+def test_helper_metadata_is_optional_and_interpretation_change_refreshes(
     retained_cache_python, tmp_path, change
 ):
     harness = InstalledHarness.create(tmp_path, retained_cache_python)
@@ -111,7 +111,7 @@ def test_capability_loss_replays_evidence_and_tool_change_refreshes(
     cache_path = harness.repo / ".agent-ops/backlog-harness/provider-observation.json"
     if change == "missing-receipt":
         cached = json.loads(cache_path.read_text())
-        cached.pop("capability_digest")
+        cached.pop("capability_digest", None)
         cache_path.write_text(json.dumps(cached))
     else:
         config = yaml.safe_load(harness.config_path.read_text())
@@ -125,7 +125,10 @@ def test_capability_loss_replays_evidence_and_tool_change_refreshes(
     calls_path = tmp_path / "agent-calls.jsonl"
     expected_calls = 1 if change == "missing-receipt" else 2
     assert len(calls_path.read_text().splitlines()) == expected_calls
-    assert json.loads(cache_path.read_text())["capability_digest"]
+    if change == "missing-receipt":
+        assert "capability_digest" not in json.loads(cache_path.read_text())
+    else:
+        assert "capability_digest" not in json.loads(cache_path.read_text())
     repeated = harness.run("refresh-provider")
     assert repeated.returncode == 0, repeated.stderr
     assert len(calls_path.read_text().splitlines()) == expected_calls

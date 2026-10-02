@@ -3,7 +3,6 @@ import pytest
 from backlog_harness.integration_reconciliation import (
     authorize_candidate,
     prepare_candidate,
-    proof_reuse,
 )
 from backlog_harness.provider import TransitionBlocked, git
 
@@ -80,23 +79,6 @@ def test_new_review_and_checks_required():
         authorize_candidate(record, review, [], authority, verify_review=lambda r: True)
 
 
-def test_proof_manifest_cannot_be_arbitrary_subset():
-    inputs = {"source": "a" * 64}
-    with pytest.raises(TransitionBlocked, match="manifest"):
-        proof_reuse("receipt", inputs, inputs, manifest={}, verify_manifest=lambda m: True)
-    manifest = {"receipt": "receipt", "complete": True, "scope": "fixture", "inputs": inputs}
-    with pytest.raises(TransitionBlocked, match="coverage"):
-        proof_reuse("receipt", inputs, inputs, manifest=manifest, verify_manifest=lambda m: False)
-    with pytest.raises(TransitionBlocked, match="identity"):
-        proof_reuse(
-            "receipt",
-            inputs,
-            {"source": "b" * 64},
-            manifest=manifest,
-            verify_manifest=lambda m: True,
-        )
-
-
 def test_separate_candidate_repository_and_stale_primary(branches, tmp_path):
     repo, args = branches
     separate = tmp_path / "candidate-repo"
@@ -155,7 +137,10 @@ def test_declared_generated_conflict_regenerated(branches, tmp_path):
     assert result["candidate"] != args["candidate"]
 
 
-def test_flow_requires_verified_new_review_and_reuses_result(branches, tmp_path):
+@pytest.mark.parametrize(
+    "check_error", [None, "Required checks failed", "Check receipt unavailable"]
+)
+def test_flow_requires_verified_new_review_and_reuses_result(branches, tmp_path, check_error):
     import asyncio
     import json
     from types import SimpleNamespace
@@ -203,6 +188,8 @@ def test_flow_requires_verified_new_review_and_reuses_result(branches, tmp_path)
             return {"checks": [["check"]]}
 
         def checks(self, repository, item, candidate, name):
+            if self.check_error:
+                raise TransitionBlocked(self.check_error)
             value = [
                 {
                     "candidate": candidate,
@@ -245,6 +232,14 @@ def test_flow_requires_verified_new_review_and_reuses_result(branches, tmp_path)
     instruction = tmp_path / "instruction.json"
     instruction.write_text("{}")
     app = App()
+    app.check_error = check_error
+    if check_error:
+        with pytest.raises(TransitionBlocked, match=check_error):
+            asyncio.run(reconcile_integration(app, "item", instruction))
+        assert app.calls == 0
+        assert not app._stage_path("item", "integration-attempt-2").exists()
+        assert not app._stage_path("item", "superseding-delivery-authorization").exists()
+        app.check_error = None
     with pytest.raises(TransitionBlocked, match="Native evidence"):
         asyncio.run(reconcile_integration(app, "item", instruction))
     assert not app._stage_path("item", "superseding-delivery-authorization").exists()
@@ -277,3 +272,28 @@ def test_retained_integration_checks_require_exact_coverage_and_content(fault):
         row["candidate"] = "other"
     with pytest.raises(TransitionBlocked):
         validate_checks([row], "candidate", [["required-check"]])
+
+
+@pytest.mark.parametrize(
+    "stage", ["integration-review-0", "integration-review-3", "different-stage"]
+)
+def test_unknown_integration_attempt_cannot_alias_a_retained_stage(stage):
+    from backlog_harness.integration_reconciliation import integration_attempt
+
+    with pytest.raises(TransitionBlocked, match="Invalid integration stage name"):
+        integration_attempt(stage, "integration-review")
+
+
+def test_workspace_snapshot_distinguishes_symlink_and_deleted_tracked_file(branches):
+    from backlog_harness.integration_reconciliation import _workspace_snapshot
+
+    repo, _args = branches
+    (repo / "linked").symlink_to("a")
+    before = _workspace_snapshot(repo)
+    assert before["files"]["linked"]["link"] == "a"
+    assert before["files"]["a"]["sha256"]
+    (repo / "a").unlink()
+    after = _workspace_snapshot(repo)
+    assert after["files"]["a"] is None
+    assert after["index"]["a"] == before["index"]["a"]
+    assert after["files"]["linked"] == before["files"]["linked"]

@@ -3,12 +3,12 @@
 import json
 
 import pytest
-from system_support import InstalledHarness, install_wheel
+from system_support import InstalledHarness
 
 
 @pytest.fixture(scope="session")
-def installed_python(tmp_path_factory):
-    return install_wheel(tmp_path_factory)
+def installed_python(installed_package_python):
+    return installed_package_python
 
 
 def test_s01_legacy_one_item(installed_python, tmp_path):

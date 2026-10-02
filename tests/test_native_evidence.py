@@ -1,5 +1,4 @@
 import json
-from hashlib import sha256
 from uuid import uuid4
 
 import pytest
@@ -9,7 +8,8 @@ from backlog_harness.native_evidence import coordination_instructions, verify_na
 from backlog_harness.provider import TransitionBlocked
 
 
-def test_native_child_freshness_candidate_verdict(tmp_path):
+@pytest.mark.parametrize("verdict_source", ["completion", "message", "fenced", "missing"])
+def test_native_child_freshness_candidate_verdict(tmp_path, verdict_source):
     root = tmp_path / "2026/09/30"
     root.mkdir(parents=True)
     producer, reviewer = str(uuid4()), str(uuid4())
@@ -62,8 +62,30 @@ def test_native_child_freshness_candidate_verdict(tmp_path):
             },
         },
     ]
+    verdict = child[-1]["payload"]["last_agent_message"]
+    if verdict_source != "completion":
+        del child[-1]["payload"]["last_agent_message"]
+        if verdict_source != "missing":
+            child.insert(
+                1,
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "agent_message",
+                        "message": f"```json\n{verdict}\n```"
+                        if verdict_source == "fenced"
+                        else verdict,
+                    },
+                },
+            )
+    # An unrelated truncated session must not prevent discovery of the real child.
+    (root / "unrelated.jsonl").write_text("{unfinished")
     write(producer, parent)
     write(reviewer, child)
+    if verdict_source == "missing":
+        with pytest.raises(TransitionBlocked, match="verdict is missing"):
+            verify_native_review(producer, "/root/review", candidate, tmp_path)
+        return
     proof = verify_native_review(producer, "/root/review", candidate, tmp_path)
     assert proof["reviewer_session"] == reviewer and proof["fresh_context"]
     with pytest.raises(TransitionBlocked):
@@ -74,7 +96,7 @@ def test_native_child_freshness_candidate_verdict(tmp_path):
         verify_native_review(producer, "/root/review", candidate, tmp_path)
 
 
-def test_native_review_requires_exact_bound_coordination_context(tmp_path):
+def test_native_review_coordination_wording_does_not_replace_evidence(tmp_path):
     root = tmp_path / "2026/10/02"
     root.mkdir(parents=True)
     producer, reviewer = str(uuid4()), str(uuid4())
@@ -139,33 +161,48 @@ def test_native_review_requires_exact_bound_coordination_context(tmp_path):
             },
         },
     ]
-    write(producer, parent("Review exact candidate." + coordination_instructions(context)))
     write(reviewer, child)
-    assert verify_native_review(
-        producer,
-        "/root/review",
-        candidate,
-        tmp_path,
-        coordination_context=context,
-    )["verdict"] == "ACCEPT"
-    write(producer, parent("Review exact candidate."))
-    with pytest.raises(TransitionBlocked, match="coordination context"):
-        verify_native_review(
-            producer,
-            "/root/review",
-            candidate,
-            tmp_path,
-            coordination_context=context,
+    # Appending another section used to make END COORDINATION CONTEXT count as
+    # a second start marker. Neither layout nor copying proves reviewer behavior.
+    messages = [
+        "Review exact candidate." + coordination_instructions(context),
+        "Review exact candidate."
+        + coordination_instructions(context)
+        + "\nSOURCE REVIEW PACKET\n{}",
+        "Review exact candidate; follow the project's coordination rules.",
+        "Review exact candidate." + coordination_instructions({**context, "claims_required": True}),
+    ]
+    for message in messages:
+        write(producer, parent(message))
+        assert (
+            verify_native_review(
+                producer,
+                "/root/review",
+                candidate,
+                tmp_path,
+            )["verdict"]
+            == "ACCEPT"
         )
-    changed = {**context, "claims_required": True}
-    write(producer, parent("Review exact candidate." + coordination_instructions(changed)))
-    with pytest.raises(TransitionBlocked, match="differs"):
+        with pytest.raises(TransitionBlocked, match="candidate"):
+            verify_native_review(
+                producer,
+                "/root/review",
+                "b" * 40,
+                tmp_path,
+            )
+
+    # Perfect prompt copying still cannot substitute for an independent verdict.
+    write(producer, parent(coordination_instructions(context)))
+    child[-1]["payload"]["last_agent_message"] = json.dumps(
+        {"candidate": candidate, "verdict": "REJECT", "unresolved_findings": ["Defect"]}
+    )
+    write(reviewer, child)
+    with pytest.raises(TransitionBlocked, match="did not accept"):
         verify_native_review(
             producer,
             "/root/review",
             candidate,
             tmp_path,
-            coordination_context=context,
         )
 
 
@@ -173,242 +210,194 @@ def test_native_review_requires_exact_bound_coordination_context(tmp_path):
     "fault",
     [
         None,
-        "invented",
-        "late",
-        "output-hash",
-        "truncated",
+        "reordered",
+        "extra-fields",
+        "assessment-missing",
         "assessment-candidate",
+        "requirements-digest",
         "missing-conclusion",
+        "duplicate-conclusion",
+        "invalid-conclusion",
         "reject-conclusion",
         "weakening-finding",
+        "evidence-path",
         "harness-check",
+        "missing-check",
+        "check-candidate",
+        "check-command",
     ],
 )
-def test_selected_source_review_binds_pre_spawn_checks_and_conclusions(tmp_path, fault):
+def test_selected_review_validates_substance_without_prompt_packets(tmp_path, fault):
     root = tmp_path / "2026/10/02"
     root.mkdir(parents=True)
     producer, reviewer = str(uuid4()), str(uuid4())
     candidate = "a" * 40
-    commands = [["python", "-m", "focused"], ["git", "diff", "--check"]]
-    outputs = [
-        "Chunk ID: one\nProcess exited with code 0\nFinal output:\npassed\n",
-        "Chunk ID: two\nProcess exited with code 0\nFinal output:\n",
-    ]
-    if fault == "truncated":
-        outputs[0] += "Warning: truncated output\n"
-    receipts = [
-        {
-            "candidate": candidate,
-            "argv": command,
-            "returncode": 0,
-            "output": output,
-            "output_sha256": sha256(output.encode()).hexdigest(),
-        }
-        for command, output in zip(commands, outputs)
-    ]
+    commands = [["python", "-m", "focused"]]
     contract = {
-        "provider_revision": "revision",
-        "preparation_digest": "1" * 64,
-        "original_preparation_digest": "2" * 64,
-        "correction_resolution_digest": "3" * 64,
         "requirements": [
             {
-                "id": "role-suite",
-                "canonical_reference": "item#acceptance",
+                "id": "strength",
+                "canonical_reference": "item#strength",
                 "acceptance_text": "Preserve evaluation strength",
-                "required_gate": {
-                    "gate": "Role-suite agreement",
-                    "requirement": "Verify role-suite agreement without weakening evaluation",
-                },
             },
             {
-                "id": "expanded-catalog",
-                "canonical_reference": "item#expanded-catalog",
-                "acceptance_text": "Preserve complete catalog evaluation strength",
-                "required_gate": "Verify complete catalog evaluation strength",
+                "id": "coverage",
+                "canonical_reference": "item#coverage",
+                "acceptance_text": "Retain catalog coverage",
             },
-        ],
-    }
-    source_paths = [{"path": "role.yaml", "sha256": "4" * 64}]
-    packet = {
-        "version": 1,
-        "candidate": candidate,
-        "canonical_acceptance": "Canonical item",
-        "preparation_evidence": {"decision_digest": "1" * 64},
-        "review_requirements": contract,
-        "requirements_digest": digest(contract),
-        "source_evidence": source_paths,
-        "pre_review_checks": receipts,
-        "check_receipt_hashes": [digest(row) for row in receipts],
+        ]
     }
     assessment = {
-        "candidate": "b" * 40 if fault == "assessment-candidate" else candidate,
+        "candidate": candidate,
         "requirements_digest": digest(contract),
-        "check_receipt_hashes": packet["check_receipt_hashes"],
-        "unresolved_findings": (
-            ["Passing checks do not preserve evaluation strength"]
-            if fault == "weakening-finding"
-            else []
-        ),
+        "unresolved_findings": [],
         "conclusions": [
             {
-                "id": requirement["id"],
-                "canonical_reference": requirement["canonical_reference"],
-                "verdict": "REJECT" if fault == "reject-conclusion" else "ACCEPT",
-                "conclusion": "Role, suite, and generated output agree",
+                "id": r["id"],
+                "canonical_reference": r["canonical_reference"],
+                "verdict": "ACCEPT",
+                "conclusion": "Reviewed substantive requirement",
                 "evidence_paths": ["role.yaml"],
             }
-            for requirement in contract["requirements"]
+            for r in contract["requirements"]
         ],
     }
+    checks = [{"candidate": candidate, "argv": commands[0], "returncode": 0}]
+    if fault == "reordered":
+        assessment["conclusions"].reverse()
+    if fault == "extra-fields":
+        assessment["conclusions"][0]["notes"] = "Additional useful context"
+    if fault == "assessment-candidate":
+        assessment["candidate"] = "b" * 40
+    if fault == "requirements-digest":
+        assessment["requirements_digest"] = "stale"
     if fault == "missing-conclusion":
-        assessment["conclusions"] = assessment["conclusions"][:-1]
-    if fault == "output-hash":
-        packet["pre_review_checks"][0]["output_sha256"] = "0" * 64
-
-    parent = []
-
-    def call(name, arguments, call_id, output):
-        parent.extend(
-            [
-                {
-                    "type": "response_item",
-                    "payload": {
-                        "type": "function_call",
-                        "name": name,
-                        "call_id": call_id,
-                        "arguments": json.dumps(arguments),
-                    },
-                },
-                {
-                    "type": "response_item",
-                    "payload": {
-                        "type": "function_call_output",
-                        "id": "output-" + call_id,
-                        "call_id": call_id,
-                        "output": output,
-                    },
-                },
-            ]
-        )
-
-    anchor = "Process exited with code 0\nFinal output:\n" + candidate + "\n"
-    call(
-        "exec_command",
-        {"cmd": "git rev-parse HEAD", "workdir": str(tmp_path)},
-        "head-before",
-        anchor,
-    )
-    if fault != "invented":
-        for index, (command, output) in enumerate(zip(commands, outputs)):
-            import shlex
-
-            call(
-                "exec_command",
-                {"cmd": shlex.join(command), "workdir": str(tmp_path)},
-                "check-" + str(index),
-                output,
-            )
-    call(
-        "exec_command",
-        {"cmd": "git rev-parse HEAD", "workdir": str(tmp_path)},
-        "head-after",
-        anchor,
-    )
-    spawn = [
+        assessment["conclusions"].pop()
+    if fault == "duplicate-conclusion":
+        assessment["conclusions"][1] = assessment["conclusions"][0]
+    if fault == "invalid-conclusion":
+        assessment["conclusions"][0] = None
+    if fault == "reject-conclusion":
+        assessment["conclusions"][0]["verdict"] = "REJECT"
+    if fault == "weakening-finding":
+        assessment["unresolved_findings"] = ["Evaluation weakened"]
+    if fault == "evidence-path":
+        assessment["conclusions"][0]["evidence_paths"] = ["unrelated.py"]
+    if fault == "harness-check":
+        checks[0]["returncode"] = 1
+    if fault == "missing-check":
+        checks.clear()
+    if fault == "check-candidate":
+        checks[0]["candidate"] = "b" * 40
+    if fault == "check-command":
+        checks[0]["argv"] = ["unrelated"]
+    verdict = {"candidate": candidate, "verdict": "ACCEPT", "unresolved_findings": []}
+    if fault != "assessment-missing":
+        verdict["source_review_assessment"] = assessment
+    # No native command receipts, magic markers, copied output, or prompt JSON packet.
+    parent = [
         {
             "type": "response_item",
             "payload": {
                 "type": "function_call",
                 "name": "spawn_agent",
-                "call_id": "spawn",
+                "call_id": "review",
                 "arguments": json.dumps(
                     {
                         "fork_turns": "none",
-                        "task_name": "review",
-                        "message": "Assess exact evidence.\nSOURCE REVIEW PACKET\n"
-                        + json.dumps(packet),
+                        "message": "Review the candidate against the selected requirements.",
                     }
                 ),
             },
         },
         {
             "type": "response_item",
-            "payload": {
-                "type": "function_call_output",
-                "call_id": "spawn",
-                "output": json.dumps({"agent_id": reviewer}),
-            },
+            "payload": {"type": "function_call_output", "call_id": "review", "output": reviewer},
         },
     ]
-    if fault == "late":
-        prior = parent[2:6]
-        parent = parent[:2] + spawn + parent[6:] + prior
-    else:
-        parent += spawn
     child = [
         {
             "type": "session_meta",
             "payload": {
                 "id": reviewer,
-                "parent_thread_id": producer,
                 "source": {"subagent": {"thread_spawn": {"parent_thread_id": producer}}},
                 "git": {"commit_hash": candidate},
             },
         },
         {
             "type": "event_msg",
-            "payload": {
-                "type": "task_complete",
-                "last_agent_message": json.dumps(
-                    {
-                        "candidate": candidate,
-                        "verdict": "ACCEPT",
-                        "unresolved_findings": [],
-                        "source_review_assessment": assessment,
-                    }
-                ),
-            },
+            "payload": {"type": "task_complete", "last_agent_message": json.dumps(verdict)},
         },
     ]
-    (root / f"rollout-{producer}.jsonl").write_text(
-        "".join(json.dumps(row) + "\n" for row in parent)
-    )
-    (root / f"rollout-{reviewer}.jsonl").write_text(
-        "".join(json.dumps(row) + "\n" for row in child)
-    )
-    source_review = {
-        "workdir": str(tmp_path),
+    for identity, records in [(producer, parent), (reviewer, child)]:
+        (root / f"rollout-{identity}.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in records)
+        )
+    context = {
         "commands": commands,
-        "canonical_acceptance": "Canonical item",
-        "preparation_evidence": {"decision_digest": "1" * 64},
         "review_requirements": contract,
-        "source_evidence": source_paths,
-        "harness_checks": [
-            {
-                "candidate": candidate,
-                "argv": command,
-                "returncode": 1 if fault == "harness-check" and index == 0 else 0,
-            }
-            for index, command in enumerate(commands)
-        ],
+        "allowed_source_paths": ["role.yaml"],
+        "harness_checks": checks,
     }
-    if fault:
-        with pytest.raises(TransitionBlocked):
-            verify_native_review(
-                producer,
-                reviewer,
-                candidate,
-                tmp_path,
-                source_review=source_review,
-            )
-    else:
+    if fault in (None, "reordered", "extra-fields"):
         result = verify_native_review(
-            producer,
-            reviewer,
-            candidate,
-            tmp_path,
-            source_review=source_review,
+            producer, reviewer, candidate, tmp_path, source_review=context
         )
         assert result["source_review_assessment"] == assessment
-        assert [row["argv"] for row in result["pre_review_checks"]] == commands
+        assert "pre_review_checks" not in result
+    else:
+        with pytest.raises(TransitionBlocked):
+            verify_native_review(producer, reviewer, candidate, tmp_path, source_review=context)
+
+
+@pytest.mark.parametrize(
+    "condition", ["complete", "running", "failed", "missing_usage", "invalid_usage"]
+)
+def test_child_usage_requires_completed_accountable_child(tmp_path, condition):
+    from backlog_harness.native_evidence import child_usage
+
+    producer, reviewer = str(uuid4()), str(uuid4())
+    root = tmp_path / "2026/10/02"
+    root.mkdir(parents=True)
+    records = [
+        {
+            "type": "session_meta",
+            "payload": {
+                "id": reviewer,
+                "parent_thread_id": producer,
+                "timestamp": "2026-10-02T12:00:01+00:00",
+            },
+        }
+    ]
+    if condition != "missing_usage":
+        records.append(
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "token_count",
+                    "info": {
+                        "total_token_usage": {
+                            "output_tokens": "12" if condition == "invalid_usage" else 12,
+                        }
+                    },
+                },
+            }
+        )
+    if condition != "running":
+        records.append(
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "task_complete",
+                    "error": "interrupted" if condition == "failed" else None,
+                },
+            }
+        )
+    (root / f"rollout-{reviewer}.jsonl").write_text(
+        "".join(json.dumps(record) + "\n" for record in records)
+    )
+    result = child_usage(
+        producer, "2026-10-02T12:00:00+00:00", "2026-10-02T12:01:00+00:00", tmp_path
+    )
+    # Unknown usage must not become a zero-cost success that permits more spending.
+    assert result == ((12, [reviewer]) if condition == "complete" else (None, []))

@@ -236,3 +236,34 @@ def test_scoped_answer_rejects_noncanonical_enrichment(cycle, field, value):
     path.unlink()
     with pytest.raises(TransitionBlocked, match="stale question"):
         admitted_question_continuation(app, "one", admission)
+
+
+def test_usage_hold_cannot_be_replayed_as_question_approval(cycle):
+    from dataclasses import replace
+
+    app, admission, current, paths, _answer, _stage, _verified = cycle
+    old = paths[0]
+    record = json.loads((old / "requested.json").read_text())
+    record["target"] = "Holding"
+    record["authority"] = {
+        "role": "coordinator",
+        "item_id": "one",
+        "invocation_id": "guard",
+        "observed_result": True,
+        "incident": "usage_unknown",
+    }
+    current[0] = replace(current[0], state="Holding")
+    operation = digest(record)
+    new = old.parent / component(operation)
+    atomic_json(new / "requested.json", record)
+    atomic_json(
+        new / "receipt.json",
+        {
+            "operation": operation,
+            "advancement_verified": True,
+            "after": asdict(current[0]),
+        },
+    )
+    (old / "requested.json").unlink()
+    with pytest.raises(TransitionBlocked, match="not a question/answer transition"):
+        admitted_question_continuation(app, "one", admission)

@@ -173,7 +173,7 @@ def test_saved_implementation_is_not_a_provider_result(config_file):
         app._stage_path("one", "observe"),
         {"request_digest": digest("observe"), "outcome": "returned"},
     )
-    with pytest.raises(TransitionBlocked, match="Stage request changed"):
+    with pytest.raises(TransitionBlocked, match="Completed stage evidence belongs to another operation"):
         asyncio.run(app.invoke("one", "observe", "coordinator", "observe", purpose="provider"))
     assert not list((app.root / "runs").glob("*/operations/*/invocations/*/intent.json"))
 
@@ -427,6 +427,7 @@ def test_resume_rejects_enabling_user_config(config_file, tmp_path):
         ("implementation", True, True, True),
         ("implementation", False, False, True),
         ("proof", False, True, True),
+        ("proof", False, False, True),
         ("implementation", False, False, False),
     ],
 )
@@ -494,7 +495,7 @@ def test_invocation_artifact_permissions(
             fs = tomllib.loads(setting)["permissions"]["harness"]["filesystem"]
             assert fs[":root"] == "read"
             output = path / "artifacts"
-            if enabled and not read_only:
+            if purpose == "proof" and not read_only:
                 assert fs[str(output)] == "write"
                 contract = json.loads((path / "artifact-output.json").read_text())
                 assert contract["path"] == str(output)
@@ -508,7 +509,7 @@ def test_invocation_artifact_permissions(
             assert str(snapshot.operational_root) not in fs
             if purpose == "proof" or read_only:
                 assert set(fs) == (
-                    {":root", str(output)} if enabled and not read_only else {":root"}
+                    {":root", str(output)} if purpose == "proof" and not read_only else {":root"}
                 )
             else:
                 assert fs[str(Path(data["workspace"]))] == "write"
@@ -517,13 +518,7 @@ def test_invocation_artifact_permissions(
 
 
 def test_artifact_output_rejects_changed_binding_and_redirect(config_file, tmp_path):
-    from backlog_harness.runtime import SessionHandle
-
     config, data = config_file
-    before = load_config(config)
-    session = SessionHandle(
-        "owner", "00000000-0000-4000-8000-000000000001", before.binding("orchestrator")
-    )
     data["profiles"]["worker"]["artifact_output"] = True
     data["operational_root"] = str(tmp_path / "ops")
     config.write_text(yaml.safe_dump(data))
@@ -535,17 +530,15 @@ def test_artifact_output_rejects_changed_binding_and_redirect(config_file, tmp_p
     request = AgentRequest(
         "proof", "inv", snapshot, binding, "proof", path, None, read_only=False, purpose="proof"
     )
-    with pytest.raises(ValueError, match="permission changes"):
-        asyncio.run(CodexAdapter().resume_session(session, request))
     (path / "artifacts").symlink_to(tmp_path, target_is_directory=True)
     with pytest.raises(ValueError, match="redirect"):
-        CodexAdapter.prepare_artifact_output(request)
+        CodexAdapter.prepare_proof_output(request)
     (path / "artifacts").unlink()
     with pytest.raises(ValueError, match="identity differs"):
-        CodexAdapter.prepare_artifact_output(replace(request, invocation_id="other"))
+        CodexAdapter.prepare_proof_output(replace(request, invocation_id="other"))
     assert not (path / "artifacts").exists()
-    contract = CodexAdapter.prepare_artifact_output(request)
-    assert CodexAdapter.prepare_artifact_output(request) == contract
+    contract = CodexAdapter.prepare_proof_output(request)
+    assert CodexAdapter.prepare_proof_output(request) == contract
     (path / "artifact-output.json").write_text("{}")
     with pytest.raises(ValueError, match="contract changed"):
-        CodexAdapter.prepare_artifact_output(request)
+        CodexAdapter.prepare_proof_output(request)

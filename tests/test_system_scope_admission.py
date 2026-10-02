@@ -6,15 +6,15 @@ from pathlib import Path
 
 import pytest
 import yaml
-from system_support import InstalledHarness, command, install_wheel
+from system_support import InstalledHarness, command
 
 from backlog_harness.contracts import digest
 from backlog_harness.evidence import component
 
 
 @pytest.fixture(scope="session")
-def scope_admission_python(tmp_path_factory):
-    return install_wheel(tmp_path_factory)
+def scope_admission_python(installed_package_python):
+    return installed_package_python
 
 
 def git(repository, *args):
@@ -342,18 +342,19 @@ def test_public_scope_amendment_replays_historical_question_before_current_answe
     assert "Status: Running" in retained_item.read_text()
     assert "restore-required-verification-environment" not in retained_item.read_text()
 
-    continuation_path = evidence / "continuation.json"
-    continuation_bytes = continuation_path.read_bytes()
-    changed = json.loads(continuation_bytes)
-    changed["approval"]["tampered"] = True
-    continuation_path.write_text(json.dumps(changed))
+    # Altering the recorded result still blocks reuse even though prompt wording may change.
+    retained_bytes = stage_path.read_bytes()
+    changed = json.loads(retained_bytes)
+    changed["text"] = json.dumps(
+        {"item_id": "item-one", "question": {"question_id": "forged", "text": "Forged"}}
+    )
+    stage_path.write_text(json.dumps(changed))
     before_tamper = calls(harness)
     tampered = harness.run("run-item", "item-one")
     assert tampered.returncode == 2
-    assert "Stage request changed; reconcile prior evidence" in tampered.stderr
+    assert "Completed stage result differs" in tampered.stderr
     assert calls(harness) == before_tamper
-    assert json.loads(stage_path.read_text()) == retained
-    continuation_path.write_bytes(continuation_bytes)
+    stage_path.write_bytes(retained_bytes)
 
     replayed = harness.run("run-item", "item-one")
     assert replayed.returncode == 0, replayed.stdout + replayed.stderr

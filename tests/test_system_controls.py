@@ -14,12 +14,12 @@ import time
 from urllib.request import urlopen
 
 import pytest
-from system_support import InstalledHarness, install_wheel
+from system_support import InstalledHarness
 
 
 @pytest.fixture(scope="session")
-def controls_python(tmp_path_factory):
-    return install_wheel(tmp_path_factory)
+def controls_python(installed_package_python):
+    return installed_package_python
 
 
 @pytest.fixture(scope="module")
@@ -92,10 +92,14 @@ class Terminal:
     def close(self):
         try:
             self.send("quit")
-            self.process.wait(timeout=5)
+            deadline = time.monotonic() + 10
+            # Keep answering cursor queries and draining output while the UI exits.
+            while self.process.poll() is None and time.monotonic() < deadline:
+                self.read()
+            self.process.wait(timeout=1)
         except (OSError, subprocess.TimeoutExpired):
             self.process.kill()
-            self.process.wait(timeout=5)
+            self.process.wait(timeout=10)
         finally:
             os.close(self.master)
 
@@ -197,10 +201,8 @@ def test_s11_populated_terminal_matches_status_and_dashboard(completed_harness):
     assert (harness.repo.parent / "agent-calls.jsonl").read_bytes() == before
 
 
-def test_s04_terminal_generic_answer_resumes_graph(controls_python, tmp_path):
-    from test_system_graph_cli import graph_harness
-
-    harness = graph_harness(tmp_path, controls_python, "graph-question")
+def test_s04_terminal_generic_answer_resumes_workflow(controls_python, tmp_path):
+    harness = InstalledHarness.create(tmp_path, controls_python, scenario="legacy-question")
     initial = harness.run("run-item", "item-one")
     assert initial.returncode == 0, initial.stdout + initial.stderr
     terminal = Terminal(harness)
@@ -208,10 +210,15 @@ def test_s04_terminal_generic_answer_resumes_graph(controls_python, tmp_path):
         terminal.send("item answer item-one language")
         terminal.wait_text("answer>")
         terminal.send("English")
+        answer = terminal.value(lambda value: value.get("disposition") == "approve", timeout=45)
+        assert answer["state"] == "Running"
+        terminal.send("run --until-terminal")
         result = terminal.value(
             lambda value: value.get("result", {}).get("state") == "Completed", timeout=45
         )
-        assert result["delivery"]["verified"] is True
+        assert result["result"]["delivery"]["verified"] is True
+        terminal.send("stop")
+        terminal.value(lambda value: value.get("admission_open") is False)
     finally:
         terminal.close()
     assert "Status: Completed" in (harness.repo / "backlog/archive/item-one.md").read_text()
