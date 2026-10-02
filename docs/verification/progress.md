@@ -148,3 +148,23 @@ verification against the accepted design. The actual configuration remains
 disabled under existing browser restrictions. Dashboard scope still awaits the
 product-target decision. No real backlog item or browser session was launched
 by these release fixtures.
+
+## Admission Authority Correction
+
+A live backlog observation cited the previous harness run's `admission_open: false`
+as a global dispatch prohibition. Operational output is now rejected as governing
+policy, including paths resolving into a custom operational root. Ordinary cached
+observations revalidate policy even when the provider revision is unchanged.
+
+Policy reassessment can retain the inventory only after validating its current
+manifest, complete classification, item bytes and revisions. It replaces policy
+only after valid source-backed evidence returns. The exact a44 observation contract
+can migrate without another inventory call only when its capability and binding
+evidence also match; unrelated contract changes still require refresh. Operator
+pause/stop controls and execution locks retain their separate enforcement.
+
+The focused provider coordination, observation and recovery tests pass (69 tests).
+They cover canonical allow/deny evidence, operational output and alias rejection,
+invalid-policy repair, changed inventory rejection, invocation reuse and capability
+drift. Live backlog resumption and installed verification are recorded separately
+from these source-level results.

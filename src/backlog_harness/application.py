@@ -211,7 +211,7 @@ class Application:
             isinstance(self.provider, AgentProvider), "Policy reassessment requires agent provider"
         )
         async with async_operation_lock(self.root / "provider-refresh.lock"):
-            observed = self.provider.observation()
+            observed = self.provider.policy_reassessment_observation()
             revision = observed["source_revision"]
             result = await self.invoke(
                 "provider-policy",
@@ -222,7 +222,10 @@ class Application:
                 "item-local wait with a global pause. An item awaiting user action and a stopped "
                 "owner do not themselves establish a global dispatch pause. Determine whether "
                 "current crisis rules permit other independent work, preserving serial execution "
-                "and all item-local restrictions. Do not infer permission from this request. "
+                "and all item-local restrictions. Harness operational outputs and cached "
+                "projections, including run.json, report runtime state but never establish "
+                "admission authority. Preserve every explicit pause or stop in canonical "
+                "authority. Do not infer permission from this request. "
                 "Return JSON {source_revision,reason,policy:{eligible:boolean,mode,primary_branch,"
                 "evidence:[{path,sha256,excerpt,supports:[mode/admission/coordination]}]}}. Cite exact source "
                 "bytes establishing global authority, not merely one item's eligibility. "
@@ -246,11 +249,61 @@ class Application:
                 self.provider.source_revision() == revision,
                 "Provider changed during policy reassessment",
             )
+            current = load_config(self.config_path)
+            require(
+                current.repository == self.config.repository
+                and current.operational_root == self.root,
+                "Provider identity changed during policy reassessment",
+            )
+            from .provider_observation import (
+                LEGACY_POLICY_VALIDATOR_DIGEST,
+                LEGACY_PROVIDER_OBSERVATION_PROMPT,
+                PROVIDER_OBSERVATION_SCHEMA,
+                effective_instruction_sources,
+                effective_skill_sources,
+                semantic_observation_fingerprint,
+            )
+
+            legacy_schema = {
+                **PROVIDER_OBSERVATION_SCHEMA,
+                "validators": {
+                    "inventory": digest(inspect.getsource(AgentProvider.validate_inventory)),
+                    "policy": LEGACY_POLICY_VALIDATOR_DIGEST,
+                    "acceptance": digest(
+                        inspect.getsource(Application._accept_provider_observation)
+                    ),
+                },
+            }
+            legacy_observer = semantic_observation_fingerprint(
+                current,
+                prompt=LEGACY_PROVIDER_OBSERVATION_PROMPT,
+                schema=legacy_schema,
+                instruction_sources=effective_instruction_sources(current),
+                skill_sources=effective_skill_sources(current),
+            )
             observed["policy"] = answer["policy"]
             observed["policy_reassessment"] = {
                 "invocation_id": result["invocation_id"],
                 "reason": answer["reason"],
             }
+            # Revalidate the complete retained inventory with the accepted replacement
+            # policy before persisting it. Only the exact predecessor contract can move
+            # to the clarified observer fingerprint without another inventory invocation.
+            manifest = self.provider.source_manifest()
+            self._validate_cached_provider_observation(observed, revision, manifest)
+            legacy_capability = self.provider_capability_digest(current, legacy_observer)
+            if (
+                observed.get("observer_digest") == legacy_observer
+                and observed.get("capability_digest") == legacy_capability
+                and observed.get("observer_binding_digest")
+                == current.binding("coordinator").relevant_digest
+            ):
+                observer = self.provider_observer_digest(current)
+                observed.update(
+                    observer_digest=observer,
+                    capability_digest=self.provider_capability_digest(current, observer),
+                    observer_binding_digest=current.binding("coordinator").relevant_digest,
+                )
             atomic_json(self.provider.cache_path, observed)
             return observed["policy"]
 

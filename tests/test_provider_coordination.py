@@ -650,12 +650,122 @@ def test_agent_policy_binds_sources_and_project_invariants(provider):
         "evidence": policy_evidence(provider.repository),
     }
     view.validate_policy(policy)
+    view.validate_policy({**policy, "eligible": False})
     with pytest.raises(TransitionBlocked, match="Structured"):
         view.validate_policy({**policy, "evidence": "trust the agent"})
     with pytest.raises(TransitionBlocked, match="Stale"):
         view.validate_policy({**policy, "evidence": [{**policy["evidence"][0], "sha256": "stale"}]})
     with pytest.raises(TransitionBlocked, match="execution mode differs"):
         view.validate_policy({**policy, "mode": "MULTITASK"})
+
+
+@pytest.mark.parametrize("alias", [False, True])
+def test_agent_policy_rejects_harness_operational_output_as_authority(provider, alias):
+    from hashlib import sha256
+
+    from backlog_harness.provider import AgentProvider
+
+    operational_root = provider.repository / ".agent-ops/backlog-harness"
+    operational_root.mkdir(parents=True)
+    run = operational_root / "run.json"
+    run.write_text('{"admission_open": false}\n')
+    cited = run
+    if alias:
+        linked = provider.repository / "retained-output"
+        linked.symlink_to(operational_root, target_is_directory=True)
+        cited = linked / "run.json"
+    view = AgentProvider(provider.repository, operational_root)
+    policy = {
+        "eligible": False,
+        "mode": "SOLO",
+        "primary_branch": "main",
+        "evidence": [
+            {
+                "path": str(cited.relative_to(provider.repository)),
+                "sha256": sha256(cited.read_bytes()).hexdigest(),
+                "excerpt": '"admission_open": false',
+                "supports": ["mode", "admission"],
+            }
+        ],
+    }
+    with pytest.raises(TransitionBlocked, match="operational output"):
+        view.validate_policy(policy)
+
+
+def test_same_revision_observation_revalidates_policy_authority(provider):
+    import json
+    from dataclasses import asdict
+    from hashlib import sha256
+
+    from backlog_harness.evidence import atomic_json
+    from backlog_harness.provider import AgentProvider
+
+    operational_root = provider.repository / ".agent-ops/backlog-harness"
+    operational_root.mkdir(parents=True)
+    run = operational_root / "run.json"
+    run.write_text('{"admission_open": false}\n')
+    view = AgentProvider(provider.repository, operational_root)
+    item = provider.item("item-one")
+    atomic_json(
+        view.cache_path,
+        {
+            "source_revision": view.source_revision(),
+            "source_manifest": view.source_manifest(),
+            "items": [asdict(item)],
+            "dependencies": {item.item_id: []},
+            "policy": {
+                "eligible": False,
+                "mode": "SOLO",
+                "primary_branch": "main",
+                "evidence": [
+                    {
+                        "path": str(run.relative_to(provider.repository)),
+                        "sha256": sha256(run.read_bytes()).hexdigest(),
+                        "excerpt": '"admission_open": false',
+                        "supports": ["mode", "admission"],
+                    }
+                ],
+            },
+        },
+    )
+    before = json.loads(view.cache_path.read_text())
+    with pytest.raises(TransitionBlocked, match="operational output"):
+        view.observation()
+    assert json.loads(view.cache_path.read_text()) == before
+
+
+def test_policy_reassessment_retains_inventory_across_source_only_head_advance(provider):
+    from dataclasses import asdict
+
+    from backlog_harness.evidence import atomic_json
+    from backlog_harness.provider import AgentProvider
+
+    view = AgentProvider(provider.repository, provider.evidence_root)
+    item = provider.item("item-one")
+    original_revision = view.source_revision()
+    atomic_json(
+        view.cache_path,
+        {
+            "source_revision": original_revision,
+            "source_manifest": view.source_manifest(),
+            "items": [asdict(item)],
+            "dependencies": {item.item_id: []},
+            "policy": {
+                "eligible": False,
+                "mode": "SOLO",
+                "primary_branch": "main",
+                "evidence": policy_evidence(provider.repository),
+            },
+        },
+    )
+    unrelated = provider.repository / "answer.txt"
+    unrelated.write_text("Unrelated source change\n")
+    git(provider.repository, "add", "--", "answer.txt")
+    git(provider.repository, "commit", "-m", "Unrelated source")
+    observed = view.policy_reassessment_observation()
+    assert observed["source_revision"] == view.source_revision()
+    assert observed["source_revision"] != original_revision
+    assert observed["items"] == [asdict(item)]
 
 
 def test_management_readiness_rejects_readonly_and_missing_skills(config_file, provider):
@@ -734,6 +844,7 @@ def test_explicit_unknown_dependencies_are_retained_but_block_execution(
 def test_policy_reassessment_requires_current_authority(config_file, provider, monkeypatch, case):
     import asyncio
     import json
+    from dataclasses import asdict
 
     import yaml
 
@@ -748,18 +859,21 @@ def test_policy_reassessment_requires_current_authority(config_file, provider, m
     )
     config.write_text(yaml.safe_dump(data))
     app = Application(config)
+    item = provider.item("item-one")
     revision = app.provider.source_revision()
     evidence = policy_evidence(provider.repository)
     original = {
         "source_revision": revision,
+        "source_manifest": app.provider.source_manifest(),
         "policy": {
             "eligible": False,
             "mode": "SOLO",
             "primary_branch": "main",
             "evidence": evidence,
         },
-        "items": [],
-        "questions": {"waiting": {"question_id": "q1"}},
+        "items": [asdict(item)],
+        "dependencies": {item.item_id: []},
+        "questions": {item.item_id: {"question_id": "q1"}},
     }
     atomic_json(app.provider.cache_path, original)
     monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
@@ -795,6 +909,134 @@ def test_policy_reassessment_requires_current_authority(config_file, provider, m
         with pytest.raises(TransitionBlocked):
             asyncio.run(app.reassess_policy())
         assert json.loads(app.provider.cache_path.read_text()) == original
+
+
+@pytest.mark.parametrize("compatibility", ["exact", "observer-drift", "capability-drift"])
+def test_policy_reassessment_repairs_rejected_cached_authority_without_inventory_call(
+    config_file, provider, monkeypatch, compatibility
+):
+    import asyncio
+    import inspect
+    import json
+    from dataclasses import asdict
+    from hashlib import sha256
+
+    import yaml
+
+    from backlog_harness.application import Application
+    from backlog_harness.contracts import digest, load_config
+    from backlog_harness.evidence import atomic_json
+    from backlog_harness.provider import AgentProvider
+    from backlog_harness.provider_observation import (
+        LEGACY_POLICY_VALIDATOR_DIGEST,
+        LEGACY_PROVIDER_OBSERVATION_PROMPT,
+        PROVIDER_OBSERVATION_SCHEMA,
+        effective_instruction_sources,
+        effective_skill_sources,
+        semantic_observation_fingerprint,
+    )
+
+    config, data = config_file
+    operational_root = provider.repository / ".agent-ops/backlog-harness"
+    operational_root.mkdir(parents=True)
+    data.update(
+        repository=str(provider.repository),
+        operational_root=str(operational_root),
+        provider_interaction="agent",
+    )
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    current = load_config(config)
+    legacy_schema = {
+        **PROVIDER_OBSERVATION_SCHEMA,
+        "validators": {
+            "inventory": digest(inspect.getsource(AgentProvider.validate_inventory)),
+            "policy": LEGACY_POLICY_VALIDATOR_DIGEST,
+            "acceptance": digest(inspect.getsource(Application._accept_provider_observation)),
+        },
+    }
+    legacy_observer = semantic_observation_fingerprint(
+        current,
+        prompt=LEGACY_PROVIDER_OBSERVATION_PROMPT,
+        schema=legacy_schema,
+        instruction_sources=effective_instruction_sources(current),
+        skill_sources=effective_skill_sources(current),
+    )
+    run = operational_root / "run.json"
+    run.write_text('{"admission_open": false}\n')
+    item = provider.item("item-one")
+    inventory = [asdict(item)]
+    old_policy = {
+        "eligible": False,
+        "mode": "SOLO",
+        "primary_branch": "main",
+        "evidence": [
+            {
+                "path": str(run.relative_to(provider.repository)),
+                "sha256": sha256(run.read_bytes()).hexdigest(),
+                "excerpt": '"admission_open": false',
+                "supports": ["mode", "admission"],
+            }
+        ],
+    }
+    cached = {
+        "source_revision": app.provider.source_revision(),
+        "source_manifest": app.provider.source_manifest(),
+        "observer_digest": (
+            legacy_observer if compatibility != "observer-drift" else "unrelated-contract"
+        ),
+        "capability_digest": (
+            app.provider_capability_digest(current, legacy_observer)
+            if compatibility != "capability-drift"
+            else "changed-capability"
+        ),
+        "observer_binding_digest": current.binding("coordinator").relevant_digest,
+        "items": inventory,
+        "dependencies": {item.item_id: []},
+        "policy": old_policy,
+        "invocation_id": "original-inventory",
+    }
+    atomic_json(app.provider.cache_path, cached)
+    calls = []
+
+    async def invoke(item_id, stage, role, prompt, **kwargs):
+        calls.append((item_id, stage, role, prompt, kwargs))
+        assert item_id == "provider-policy"
+        return {
+            "invocation_id": "policy-decision",
+            "text": json.dumps(
+                {
+                    "source_revision": cached["source_revision"],
+                    "reason": "Canonical project authority permits independent Ready work",
+                    "policy": {
+                        "eligible": True,
+                        "mode": "SOLO",
+                        "primary_branch": "main",
+                        "evidence": policy_evidence(provider.repository),
+                    },
+                }
+            ),
+        }
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+    assert asyncio.run(app.reassess_policy())["eligible"] is True
+    repaired = json.loads(app.provider.cache_path.read_text())
+    assert repaired["items"] == inventory
+    assert repaired["invocation_id"] == "original-inventory"
+    if compatibility == "exact":
+        assert repaired["observer_digest"] == app.provider_observer_digest(current)
+        assert repaired["capability_digest"] == app.provider_capability_digest(
+            current, repaired["observer_digest"]
+        )
+        asyncio.run(app.refresh_provider())
+    elif compatibility == "observer-drift":
+        assert repaired["observer_digest"] == "unrelated-contract"
+    else:
+        assert repaired["observer_digest"] == legacy_observer
+        assert repaired["capability_digest"] == "changed-capability"
+    assert len(calls) == 1
 
 
 @pytest.mark.parametrize("legacy", [False, True])

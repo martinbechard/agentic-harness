@@ -534,11 +534,55 @@ class AgentProvider:
             if value.get("source_manifest") != self.source_manifest():
                 raise TransitionBlocked("Provider observation is stale; refresh through the agent")
             self.validate_inventory(value)
-            self.validate_policy(value["policy"])
             if self.source_revision() != revision:
                 raise TransitionBlocked("Provider changed during observation validation")
             value = {**value, "source_revision": revision}
+        # A previously accepted cache can become invalid when the harness strengthens
+        # its authority boundary. Scheduling must apply the current validator even when
+        # the provider bytes and their revision have not changed.
+        self.validate_policy(value["policy"])
         return value
+
+    def policy_reassessment_observation(self):
+        """Return current cached inventory without trusting its replaceable policy.
+
+        Policy reassessment is the only recovery path allowed to read a cache whose
+        policy fails the current validator. The retained inventory remains usable only
+        after its source identity, classification, paths, bytes, and item revisions are
+        all revalidated against the authoritative provider.
+        """
+        from .workflow import require
+
+        require(self.cache_path.exists(), "Provider agent observation is required")
+        value = json.loads(self.cache_path.read_text())
+        revision = self.source_revision()
+        manifest = self.source_manifest()
+        require(
+            value.get("source_manifest") == manifest,
+            "Cached provider source identity is stale",
+        )
+        self.validate_inventory(value)
+        for row in value["items"]:
+            item = Item(**row)
+            path = self.repository / item.path
+            require(
+                not Path(item.path).is_absolute()
+                and ".." not in Path(item.path).parts
+                and not path.is_symlink()
+                and path.resolve().is_relative_to(self.repository / "backlog")
+                and path.read_bytes() == item.content.encode(),
+                "Cached provider item differs from authoritative bytes",
+            )
+            require(
+                sha256(item.path.encode() + b"\0" + item.content.encode()).hexdigest()
+                == item.revision,
+                "Cached provider item revision differs",
+            )
+        require(
+            self.source_revision() == revision,
+            "Provider changed during policy reassessment validation",
+        )
+        return {**value, "source_revision": revision, "source_manifest": manifest}
 
     def snapshot(self):
         return [Item(**value) for value in self.observation()["items"]]
@@ -570,13 +614,18 @@ class AgentProvider:
         for reference in evidence:
             name = reference.get("path", "")
             path = self.repository / name
+            resolved = path.resolve()
             require(
                 name
                 and not Path(name).is_absolute()
                 and ".." not in Path(name).parts
                 and not path.is_symlink()
-                and path.resolve().is_relative_to(self.repository),
+                and resolved.is_relative_to(self.repository),
                 "Unsafe policy evidence path",
+            )
+            require(
+                not resolved.is_relative_to(self.evidence_root),
+                "Harness operational output cannot establish provider policy authority",
             )
             content = path.read_bytes()
             require(sha256(content).hexdigest() == reference.get("sha256"), "Stale policy evidence")

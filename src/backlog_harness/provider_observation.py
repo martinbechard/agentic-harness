@@ -21,7 +21,7 @@ MANAGEMENT_SKILLS = (
 )
 
 
-PROVIDER_OBSERVATION_PROMPT = (
+LEGACY_PROVIDER_OBSERVATION_PROMPT = (
     "Observe the authoritative file provider using its selected management skills. "
     "Do not mutate or dispatch. Classify groups and historical archive debt; return only "
     "actual work items, preserving canonical ownership and unknown estimates. "
@@ -48,6 +48,20 @@ PROVIDER_OBSERVATION_PROMPT = (
     "available:boolean,tools:[exact_exposed_tool_names]} based on tools actually exposed "
     "in this invocation. Do not infer availability from configuration text and do not "
     "invoke any claim operation as a probe. Report unavailable when unproven."
+)
+
+# This exact predecessor identifies the one compatible cache contract that policy
+# reassessment may upgrade after it replaces invalid authority. Other observation
+# contract changes still require a complete provider refresh.
+LEGACY_POLICY_VALIDATOR_DIGEST = (
+    "49aa3d1eded81bc201330027f2211e626a5b9b8fb267559e8eae9b5037593730"
+)
+
+PROVIDER_OBSERVATION_PROMPT = LEGACY_PROVIDER_OBSERVATION_PROMPT + (
+    " Harness operational outputs and cached projections, including run.json, report "
+    "runtime state but never establish mode, admission, or coordination authority. "
+    "Preserve an explicit pause or stop from canonical authority; do not infer one from "
+    "a prior harness run or its admission projection."
 )
 
 
