@@ -105,30 +105,39 @@ def test_effective_workflow_allows_catalog_growth_and_safe_path_narrowing(config
         "scope": {"allowed_paths": ["src/changed.py", "tests/new.py"], "checks": [old_check, new_check]},
     }
     current = load_config(config)
-    value = effective_workflow(app, request, None, current)
+    value = effective_workflow(
+        app, request, None, current, provider_path="backlog/one.md"
+    )
     assert value["allowed_paths"] == ["src/changed.py", "tests/new.py"]
     assert value["checks"] == [old_check, new_check]
     request["scope"]["checks"] = [new_check]
     with pytest.raises(TransitionBlocked, match="drops a required check"):
-        effective_workflow(app, request, None, current)
+        effective_workflow(app, request, None, current, provider_path="backlog/one.md")
     request["scope"]["checks"] = [old_check, new_check]
     request["scope"]["allowed_paths"] = ["src/changed.py", "outside/new.py"]
     with pytest.raises(TransitionBlocked, match="configured authority"):
-        effective_workflow(app, request, None, current)
+        effective_workflow(app, request, None, current, provider_path="backlog/one.md")
     request["scope"]["allowed_paths"] = ["src/changed.py", "tests/new.py"]
     request["scope"]["checks"].append(["python", "-m", "unconfigured"])
     with pytest.raises(TransitionBlocked, match="command authority"):
-        effective_workflow(app, request, None, current)
+        effective_workflow(app, request, None, current, provider_path="backlog/one.md")
     request["scope"]["checks"].pop()
     data["workflow"]["primary_branch"] = "master"
     config.write_text(yaml.safe_dump(data))
     with pytest.raises(TransitionBlocked, match="workflow gates"):
-        effective_workflow(app, request, None, load_config(config))
+        effective_workflow(
+            app,
+            request,
+            None,
+            load_config(config),
+            provider_path="backlog/one.md",
+        )
 
 
 def test_effective_workflow_appends_bound_review_requirements_across_admissions(config_file):
     config, data = config_file
-    provider_path = "backlog/one.md"
+    historical_path = "backlog/defect-backlog/one.md"
+    provider_path = "backlog/user-action-required/one.md"
     old = {
         "id": "original-review",
         "canonical_reference": "backlog/one.md#acceptance",
@@ -162,7 +171,7 @@ def test_effective_workflow_appends_bound_review_requirements_across_admissions(
     }
     atomic_json(
         app._stage_path("one", "assignment"),
-        {"workflow": frozen, "content": "original", "provider_path": provider_path},
+        {"workflow": frozen, "content": "original", "provider_path": historical_path},
     )
     amended = "original\nexpanded review"
     proposed = {
@@ -179,7 +188,13 @@ def test_effective_workflow_appends_bound_review_requirements_across_admissions(
         "amended_content": amended,
         "review_requirements": proposed,
     }
-    selected = effective_workflow(app, request, None, load_config(config))
+    selected = effective_workflow(
+        app,
+        request,
+        None,
+        load_config(config),
+        provider_path=provider_path,
+    )
     assert selected["review_requirements"]["requirements"][0] == old
     assert selected["review_requirements"] == proposed
     assert frozen["review_requirements"] == original_review
@@ -201,7 +216,11 @@ def test_effective_workflow_appends_bound_review_requirements_across_admissions(
     }
     request.update(amended_content=further, review_requirements=final)
     assert effective_workflow(
-        app, request, {"workflow": selected}, load_config(config)
+        app,
+        request,
+        {"workflow": selected},
+        load_config(config),
+        provider_path=provider_path,
     )["review_requirements"] == final
 
 
@@ -286,13 +305,17 @@ def test_scope_admission_replays_the_validated_pre_extension_review_contract(
         approved,
         None,
         load_config(config),
+        provider_path=provider_path,
         retained_decision=decision,
     )
     provider_request = {
         "kind": "amend-content",
         "admission_input_digest": digest(approved),
         "stage_operation": "legacy-provider-amendment",
-        "item": {"revision": operator_request["expected_revision"]},
+        "item": {
+            "path": provider_path,
+            "revision": operator_request["expected_revision"],
+        },
     }
     operation = digest(provider_request)
     operation_path = app.root / "provider-agent-operations" / component(operation)
@@ -343,6 +366,7 @@ def test_scope_admission_replays_the_validated_pre_extension_review_contract(
             approved,
             None,
             load_config(config),
+            provider_path=provider_path,
             retained_decision=changed_protocol,
         )
 
@@ -465,7 +489,13 @@ def test_effective_workflow_rejects_nonadditive_review_selection(config_file, fa
         "review_requirements": proposed,
     }
     with pytest.raises(TransitionBlocked, match=message):
-        effective_workflow(app, request, None, load_config(config))
+        effective_workflow(
+            app,
+            request,
+            None,
+            load_config(config),
+            provider_path=provider_path,
+        )
 
 
 def test_requirement_coverage_binds_source_acceptance_without_admin_gates():
@@ -860,7 +890,7 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
     assignment = {
         "content": running.content,
         "provider_revision": running.revision,
-        "provider_path": running.path,
+        "provider_path": "backlog/defect-backlog/item-one.md",
         "original_high": 100,
         "historical_original_high": 100,
         "workflow": {
@@ -1098,6 +1128,16 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
     receipt = asyncio.run(app.amend_scope("item-one", request_path))
     assert receipt["provider_revision"] == app.provider.item("item-one").revision
     assert receipt["workflow"]["review_requirements"] == selected_review
+    provider_request = json.loads(
+        (
+            app.root
+            / "provider-agent-operations"
+            / component(receipt["provider_receipt"]["operation"])
+            / "requested.json"
+        ).read_text()
+    )
+    assert provider_request["item"]["path"] == running.path
+    assert assignment["provider_path"] != provider_request["item"]["path"]
     assert app.item_workflow("item-one")["allowed_paths"] == request["scope"]["allowed_paths"]
     assert git(candidate, "rev-parse", "HEAD") == candidate_head
     assert all(app._stage_path("item-one", stage).read_bytes() == value for stage, value in originals.items())

@@ -674,6 +674,7 @@ class Application:
                 value,
                 previous,
                 current,
+                provider_path=provider_request["item"]["path"],
                 retained_decision=receipt["decision"],
             )
             require(receipt["workflow"] == expected, "Scope admission workflow differs")

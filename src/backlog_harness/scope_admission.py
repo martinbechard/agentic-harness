@@ -254,7 +254,15 @@ def validate_decision_contract(app, request, decision):
     return result, current_shape
 
 
-def effective_workflow(app, request, previous, current, *, retained_decision=None):
+def effective_workflow(
+    app,
+    request,
+    previous,
+    current,
+    *,
+    provider_path,
+    retained_decision=None,
+):
     """Apply admitted scope and additive review changes while retaining every other gate."""
     from .estimation import configured_workflow, validate_preparation_scope
 
@@ -289,9 +297,6 @@ def effective_workflow(app, request, previous, current, *, retained_decision=Non
         "Configured source-review selection changed after assignment",
     )
     validate_preparation_scope(scope, selected, current)
-    provider_path = json.loads(
-        app._stage_path(request["item_id"], "assignment").read_text()
-    )["provider_path"]
     if "review_requirements" in request:
         review, _ = _review_extension(
             prior,
@@ -475,7 +480,13 @@ def validate_request(app, item: Item, supplied, input_path, current):
 
     candidate_repo = Path(root).resolve() / component(item.item_id)
     require((candidate_repo / ".git").is_dir(), "Scope amendment candidate is absent")
-    workflow = effective_workflow(app, request, previous, current)
+    workflow = effective_workflow(
+        app,
+        request,
+        previous,
+        current,
+        provider_path=item.path,
+    )
     _, added_review_requirements = _review_extension(
         previous["workflow"] if previous else json.loads(
             app._stage_path(item.item_id, "assignment").read_text()
