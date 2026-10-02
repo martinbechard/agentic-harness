@@ -3463,6 +3463,12 @@ class Application:
             + "\nWork item:\n"
             + assignment
         )
+        if workflow.get("preparation_evidence"):
+            prompt += (
+                "\nRetained Coordinator preparation evidence (not permission or completed checks). "
+                "Preserve its constraints and supply it in full to the independent reviewer: "
+                + json.dumps(workflow["preparation_evidence"])
+            )
         prompt += "\nIf an exact operator answer is required before implementation, return only JSON with item_id and question {question_id, text}. Leave the candidate clean at its base commit. Do not implement before approval."
         recovery = self.recovery_record(item_id)
         if recovery:

@@ -79,3 +79,16 @@ The exact installed a41 artifact additionally replays the actual pre-fix request
 
 
 `tests/test_system_retained_cache_delivery.py` adds three installed-wheel cache regressions (all passed in 44.92 seconds). An unrecognizable legacy observer with missing provenance incurs one refresh. After that refresh, source-only advancement, model/effort edits, integration reconciliation, Completed delivery, and replay add zero inventory observations. Missing capability metadata in a current cache is recovered from the exact saved invocation without a new call; changed native-tool configuration requires one new observation and then reuses it. These checks do not reconstruct missing historical semantic provenance or prove the actual live scan was substantively necessary.
+
+
+## Preparation Obligation Coverage Gap
+
+The first dev-methodology `run --until-terminal` after the recovered delivery returned an explicit blocked report: 106 Completed, 6 Abandoned, 4 Blocked, 13 Ready, and 10 User Action Required. These are total inventory counts, not deliveries attributed to this run. Two retained preparation responses place explanatory constraints and mandatory gates inside `workflow`: `add-whats-happening-now-dashboard-panel` and `improve-generic-agent-definitions-portrait-print-readability`.
+
+Their browser/print, independent usability, and exact-candidate approval obligations are not currently bound and enforced by the generic preparation-to-acceptance route. This is a workflow coverage gap separate from the existing browser permission denial. A generic native ACCEPT cannot establish those obligations by itself. Compatibility handling must preserve the original receipts and all obligations, validate authority selectors, allow only supported configuration, and stop unsupported obligations before dispatch. Restoring schema compatibility alone is not acceptance of these workflows.
+
+
+The smallest identified extension is to bind the existing independent proof/review result to the preparation obligation digest and exact candidate, require supporting artifact evidence for each declared obligation, and reuse the existing candidate-specific approval check for ordinary delivery as well as recovery. This route is not yet implemented or accepted. Browser permission remains a separate requirement; a metadata packet cannot grant it.
+
+
+Version a42 verifies this limited contract in 51 focused tests and three installed public-CLI scenarios (42.42 seconds). Compatible metadata-only preparation reaches source merge/provider closure. Each actual retained gate array is preserved verbatim and stops before producer or provider effects, even though the fixture producer would otherwise return generic ACCEPT. Replays preserve preparation bytes and add zero calls. The exact installed wheel SHA-256 is `175f622767cef7f32fd08b8a8fe67b462cfd0c85ea0c2436cf7796b055a6f618`.

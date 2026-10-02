@@ -1,0 +1,71 @@
+{
+  "persistence": "file",
+  "completion": "main-branch",
+  "canonical_primary_branch": "main",
+  "allowed_paths": [
+    "design/documentation-design-system/assets/design-system.css",
+    "design/generic-agent-definitions-source.html",
+    "scripts/test_documentation_design_system.py"
+  ],
+  "checks": [
+    [
+      "/Users/martinbechard/.cache/codex-backlog/dev-methodology-efficiency/coordinated-runtime-preflight/python-install/cpython-3.12.7-macos-aarch64-none/harness-promotion-test-venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "scripts.test_documentation_design_system"
+    ],
+    [
+      "git",
+      "diff",
+      "--check"
+    ]
+  ],
+  "checks_executed": false,
+  "implementation_constraints": [
+    "Prefer a shared print pattern. Current shared print CSS uses fixed table layout and overflow-wrap:anywhere; the screen wide-table minimum width is 860px.",
+    "Preserve portrait Letter as the acceptance target. The open landscape question does not independently authorize abandoning portrait readability.",
+    "Preserve every identifier, visible content relationship, table header association, accessible region name, focus stop and screen scrolling behavior.",
+    "Keep changes within the exact allowed paths; obtain a revised preparation packet before expanding scope.",
+    "Preserve existing provenance and unrelated checkout changes."
+  ],
+  "required_gates": [
+    {
+      "gate": "execution_admission",
+      "requirement": "Coordinator admission and distinct Ready -> Starting -> Running provider transitions precede implementation. Reconcile current crisis authority; do not invoke claims while prohibited."
+    },
+    {
+      "gate": "design_and_acceptance",
+      "requirement": "Review the proposed shared print treatment against all canonical requirements before implementation. Retain portrait readability, complete identifiers and unchanged screen behavior as separate acceptance criteria."
+    },
+    {
+      "gate": "fresh_browser_evidence",
+      "requirement": "Produce before-and-after Letter portrait print evidence for the six-column mapping table. Inspect actual printed pages for improved scanability and complete identifiers; verify all six wide tables remain within print margins without clipping."
+    },
+    {
+      "gate": "screen_and_accessibility",
+      "requirement": "Verify desktop and narrow-screen rendering, keyboard horizontal scrolling, visible focus, table semantics and accessible names. Check links, fragments, resources and console output for new errors."
+    },
+    {
+      "gate": "shared_css_regression",
+      "requirement": "Run the selected design-system suite and inspect directly affected shared-style consumers. Add focused assertions for the chosen print behavior and preserved semantics. Record exact changed-path whitespace evidence."
+    },
+    {
+      "gate": "independent_review",
+      "requirement": "Require independent source review, artifact acceptance, applicable Documentation Design System review and browser-based UX verification against the final candidate. Supply the complete Shared checklist inventory and expected suite navigation when invoking that review; do not substitute unit-test success for these gates."
+    },
+    {
+      "gate": "independent_verification",
+      "requirement": "An independent verifier challenges acceptance against the complete canonical item and verifies the exact reviewed bytes. Missing print or browser evidence remains unfinished."
+    },
+    {
+      "gate": "main_branch_delivery",
+      "requirement": "Apply deliver-work-item-main-branch: accepted commit, resolved required findings, source checks, deliberate integration, focused integrated verification, exact main observation and reachability or content-equivalent integration mapping. Refresh evidence when integration changes reviewed bytes or rendering assumptions."
+    },
+    {
+      "gate": "provider_completion",
+      "requirement": "Only after delivery returns READY may the owning Dev Orchestrator perform the separate file-provider terminal transaction and verify its committed archive outcome."
+    }
+  ],
+  "verification_limit": "Catalog commands cover source regressions and whitespace, not visual print or browser acceptance. Those remain mandatory independent execution gates; this preparation does not claim they passed."
+}

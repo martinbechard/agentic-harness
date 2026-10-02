@@ -551,7 +551,8 @@ def test_preparation_rejects_invalid_authority(config_file, monkeypatch, defect)
         prepared_workflow(app, "one", app.config)
 
 
-def test_preparation_config_binding_ignores_other_item(config_file, monkeypatch):
+@pytest.mark.parametrize("metadata_shape", [None, "supported", "dashboard", "portrait"])
+def test_preparation_config_binding_ignores_other_item(config_file, monkeypatch, metadata_shape):
     from backlog_harness.contracts import load_config
     from backlog_harness.estimation import configured_workflow, prepared_workflow
 
@@ -603,7 +604,54 @@ def test_preparation_config_binding_ignores_other_item(config_file, monkeypatch)
             "invocation_config_digest": app.config.file_digest,
         },
     )
+    if metadata_shape:
+        from pathlib import Path
+
+        path = app._stage_path("one", "preparation")
+        saved = json.loads(path.read_text())
+        value = json.loads(saved["decision"]["text"])
+        if metadata_shape == "supported":
+            metadata = {
+                "checks_executed": False,
+                "scope_conditions": ["Preserve existing behavior"],
+                "verification_limit": "No acceptance checks have run",
+            }
+        else:
+            actual = json.loads(
+                (
+                    Path(__file__).parent / "fixtures/preparation" / (metadata_shape + ".json")
+                ).read_text()
+            )
+            metadata = {
+                key: value
+                for key, value in actual.items()
+                if key
+                not in {
+                    "allowed_paths",
+                    "checks",
+                    "persistence",
+                    "completion",
+                    "canonical_primary_branch",
+                }
+            }
+        value["workflow"].update(metadata)
+        saved["decision"]["text"] = json.dumps(value)
+        atomic_json(path, saved)
+        before = path.read_bytes()
+        if metadata_shape != "supported":
+            for _ in range(2):
+                with pytest.raises(
+                    TransitionBlocked, match="unsupported acceptance gates before dispatch"
+                ) as error:
+                    prepared_workflow(app, "one", app.config)
+                assert json.dumps(metadata["required_gates"]) in str(error.value)
+            assert path.read_bytes() == before
+            return
     expected = prepared_workflow(app, "one", app.config)
+    if metadata_shape:
+        assert expected["preparation_evidence"]["metadata"] == metadata
+        assert expected["preparation_evidence"]["decision_digest"] == digest(saved["decision"])
+        assert path.read_bytes() == before
     assert data["workflow"]["checks"][0] in expected["checks"]
     data["workflow"]["items"] = {"other": {"allowed_paths": ["other.py"]}}
     config.write_text(yaml.safe_dump(data))
@@ -763,3 +811,46 @@ def test_preparation_accepts_only_bound_external_stopped_runtime(tmp_path, defec
             )
     else:
         validate_preparation_sources(app, SimpleNamespace(repository=repository), item, [evidence])
+
+
+@pytest.mark.parametrize("name", ["dashboard", "portrait"])
+def test_retained_preparation_metadata_preserves_every_obligation(name):
+    from pathlib import Path
+
+    from backlog_harness.estimation import normalize_preparation_workflow
+
+    parameters = json.loads(
+        (Path(__file__).parent / "fixtures/preparation" / (name + ".json")).read_text()
+    )
+    echoes = {
+        "persistence": "file",
+        "completion": "main-branch",
+        "canonical_primary_branch": "main",
+    }
+    executable, evidence = normalize_preparation_workflow(parameters, echoes)
+    assert set(executable) == {"allowed_paths", "checks"}
+    assert executable | evidence | echoes == parameters
+    assert evidence["required_gates"] == parameters["required_gates"]
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("checks_executed", True),
+        ("checks_executed", 0),
+        ("required_gates", "ACCEPT"),
+        ("required_gates", [{"gate": "browser"}]),
+        ("implementation_constraints", [False]),
+        ("verification_limit", ""),
+        ("extra_permission", True),
+        ("completion", "skip-review"),
+    ],
+)
+def test_preparation_metadata_invalid_fields_block(field, value):
+    from backlog_harness.estimation import normalize_preparation_workflow
+
+    with pytest.raises(TransitionBlocked, match=field):
+        normalize_preparation_workflow(
+            {"allowed_paths": ["answer.py"], "checks": [["git", "diff", "--check"]], field: value},
+            {"completion": "main-branch"},
+        )

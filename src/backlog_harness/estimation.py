@@ -118,14 +118,13 @@ def prepared_workflow(app, item_id, config):
         "completion": selected["completion"],
         "canonical_primary_branch": selected["primary_branch"],
     }
+    parameters, metadata = normalize_preparation_workflow(parameters, echoes)
+    # Free-form gates are obligations, not executable configuration. Until a gate has
+    # an enforceable evidence contract, do not dispatch and hope a prompt enforces it.
     require(
-        all(parameters[key] == expected for key, expected in echoes.items() if key in parameters),
-        "Preparation echoed a different workflow authority",
-    )
-    unsupported = set(parameters) - {"allowed_paths", "checks", *echoes}
-    require(
-        not unsupported and {"allowed_paths", "checks"} <= set(parameters),
-        "Preparation contains unsupported workflow fields: " + ", ".join(sorted(unsupported)),
+        not metadata.get("required_gates"),
+        "Preparation requires unsupported acceptance gates before dispatch: "
+        + json.dumps(metadata.get("required_gates", [])),
     )
 
     policy = selected.get("preparation", {})
@@ -159,7 +158,63 @@ def prepared_workflow(app, item_id, config):
     selected["checks"] = selected["checks"] + [
         argv for argv in checks if argv not in selected["checks"]
     ]
+    if metadata:
+        selected["preparation_evidence"] = {
+            "item_id": item_id,
+            "provider_revision": saved["item"]["revision"],
+            "decision_digest": digest(decision),
+            "metadata": metadata,
+        }
     return selected
+
+
+def normalize_preparation_workflow(parameters, echoes):
+    """Separate bounded executable parameters from retained Coordinator commentary."""
+    require(isinstance(parameters, dict), "Preparation workflow must be an object")
+    metadata_fields = {
+        "check_status",
+        "checks_executed",
+        "required_gates",
+        "scope_conditions",
+        "implementation_constraints",
+        "verification_limit",
+    }
+    for key, expected in echoes.items():
+        require(
+            key not in parameters or parameters[key] == expected,
+            "Preparation echoed a different workflow authority: " + key,
+        )
+    unsupported = set(parameters) - {"allowed_paths", "checks", *echoes, *metadata_fields}
+    require(
+        not unsupported,
+        "Preparation contains unsupported workflow fields: " + ", ".join(sorted(unsupported)),
+    )
+    require(
+        {"allowed_paths", "checks"} <= set(parameters),
+        "Preparation requires allowed_paths and checks",
+    )
+    metadata = {key: parameters[key] for key in sorted(metadata_fields) if key in parameters}
+    for key, value in metadata.items():
+        if key == "checks_executed":
+            valid = value is False
+        elif key in {"check_status", "verification_limit"}:
+            valid = isinstance(value, str) and bool(value.strip())
+        elif key == "required_gates":
+            valid = isinstance(value, list) and all(
+                (isinstance(gate, str) and bool(gate.strip()))
+                or (
+                    isinstance(gate, dict)
+                    and set(gate) == {"gate", "requirement"}
+                    and all(isinstance(v, str) and bool(v.strip()) for v in gate.values())
+                )
+                for gate in value
+            )
+        else:
+            valid = isinstance(value, list) and all(
+                isinstance(entry, str) and bool(entry.strip()) for entry in value
+            )
+        require(valid, "Preparation has invalid evidence field: " + key)
+    return {key: parameters[key] for key in ("allowed_paths", "checks")}, metadata
 
 
 def validate_preparation_invocation(decision, config_digest, root):

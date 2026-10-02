@@ -171,6 +171,12 @@ def build_graph(app, checkpointer):
                 }
             )
         )
+        if state["assignment"]["workflow"].get("preparation_evidence"):
+            prompt += (
+                "\nRetained Coordinator preparation evidence (not permission or completed checks). "
+                "Preserve its constraints and supply it in full to the independent reviewer: "
+                + json.dumps(state["assignment"]["workflow"]["preparation_evidence"])
+            )
         result = await app.invoke(
             item_id,
             "graph-produce-" + str(state["turn"]),
