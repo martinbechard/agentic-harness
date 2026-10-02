@@ -34,7 +34,7 @@ def question_revision(harness):
     return sha256(relative.encode() + b"\0" + item.read_bytes()).hexdigest()
 
 
-def amended_harness(scope_admission_python, tmp_path):
+def amended_harness(scope_admission_python, tmp_path, *, prior_answer=False):
     harness = InstalledHarness.create(
         tmp_path,
         scope_admission_python,
@@ -70,6 +70,23 @@ def amended_harness(scope_admission_python, tmp_path):
     harness.config_path.write_text(yaml.safe_dump(config))
     harness.env["HARNESS_SCOPE_OLD_CHECK"] = json.dumps(old_check)
 
+    if prior_answer:
+        harness.env["HARNESS_SCOPE_PRIOR_QUESTION"] = "1"
+        prior_question = harness.run("run-item", "item-one")
+        assert prior_question.returncode == 0, prior_question.stdout + prior_question.stderr
+        prior_revision = question_revision(harness)
+        prior_answered = harness.run(
+            "answer",
+            "item-one",
+            "--question-id",
+            "confirm-retained-execution",
+            "--revision",
+            prior_revision,
+            "--text",
+            "Continue this exact native execution.",
+        )
+        assert prior_answered.returncode == 0, prior_answered.stdout + prior_answered.stderr
+
     stopped = harness.run("run-item", "item-one")
     assert stopped.returncode == 2
     assert "Question boundary contains unapproved source work" in stopped.stderr
@@ -82,7 +99,12 @@ def amended_harness(scope_admission_python, tmp_path):
         if (evidence / f"{name}.json").exists()
     }
     acceptance = json.loads((evidence / "accept.json").read_text())
-    previous = json.loads((evidence / "produce-review.json").read_text())
+    previous_stage = (
+        json.loads((evidence / "continuation.json").read_text())["stage"]
+        if prior_answer
+        else "produce-review"
+    )
+    previous = json.loads((evidence / f"{previous_stage}.json").read_text())
     previous_value = json.loads(previous["text"])
     assert previous_value["question"]["question_id"] == "reconcile-verifier-validation-blocker"
 
@@ -90,7 +112,10 @@ def amended_harness(scope_admission_python, tmp_path):
         allowed_paths=["answer.txt", "expanded.txt"], checks=[old_check, new_check]
     )
     harness.config_path.write_text(yaml.safe_dump(config))
-    item_path = harness.repo / "backlog/feature-backlog/item-one.md"
+    item_paths = list(harness.repo.glob("backlog/*/item-one.md"))
+    assert len(item_paths) == 1
+    item_path = item_paths[0]
+    item_relative = str(item_path.relative_to(harness.repo))
     content = item_path.read_text()
     amended = content + "\n## Expanded requirement\n\nRun the expanded check.\n"
     authority = tmp_path / "authority.txt"
@@ -100,9 +125,7 @@ def amended_harness(scope_admission_python, tmp_path):
     request = {
         "version": 1,
         "item_id": "item-one",
-        "expected_revision": sha256(
-            b"backlog/feature-backlog/item-one.md\0" + content.encode()
-        ).hexdigest(),
+        "expected_revision": sha256(item_relative.encode() + b"\0" + content.encode()).hexdigest(),
         "previous_admission_digest": None,
         "authority_sources": [
             {
@@ -266,3 +289,124 @@ def test_public_scope_amendment_answers_new_question_before_same_native_completi
     terminal_replay = harness.run("run-item", "item-one")
     assert terminal_replay.returncode == 0, terminal_replay.stdout + terminal_replay.stderr
     assert len(calls_path.read_text().splitlines()) == final_calls
+
+
+def test_public_scope_amendment_replays_historical_question_before_current_answer(
+    scope_admission_python, tmp_path
+):
+    harness, candidate, evidence, acceptance, request, _calls_path = amended_harness(
+        scope_admission_python, tmp_path, prior_answer=True
+    )
+    harness.env["HARNESS_SCOPE_POST_AMENDMENT_QUESTION"] = "1"
+    admission_path = next(evidence.glob("scope-admission-receipt-*.json"))
+    admission = json.loads(admission_path.read_text())
+    stage = "scope-continuation-" + digest(admission)
+    stage_path = evidence / f"{stage}.json"
+    producer_before = [
+        row
+        for row in calls(harness)
+        if "Running is now recorded for your exact session" in row["prompt"]
+        and "Scope admission:" in row["prompt"]
+    ]
+
+    bootstrap = command(
+        [
+            scope_admission_python,
+            Path(__file__).parent / "fixtures/scope_replay_bootstrap.py",
+            "--config",
+            harness.config_path,
+            "run-item",
+            "item-one",
+        ],
+        cwd=harness.repo,
+        env=harness.env,
+        timeout=60,
+    )
+    assert bootstrap.returncode == 2
+    assert "Historical fixture stopped before provider effect" in bootstrap.stderr
+    retained = json.loads(stage_path.read_text())
+    assert json.loads(retained["text"])["question"] == {
+        "question_id": "restore-required-verification-environment",
+        "text": "Can the required verification environment be restored?",
+    }
+    historical_calls = [
+        row
+        for row in calls(harness)
+        if "Running is now recorded for your exact session" in row["prompt"]
+        and "Scope admission:" in row["prompt"]
+    ]
+    assert len(historical_calls) == len(producer_before) + 1
+    assert "Persisted canonical approval:" in historical_calls[-1]["prompt"]
+    assert "Scoped question continuation:" not in historical_calls[-1]["prompt"]
+    retained_item = harness.repo / admission["provider_receipt"]["after"]["path"]
+    assert "Status: Running" in retained_item.read_text()
+    assert "restore-required-verification-environment" not in retained_item.read_text()
+
+    continuation_path = evidence / "continuation.json"
+    continuation_bytes = continuation_path.read_bytes()
+    changed = json.loads(continuation_bytes)
+    changed["approval"]["tampered"] = True
+    continuation_path.write_text(json.dumps(changed))
+    before_tamper = calls(harness)
+    tampered = harness.run("run-item", "item-one")
+    assert tampered.returncode == 2
+    assert "Stage request changed; reconcile prior evidence" in tampered.stderr
+    assert calls(harness) == before_tamper
+    assert json.loads(stage_path.read_text()) == retained
+    continuation_path.write_bytes(continuation_bytes)
+
+    replayed = harness.run("run-item", "item-one")
+    assert replayed.returncode == 0, replayed.stdout + replayed.stderr
+    assert len(
+        [
+            row
+            for row in calls(harness)
+            if "Running is now recorded for your exact session" in row["prompt"]
+            and "Scope admission:" in row["prompt"]
+        ]
+    ) == len(historical_calls)
+    waiting = harness.repo / "backlog/user-action-required/item-one.md"
+    assert "Status: User Action Required" in waiting.read_text()
+    assert "restore-required-verification-environment" in waiting.read_text()
+
+    answer_args = (
+        "answer",
+        "item-one",
+        "--question-id",
+        "restore-required-verification-environment",
+        "--revision",
+        question_revision(harness),
+        "--text",
+        "Restore the admitted verification environment and continue.",
+    )
+    answered = harness.run(*answer_args)
+    assert answered.returncode == 0, answered.stdout + answered.stderr
+    answered_calls = calls(harness)
+    answer_replay = harness.run(*answer_args)
+    assert answer_replay.returncode == 0, answer_replay.stdout + answer_replay.stderr
+    assert calls(harness) == answered_calls
+
+    completed = harness.run("run-item", "item-one")
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    modern = [row for row in calls(harness) if "Scoped question continuation:" in row["prompt"]]
+    assert len(modern) == 1
+    assert "resume" in modern[0]["argv"]
+    assert (
+        modern[0]["argv"][modern[0]["argv"].index("resume") + 1]
+        == acceptance["session"]["native_session_id"]
+    )
+    assert (
+        git(
+            candidate,
+            "merge-base",
+            "--is-ancestor",
+            request["candidate"]["head"],
+            git(candidate, "rev-parse", "HEAD"),
+        )
+        == ""
+    )
+    assert "Status: Completed" in (harness.repo / "backlog/archive/item-one.md").read_text()
+    final_calls = calls(harness)
+    terminal_replay = harness.run("run-item", "item-one")
+    assert terminal_replay.returncode == 0, terminal_replay.stdout + terminal_replay.stderr
+    assert calls(harness) == final_calls

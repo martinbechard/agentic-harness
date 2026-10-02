@@ -782,3 +782,117 @@ def scoped_question_content(before, target, authority):
         + json.dumps({"authority": authority}, sort_keys=True)
         + "\n```\n"
     )
+
+
+def retained_scope_question_prompt(app, item_id, stage, prompt, result, coordination_context):
+    """Reconstruct only the a53 approval suffix for an already completed scoped question."""
+    from .evidence import EvidenceStore, component
+    from .native_evidence import coordination_instructions, source_review_instructions
+
+    admission = app.scope_admission(item_id)
+    require(admission is not None and stage == "scope-continuation-" + digest(admission),
+            "Historical scope replay is not the original admitted stage")
+    require(admitted_question_continuation(app, item_id, admission) is None,
+            "Historical scope replay cannot replace an approved answer")
+    require(result.get("outcome") == "returned" and result.get("role") == "orchestrator"
+            and result.get("session") == admission["session"],
+            "Historical scope question is not a terminal canonical result")
+    path = Path(result["evidence_path"])
+    expected = (app.root / "runs" / component("item:" + item_id) / "operations"
+                / component(item_id + ":" + stage) / "invocations" / component(result["invocation_id"]))
+    require(path.absolute() == expected and path.resolve() == expected and app.process_stopped(path),
+            "Historical scope question invocation is not retained and stopped")
+    retained_files = ("intent.json", "config.json", "execution-context.json", "session.json",
+                      "requested.json", "outcomes.jsonl", "events.jsonl", "resume-binding.json",
+                      "telemetry.json", "telemetry-report.json")
+    require(all((path / name).is_file() and not (path / name).is_symlink()
+                for name in retained_files), "Historical scope invocation evidence is incomplete")
+    intent = EvidenceStore.reconcile(path)
+    from dataclasses import asdict
+
+    from .contracts import AgentBinding, resume_binding_compatible
+
+    try:
+        actual_binding = AgentBinding(**result["binding"])
+        previous_binding = AgentBinding(**admission["session"]["binding"])
+    except (KeyError, TypeError) as error:
+        raise TransitionBlocked("Historical scope invocation binding is invalid") from error
+    require(result.get("version") == 1 and result.get("purpose") == "implementation"
+            and result["binding"] == asdict(actual_binding)
+            and actual_binding.role == previous_binding.role == "orchestrator"
+            and resume_binding_compatible(previous_binding, actual_binding)
+            and intent.get("action") == stage and intent.get("item_id") == item_id
+            and intent.get("run_id") == "item:" + item_id
+            and intent.get("binding") == result["binding"],
+            "Historical scope invocation identity or binding differs")
+    _sha(intent.get("config_digest"), "historical scope configuration")
+    def retained(name):
+        return json.loads((path / name).read_text())
+
+    require(retained("config.json") == {"version": 1, "digest": intent["config_digest"],
+                                       "binding": result["binding"]}
+            and retained("execution-context.json") == {"purpose": "implementation",
+                "provider_operation": None, "read_only": False}
+            and retained("session.json") == {"version": 1,
+                "session_id": result["session"]["session_id"],
+                "native_session_id": result["session"]["native_session_id"],
+                "binding": result["binding"]}
+            and retained("resume-binding.json") == {
+                "session_id": result["session"]["session_id"],
+                "native_session_id": result["session"]["native_session_id"],
+                "previous_binding": admission["session"]["binding"],
+                "current_binding": result["binding"],
+                "current_config_digest": intent["config_digest"]},
+            "Historical scope retained configuration, context or session differs")
+    require(intent.get("outcome") == "returned" and intent.get("partial") is False
+            and intent.get("request_digest") == result.get("request_digest")
+            and intent.get("invocation_id") == result.get("invocation_id")
+            and intent.get("operation_id") == item_id + ":" + stage,
+            "Historical scope question terminal evidence differs")
+    metadata = retained("telemetry.json")
+    require(isinstance(metadata, dict) and set(metadata) == {"path"}
+            and isinstance(metadata["path"], str), "Historical scope telemetry metadata differs")
+    telemetry_path = Path(metadata["path"])
+    require(telemetry_path.is_absolute() and telemetry_path.is_file()
+            and not telemetry_path.is_symlink() and telemetry_path.resolve() == telemetry_path
+            and telemetry_path.is_relative_to(app.root.resolve()),
+            "Historical scope telemetry path is unsafe")
+    # The returned/report-present guards above keep this reconstruction read-only.
+    recovered = app.recover_invocation(path)
+    require(recovered is not None, "Historical scope terminal reconstruction is incomplete")
+    # Codex retains the original SessionHandle while session.json records resumed tuning.
+    # The exact session record and resume audit were checked above; normalize only that handle.
+    recorded_session = retained("session.json")
+    require(recovered.get("session") == {key: value for key, value in recorded_session.items() if key != "version"},
+            "Historical scope reconstructed session differs")
+    recovered = {**recovered, "session": admission["session"]}
+    require(result == recovered, "Historical scope result differs from retained terminal output")
+    value = app.result_json(result)
+    question = value.get("question")
+    require(value.get("item_id") == item_id and isinstance(question, dict)
+            and all(isinstance(question.get(key), str) and question[key].strip()
+                    for key in ("question_id", "text")),
+            "Historical scope result is not a pending question")
+    continuation_path = app._stage_path(item_id, "continuation")
+    require(continuation_path.is_file() and not continuation_path.is_symlink(),
+            "Historical scope approval bytes are missing")
+    continuation = json.loads(continuation_path.read_text())
+    legacy = "\nPersisted canonical approval: " + json.dumps(continuation["approval"])
+    proof_path = app._stage_path(item_id, "proof-review")
+    if proof_path.exists():
+        require(proof_path.is_file() and not proof_path.is_symlink(), "Historical proof review is unsafe")
+        legacy += (
+            "\nReuse this retained fresh proof review; include its reviewer_task (or reviewer_session if absent) as "
+            "proof_reviewer_session in your response. Do not repeat proof or review: " + proof_path.read_text()
+        )
+    tail = source_review_instructions(admission["workflow"], admission["input"]["amended_content"],
+                                      app.candidate_repository(item_id))
+    if coordination_context is not None:
+        tail += coordination_instructions(coordination_context)
+        legacy = legacy.replace("Follow current claim-free crisis authority; do not invoke claims. ", "")
+    require(not tail or prompt.endswith(tail), "Historical scope prompt layout differs")
+    prefix = prompt[:-len(tail)] if tail else prompt
+    reconstructed = prefix + legacy + tail
+    require(digest(reconstructed) == result["request_digest"],
+            "Stage request changed; reconcile prior evidence")
+    return reconstructed

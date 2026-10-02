@@ -16,6 +16,10 @@ POST_AMENDMENT_QUESTION = {
     "question_id": "restore-required-verification-environment",
     "text": "Can the required verification environment be restored?",
 }
+PRIOR_QUESTION = {
+    "question_id": "confirm-retained-execution",
+    "text": "Should this exact native execution continue?",
+}
 
 
 def _legacy():
@@ -130,6 +134,11 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
             }
     if "Running is now recorded for your exact session" in prompt:
         if "Scope admission:" not in prompt:
+            if (
+                os.environ.get("HARNESS_SCOPE_PRIOR_QUESTION") == "1"
+                and "Persisted canonical approval:" not in prompt
+            ):
+                return {"item_id": "item-one", "question": PRIOR_QUESTION}
             (cwd / "answer.txt").write_text("candidate\n")
             git(cwd, "add", "--", "answer.txt")
             git(cwd, "commit", "-m", "Retained partial candidate")

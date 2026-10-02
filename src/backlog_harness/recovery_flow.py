@@ -256,7 +256,16 @@ def question_handoff_paths(repository, item, declared_paths=None):
         for line in item.content.splitlines()
         if line.startswith("Series: ")
     ]
-    expected = [item.path, "backlog/user-action-required/" + Path(item.path).name, *series]
+    target = "backlog/user-action-required/" + Path(item.path).name
+    if item.path == target:
+        source = repository / item.path
+        require(not series
+                and not source.is_symlink()
+                and source.resolve() == repository.resolve() / target,
+                "In-place question handoff requires a canonical item without a series move")
+        expected = [item.path]
+    else:
+        expected = [item.path, target, *series]
     paths = expected if declared_paths is None else declared_paths
     require(
         len(series) <= 1

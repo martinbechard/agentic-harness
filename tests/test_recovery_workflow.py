@@ -700,6 +700,32 @@ def test_question_routes_require_exact_series_evidence(provider):
         question_handoff_paths(provider.repository, item)
 
 
+def test_running_question_already_in_canonical_queue_is_an_exact_in_place_update(provider):
+    from backlog_harness.recovery_flow import question_handoff_paths
+
+    source = "backlog/user-action-required/item-one.md"
+    item = replace(provider.item("item-one"), path=source, state="Running", owner="canonical", content="Status: Running\n")
+    assert question_handoff_paths(provider.repository, item) == [source]
+    assert question_handoff_paths(provider.repository, item, [source]) == [source]
+    for state in ("Ready", "User Action Required"):
+        # The helper validates paths; validate_transition separately owns lifecycle authority.
+        assert question_handoff_paths(provider.repository, replace(item, state=state)) == [source]
+    for invalid in ([source, source], [source, "extra.md"], ["elsewhere.md"]):
+        with pytest.raises(TransitionBlocked):
+            question_handoff_paths(provider.repository, item, invalid)
+    for invalid in (
+        replace(item, content=item.content + "Series: backlog/user-action-required/index.md\n"),
+        replace(item, path="backlog/user-action-required/../item-one.md"),
+    ):
+        with pytest.raises(TransitionBlocked):
+            question_handoff_paths(provider.repository, invalid)
+    path = provider.repository / source
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.symlink_to(provider.repository / "outside.md")
+    with pytest.raises(TransitionBlocked, match="In-place question"):
+        question_handoff_paths(provider.repository, item)
+
+
 @pytest.mark.parametrize("retained", [False, True])
 def test_normal_question_transition_routes_or_replays(config_file, provider, monkeypatch, retained):
     import asyncio

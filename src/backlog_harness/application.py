@@ -2404,6 +2404,16 @@ class Application:
         )
         if saved.exists() and continuation is None:
             result = json.loads(saved.read_text())
+            if (result.get("request_digest") != request_hash
+                    and stage.startswith("scope-continuation-")
+                    and purpose == "implementation" and role == "orchestrator"
+                    and not read_only and session is not None):
+                from .scope_admission import retained_scope_question_prompt
+
+                prompt = retained_scope_question_prompt(
+                    self, item_id, stage, prompt, result, coordination_context
+                )
+                request_hash = digest(prompt)
             require(
                 result["request_digest"] == request_hash,
                 "Stage request changed; reconcile prior evidence",
