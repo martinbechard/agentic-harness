@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from dataclasses import asdict
 from hashlib import sha256
 from pathlib import Path
@@ -10,7 +11,7 @@ import yaml
 from backlog_harness.application import Application
 from backlog_harness.contracts import digest, load_config
 from backlog_harness.delivery import preserved_candidate_mode
-from backlog_harness.evidence import atomic_json
+from backlog_harness.evidence import atomic_json, component
 from backlog_harness.provider import Item, TransitionBlocked, git
 from backlog_harness.scope_admission import (
     admission_receipts,
@@ -18,6 +19,7 @@ from backlog_harness.scope_admission import (
     effective_workflow,
     resolve_scope_answer,
     validate_coverage,
+    validate_decision_contract,
     validate_request,
     validate_retained_usage,
 )
@@ -94,10 +96,12 @@ def test_effective_workflow_allows_catalog_growth_and_safe_path_narrowing(config
     }
     atomic_json(
         app._stage_path("one", "assignment"),
-        {"workflow": frozen, "content": "original"},
+        {"workflow": frozen, "content": "original", "provider_path": "backlog/one.md"},
     )
     request = {
         "item_id": "one",
+        "amended_content": "original\nexpanded",
+        "review_requirements": None,
         "scope": {"allowed_paths": ["src/changed.py", "tests/new.py"], "checks": [old_check, new_check]},
     }
     current = load_config(config)
@@ -122,21 +126,385 @@ def test_effective_workflow_allows_catalog_growth_and_safe_path_narrowing(config
         effective_workflow(app, request, None, load_config(config))
 
 
-def test_requirement_coverage_binds_appended_bytes_to_checks_or_retained_gates():
+def test_effective_workflow_appends_bound_review_requirements_across_admissions(config_file):
+    config, data = config_file
+    provider_path = "backlog/one.md"
+    old = {
+        "id": "original-review",
+        "canonical_reference": "backlog/one.md#acceptance",
+        "acceptance_text": "Review the original source acceptance.",
+        "required_gate": "Verify the original source acceptance.",
+    }
+    added = {
+        "id": "expanded-review",
+        "canonical_reference": "backlog/one.md#expanded",
+        "acceptance_text": "Review the expanded catalog acceptance.",
+        "required_gate": "Verify the expanded catalog acceptance.",
+    }
+    original_review = {
+        "provider_revision": "original-revision",
+        "preparation_digest": "1" * 64,
+        "original_preparation_digest": "2" * 64,
+        "correction_resolution_digest": "3" * 64,
+        "requirements": [old],
+    }
+    data["workflow"]["review_requirements"] = original_review
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": data["workflow"]["checks"],
+    }
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    frozen = {
+        key: deepcopy(value)
+        for key, value in data["workflow"].items()
+        if key != "preparation"
+    }
+    atomic_json(
+        app._stage_path("one", "assignment"),
+        {"workflow": frozen, "content": "original", "provider_path": provider_path},
+    )
+    amended = "original\nexpanded review"
+    proposed = {
+        **deepcopy(original_review),
+        "provider_revision": sha256((provider_path + "\0" + amended).encode()).hexdigest(),
+        "requirements": [deepcopy(old), deepcopy(added)],
+    }
+    request = {
+        "item_id": "one",
+        "scope": {
+            "allowed_paths": data["workflow"]["allowed_paths"],
+            "checks": data["workflow"]["checks"],
+        },
+        "amended_content": amended,
+        "review_requirements": proposed,
+    }
+    selected = effective_workflow(app, request, None, load_config(config))
+    assert selected["review_requirements"]["requirements"][0] == old
+    assert selected["review_requirements"] == proposed
+    assert frozen["review_requirements"] == original_review
+
+    further = amended + "\nfurther review"
+    final = {
+        **deepcopy(proposed),
+        "provider_revision": sha256((provider_path + "\0" + further).encode()).hexdigest(),
+        "requirements": [
+            deepcopy(old),
+            deepcopy(added),
+            {
+                "id": "further-review",
+                "canonical_reference": "backlog/one.md#further",
+                "acceptance_text": "Review the further acceptance.",
+                "required_gate": "Verify the further acceptance.",
+            },
+        ],
+    }
+    request.update(amended_content=further, review_requirements=final)
+    assert effective_workflow(
+        app, request, {"workflow": selected}, load_config(config)
+    )["review_requirements"] == final
+
+
+def test_scope_admission_replays_the_validated_pre_extension_review_contract(
+    config_file, monkeypatch
+):
+    config, data = config_file
+    provider_path = "backlog/one.md"
+    original_review = {
+        "provider_revision": "original-revision",
+        "preparation_digest": "1" * 64,
+        "requirements": [
+            {
+                "id": "original-review",
+                "canonical_reference": "backlog/one.md#acceptance",
+                "acceptance_text": "Review the original source acceptance.",
+                "required_gate": "Verify the original source acceptance.",
+            }
+        ],
+    }
+    data["workflow"]["review_requirements"] = original_review
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": data["workflow"]["checks"],
+    }
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    frozen = {
+        key: deepcopy(value)
+        for key, value in data["workflow"].items()
+        if key != "preparation"
+    }
+    assignment = {
+        "workflow": frozen,
+        "content": "original",
+        "provider_path": provider_path,
+    }
+    acceptance = {"session": {"session_id": "owner", "native_session_id": "native"}}
+    atomic_json(app._stage_path("one", "assignment"), assignment)
+    atomic_json(app._stage_path("one", "accept"), acceptance)
+    operator_request = {
+        "version": 1,
+        "item_id": "one",
+        "expected_revision": "a" * 64,
+        "previous_admission_digest": None,
+        "authority_sources": [],
+        "original_preparation_digest": "b" * 64,
+        "original_assignment_digest": digest(assignment),
+        "acceptance_digest": digest(acceptance),
+        "previous_result_digest": "c" * 64,
+        "scope_answer": None,
+        "candidate": {},
+        "scope": {
+            "allowed_paths": data["workflow"]["allowed_paths"],
+            "checks": data["workflow"]["checks"],
+        },
+        "amended_content": "original\nexpanded",
+    }
+    operator_digest = digest(operator_request)
+    decision = {
+        "invocation_id": "legacy-scope-decision",
+        "text": json.dumps(
+            {
+                "operation": "amend-content",
+                "authorized": True,
+                "request_digest": operator_digest,
+            }
+        ),
+    }
+    approved = {
+        **operator_request,
+        "remaining_estimate": 10,
+        "authority": {
+            "operator_request_digest": operator_digest,
+            "decision_digest": digest(decision),
+            "invocation_id": decision["invocation_id"],
+            "scope_answer_digest": None,
+        },
+    }
+    workflow = effective_workflow(
+        app,
+        approved,
+        None,
+        load_config(config),
+        retained_decision=decision,
+    )
+    provider_request = {
+        "kind": "amend-content",
+        "admission_input_digest": digest(approved),
+        "stage_operation": "legacy-provider-amendment",
+        "item": {"revision": operator_request["expected_revision"]},
+    }
+    operation = digest(provider_request)
+    operation_path = app.root / "provider-agent-operations" / component(operation)
+    operation_path.mkdir(parents=True)
+    atomic_json(operation_path / "requested.json", provider_request)
+    receipt = {
+        "version": 1,
+        "input": approved,
+        "decision": decision,
+        "provider_receipt": {
+            "operation": operation,
+            "after": {"revision": "amended-revision"},
+        },
+        "provider_revision": "amended-revision",
+        "workflow": workflow,
+        "candidate": operator_request["candidate"],
+        "session": acceptance["session"],
+        "usage": {"generated_tokens": 1},
+        "remaining_high": 10,
+    }
+    atomic_json(
+        app._stage_path("one", "scope-admission-receipt-" + digest(approved)),
+        receipt,
+    )
+    monkeypatch.setattr(app, "verify_provider_receipt", lambda *args: None)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda *args: None)
+    monkeypatch.setattr(
+        app.provider,
+        "item",
+        lambda item_id: SimpleNamespace(revision="amended-revision"),
+    )
+    assert app.scope_admission("one") == receipt
+    assert receipt["workflow"]["review_requirements"] == original_review
+
+    changed_protocol = {
+        **decision,
+        "text": json.dumps(
+            {
+                "operation": "amend-content",
+                "authorized": True,
+                "operator_request_digest": operator_digest,
+            }
+        ),
+    }
+    with pytest.raises(TransitionBlocked, match="decision contract differs"):
+        effective_workflow(
+            app,
+            approved,
+            None,
+            load_config(config),
+            retained_decision=changed_protocol,
+        )
+
+
+@pytest.mark.parametrize("fault", ["missing", "wrong"])
+def test_current_scope_decision_replay_requires_exact_operator_digest(fault):
+    operator_request = {
+        "version": 1,
+        "item_id": "one",
+        "expected_revision": "a" * 64,
+        "previous_admission_digest": None,
+        "authority_sources": [],
+        "original_preparation_digest": "b" * 64,
+        "original_assignment_digest": "c" * 64,
+        "acceptance_digest": "d" * 64,
+        "previous_result_digest": "e" * 64,
+        "scope_answer": None,
+        "candidate": {},
+        "scope": {},
+        "review_requirements": None,
+        "amended_content": "original\nexpanded",
+    }
+    operator_digest = digest(operator_request)
+    result = {"operation": "amend-content", "authorized": True}
+    if fault != "missing":
+        result["operator_request_digest"] = "f" * 64
+    decision = {"invocation_id": "current-scope-decision", "text": json.dumps(result)}
+    approved = {
+        **operator_request,
+        "remaining_estimate": 10,
+        "authority": {
+            "operator_request_digest": operator_digest,
+            "decision_digest": digest(decision),
+            "invocation_id": decision["invocation_id"],
+            "scope_answer_digest": None,
+        },
+    }
+    app = SimpleNamespace(result_json=lambda value: json.loads(value["text"]))
+    with pytest.raises(TransitionBlocked, match="decision contract differs"):
+        validate_decision_contract(app, approved, decision)
+
+    accepted = {
+        **result,
+        "operator_request_digest": operator_digest,
+    }
+    decision = {**decision, "text": json.dumps(accepted)}
+    approved["authority"]["decision_digest"] = digest(decision)
+    assert validate_decision_contract(app, approved, decision) == (accepted, True)
+
+
+@pytest.mark.parametrize(
+    ("fault", "message"),
+    [
+        ("old-only", "must append"),
+        ("alter-old", "must append"),
+        ("wrong-revision", "differs from amended content"),
+        ("lineage", "changed review lineage"),
+        ("duplicate-id", "must be unique"),
+    ],
+)
+def test_effective_workflow_rejects_nonadditive_review_selection(config_file, fault, message):
+    config, data = config_file
+    provider_path = "backlog/one.md"
+    original = {
+        "id": "original-review",
+        "canonical_reference": "backlog/one.md#acceptance",
+        "acceptance_text": "Original acceptance.",
+        "required_gate": "Original gate.",
+    }
+    added = {
+        "id": "expanded-review",
+        "canonical_reference": "backlog/one.md#expanded",
+        "acceptance_text": "Expanded acceptance.",
+        "required_gate": "Expanded gate.",
+    }
+    contract = {
+        "provider_revision": "original-revision",
+        "preparation_digest": "1" * 64,
+        "requirements": [original],
+    }
+    data["workflow"]["review_requirements"] = contract
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": data["workflow"]["checks"],
+    }
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    frozen = {
+        key: deepcopy(value)
+        for key, value in data["workflow"].items()
+        if key != "preparation"
+    }
+    atomic_json(
+        app._stage_path("one", "assignment"),
+        {"workflow": frozen, "content": "original", "provider_path": provider_path},
+    )
+    amended = "original\nexpanded"
+    proposed = {
+        **deepcopy(contract),
+        "provider_revision": sha256((provider_path + "\0" + amended).encode()).hexdigest(),
+        "requirements": [deepcopy(original), deepcopy(added)],
+    }
+    if fault == "old-only":
+        proposed["requirements"] = [deepcopy(original)]
+    elif fault == "alter-old":
+        proposed["requirements"][0]["acceptance_text"] = "Changed acceptance."
+    elif fault == "wrong-revision":
+        proposed["provider_revision"] = "wrong"
+    elif fault == "lineage":
+        proposed["preparation_digest"] = "2" * 64
+    else:
+        proposed["requirements"][1]["id"] = original["id"]
+    request = {
+        "item_id": "one",
+        "scope": {
+            "allowed_paths": data["workflow"]["allowed_paths"],
+            "checks": data["workflow"]["checks"],
+        },
+        "amended_content": amended,
+        "review_requirements": proposed,
+    }
+    with pytest.raises(TransitionBlocked, match=message):
+        effective_workflow(app, request, None, load_config(config))
+
+
+def test_requirement_coverage_binds_source_acceptance_without_admin_gates():
     check = ["python", "-m", "unittest"]
-    workflow = {"allowed_paths": ["src/a.py"], "checks": [check], "completion": "main-branch"}
-    gate = digest("main-branch")
+    proof = {"required": True, "artifact": "report.json"}
+    workflow = {
+        "allowed_paths": ["src/a.py"],
+        "checks": [check],
+        "completion": "main-branch",
+        "proof_requirements": proof,
+    }
+    added = [{"id": "expanded-review"}]
+    gate = digest(proof)
     result = {
         "coverage_complete": True,
         "unsupported_new_requirements": [],
         "requirements_coverage": [
             {"excerpt": "run the suite", "kind": "check", "value": check},
-            {"excerpt": "deliver on main", "kind": "gate", "value": gate},
+            {"excerpt": "retain source proof", "kind": "gate", "value": gate},
+            {
+                "excerpt": "review the expanded catalog",
+                "kind": "review_requirement",
+                "value": "expanded-review",
+            },
         ],
     }
-    validate_coverage(result, "run the suite and deliver on main.", workflow)
+    appended = "run the suite, retain source proof, and review the expanded catalog."
+    validate_coverage(result, appended, workflow, added)
     with pytest.raises(TransitionBlocked, match="excerpt is absent"):
-        validate_coverage(result, "Different text", workflow)
+        validate_coverage(result, "Different text", workflow, added)
+    result["requirements_coverage"][1]["value"] = digest("main-branch")
+    with pytest.raises(TransitionBlocked, match="gate differs"):
+        validate_coverage(result, appended, workflow, added)
+    unsupported = {
+        **result,
+        "unsupported_new_requirements": ["browser proof has no selected source-proof route"],
+    }
+    with pytest.raises(TransitionBlocked, match="did not cover"):
+        validate_coverage(unsupported, appended, workflow, added)
 
 
 @pytest.mark.parametrize(
@@ -174,6 +542,7 @@ def test_scope_amendment_rejects_stale_revision_before_reading_authority(tmp_pat
         "scope_answer": None,
         "candidate": {},
         "scope": {},
+        "review_requirements": None,
         "amended_content": "old\nnew",
     }
     with pytest.raises(TransitionBlocked, match="revision is stale"):
@@ -416,6 +785,17 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
 
     old_check = ["python", "-m", "unittest"]
     new_check = ["python", "-m", "yaml"]
+    original_requirement = {
+        "id": "original-review",
+        "canonical_reference": "backlog/feature-backlog/item-one.md#acceptance",
+        "acceptance_text": "Review the original source acceptance.",
+        "required_gate": "Verify the original source acceptance.",
+    }
+    original_review = {
+        "provider_revision": "original-revision",
+        "preparation_digest": "1" * 64,
+        "requirements": [original_requirement],
+    }
     data.update(
         repository=str(provider.repository),
         provider_interaction="agent",
@@ -426,6 +806,7 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
     data["workflow"].update(
         allowed_paths=["src/one.py"],
         checks=[old_check],
+        review_requirements=original_review,
         preparation={
             "allowed_roots": ["src"],
             "check_commands": [old_check, new_check],
@@ -517,7 +898,21 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
         atomic_json(app._stage_path("item-one", stage), value)
     authority = tmp_path / "authority.txt"
     authority.write_text("Expand the retained item to cover the complete suite repair.\n")
-    amended = running.content + "\n## Expanded requirement\n\nRun the expanded check.\n"
+    amended = (
+        running.content
+        + "\n## Expanded requirement\n\nRun the expanded check. Review expanded source acceptance.\n"
+    )
+    expanded_requirement = {
+        "id": "expanded-review",
+        "canonical_reference": "backlog/feature-backlog/item-one.md#expanded-requirement",
+        "acceptance_text": "Review expanded source acceptance.",
+        "required_gate": "Verify expanded source acceptance.",
+    }
+    selected_review = {
+        **deepcopy(original_review),
+        "provider_revision": sha256((running.path + "\0" + amended).encode()).hexdigest(),
+        "requirements": [deepcopy(original_requirement), expanded_requirement],
+    }
     request = {
         "version": 1,
         "item_id": "item-one",
@@ -542,14 +937,17 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
             "tree": git(candidate, "rev-parse", "HEAD^{tree}"),
         },
         "scope": {"allowed_paths": ["src/one.py", "src/two.py"], "checks": [old_check, new_check]},
+        "review_requirements": selected_review,
         "amended_content": amended,
     }
     request_path = tmp_path / "scope-request.json"
     request_path.write_text(json.dumps(request))
     calls = []
     retained_results = {}
+    wrong_digest_once = True
 
     async def invoke(item_id, stage, role, prompt, **kwargs):
+        nonlocal wrong_digest_once
         if stage in retained_results:
             return retained_results[stage]
         calls.append(stage)
@@ -566,7 +964,6 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
                 "authorized": True,
                 "item_id": item_id,
                 "expected_revision": requested["expected_revision"],
-                "request_digest": digest(requested),
                 "previous_admission_digest": requested["previous_admission_digest"],
                 "candidate": requested["candidate"],
                 "scope": requested["scope"],
@@ -578,9 +975,28 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
                 "coverage_complete": True,
                 "unsupported_new_requirements": [],
                 "requirements_coverage": [
-                    {"excerpt": excerpt, "kind": "check", "value": new_check}
+                    {"excerpt": excerpt, "kind": "check", "value": new_check},
+                    *[
+                        {
+                            "excerpt": (
+                                "Review sequential source acceptance."
+                                if row["id"] == "sequential-review"
+                                else "Review expanded source acceptance."
+                            ),
+                            "kind": "review_requirement",
+                            "value": row["id"],
+                        }
+                        for row in payload["eligible_coverage_bindings"][
+                            "review_requirements"
+                        ]
+                    ],
                 ],
             }
+            if wrong_digest_once:
+                value["request_digest"] = digest(requested)
+                wrong_digest_once = False
+            else:
+                value["operator_request_digest"] = payload["operator_request_digest"]
             result = {
                 "role": "coordinator",
                 "invocation_id": stage,
@@ -588,7 +1004,8 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
                 "evidence_path": str(tmp_path / stage),
                 "text": json.dumps(value),
             }
-            retained_results[stage] = result
+            if "operator_request_digest" in value:
+                retained_results[stage] = result
             return result
         operation = kwargs["provider_operation"]
         record = json.loads(
@@ -648,6 +1065,17 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
         stage: app._stage_path("item-one", stage).read_bytes()
         for stage in ("preparation", "assignment", "accept", "produce-review")
     }
+    old_request = {key: value for key, value in request.items() if key != "review_requirements"}
+    rejected_path = app._stage_path(
+        "item-one", "scope-admission-decision-" + digest(old_request)
+    )
+    atomic_json(rejected_path, {"authorized": False, "reason": "old contract rejected"})
+    rejected_bytes = rejected_path.read_bytes()
+    with pytest.raises(TransitionBlocked, match="exact scope amendment"):
+        asyncio.run(app.amend_scope("item-one", request_path))
+    assert app.provider.item("item-one").content == running.content
+    assert rejected_path.read_bytes() == rejected_bytes
+    assert calls == [next(stage for stage in calls if stage.startswith("scope-admission"))]
     real_atomic_json = atomic_json
     publication_failed = False
 
@@ -662,22 +1090,22 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
     with pytest.raises(OSError, match="publication failure"):
         asyncio.run(app.amend_scope("item-one", request_path))
     assert app.provider.item("item-one").content == amended
-    assert len(calls) == 2
+    assert len(calls) == 3
     assert not list(
         app._stage_path("item-one", "unused").parent.glob("scope-admission-receipt-*.json")
     )
     monkeypatch.setattr("backlog_harness.application.atomic_json", real_atomic_json)
     receipt = asyncio.run(app.amend_scope("item-one", request_path))
     assert receipt["provider_revision"] == app.provider.item("item-one").revision
+    assert receipt["workflow"]["review_requirements"] == selected_review
     assert app.item_workflow("item-one")["allowed_paths"] == request["scope"]["allowed_paths"]
     assert git(candidate, "rev-parse", "HEAD") == candidate_head
     assert all(app._stage_path("item-one", stage).read_bytes() == value for stage, value in originals.items())
-    assert calls == [
-        next(stage for stage in calls if stage.startswith("scope-admission")),
-        next(stage for stage in calls if stage.startswith("provider-amend")),
-    ]
+    assert calls[0] == calls[1]
+    assert calls[0].startswith("scope-admission")
+    assert calls[2].startswith("provider-amend")
     assert asyncio.run(app.amend_scope("item-one", request_path)) == receipt
-    assert len(calls) == 2
+    assert len(calls) == 3
 
     retained_continuation = {
         **previous,
@@ -700,16 +1128,37 @@ def test_amend_scope_commits_once_publishes_admission_and_replays_without_calls(
         "previous_admission_digest": digest(receipt),
         "previous_result_digest": digest(retained_continuation),
         "amended_content": amended
-        + "\n## Further requirement\n\nConfirm sequential admission.\n",
+        + "\n## Further requirement\n\nConfirm sequential admission. "
+        "Review sequential source acceptance.\n",
+    }
+    sequential_requirement = {
+        "id": "sequential-review",
+        "canonical_reference": "backlog/feature-backlog/item-one.md#further-requirement",
+        "acceptance_text": "Review sequential source acceptance.",
+        "required_gate": "Verify sequential source acceptance.",
+    }
+    second_request["review_requirements"] = {
+        **deepcopy(selected_review),
+        "provider_revision": sha256(
+            (running.path + "\0" + second_request["amended_content"]).encode()
+        ).hexdigest(),
+        "requirements": [
+            deepcopy(original_requirement),
+            deepcopy(expanded_requirement),
+            sequential_requirement,
+        ],
     }
     second_path = tmp_path / "scope-request-2.json"
     second_path.write_text(json.dumps(second_request))
     second_receipt = asyncio.run(app.amend_scope("item-one", second_path))
     assert second_receipt["input"]["previous_admission_digest"] == digest(receipt)
+    assert second_receipt["workflow"]["review_requirements"] == second_request[
+        "review_requirements"
+    ]
     assert app.provider.item("item-one").content == second_request["amended_content"]
-    assert len(calls) == 4
+    assert len(calls) == 5
     assert asyncio.run(app.amend_scope("item-one", second_path)) == second_receipt
-    assert len(calls) == 4
+    assert len(calls) == 5
     receipt = second_receipt
     amended = second_request["amended_content"]
 

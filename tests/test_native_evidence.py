@@ -220,7 +220,13 @@ def test_selected_source_review_binds_pre_spawn_checks_and_conclusions(tmp_path,
                     "gate": "Role-suite agreement",
                     "requirement": "Verify role-suite agreement without weakening evaluation",
                 },
-            }
+            },
+            {
+                "id": "expanded-catalog",
+                "canonical_reference": "item#expanded-catalog",
+                "acceptance_text": "Preserve complete catalog evaluation strength",
+                "required_gate": "Verify complete catalog evaluation strength",
+            },
         ],
     }
     source_paths = [{"path": "role.yaml", "sha256": "4" * 64}]
@@ -246,16 +252,17 @@ def test_selected_source_review_binds_pre_spawn_checks_and_conclusions(tmp_path,
         ),
         "conclusions": [
             {
-                "id": "role-suite",
-                "canonical_reference": "item#acceptance",
+                "id": requirement["id"],
+                "canonical_reference": requirement["canonical_reference"],
                 "verdict": "REJECT" if fault == "reject-conclusion" else "ACCEPT",
                 "conclusion": "Role, suite, and generated output agree",
                 "evidence_paths": ["role.yaml"],
             }
+            for requirement in contract["requirements"]
         ],
     }
     if fault == "missing-conclusion":
-        assessment["conclusions"] = []
+        assessment["conclusions"] = assessment["conclusions"][:-1]
     if fault == "output-hash":
         packet["pre_review_checks"][0]["output_sha256"] = "0" * 64
 

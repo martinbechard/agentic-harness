@@ -54,7 +54,7 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
             "authorized": True,
             "item_id": request["item_id"],
             "expected_revision": request["expected_revision"],
-            "request_digest": sha256(
+            "operator_request_digest": sha256(
                 json.dumps(request, sort_keys=True, separators=(",", ":")).encode()
             ).hexdigest(),
             "previous_admission_digest": request["previous_admission_digest"],

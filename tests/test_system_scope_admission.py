@@ -125,6 +125,7 @@ def test_public_scope_amendment_reuses_provider_effect_and_native_execution(
             "allowed_paths": ["answer.txt", "expanded.txt"],
             "checks": [old_check, new_check],
         },
+        "review_requirements": None,
         "amended_content": amended,
     }
     request_path = tmp_path / "scope-amendment.json"

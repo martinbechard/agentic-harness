@@ -592,7 +592,11 @@ class Application:
 
     def scope_admission(self, item_id, *, current=None):
         """Read a fully linked admission without replacing historical assignment evidence."""
-        from .scope_admission import admission_receipts, effective_workflow
+        from .scope_admission import (
+            admission_receipts,
+            effective_workflow,
+            validate_decision_contract,
+        )
 
         chain = admission_receipts(self, item_id)
         if not chain:
@@ -659,16 +663,19 @@ class Application:
                 },
             )
             self.validate_invocation_result(receipt["decision"])
-            decision = self.result_json(receipt["decision"])
+            decision, _ = validate_decision_contract(self, value, receipt["decision"])
             require(
-                value.get("authority", {}).get("decision_digest") == digest(receipt["decision"])
-                and value["authority"].get("invocation_id")
-                == receipt["decision"].get("invocation_id")
-                and decision.get("operation") == "amend-content"
+                decision.get("operation") == "amend-content"
                 and decision.get("authorized") is True,
                 "Scope admission authority differs",
             )
-            expected = effective_workflow(self, value, previous, current)
+            expected = effective_workflow(
+                self,
+                value,
+                previous,
+                current,
+                retained_decision=receipt["decision"],
+            )
             require(receipt["workflow"] == expected, "Scope admission workflow differs")
             previous = receipt
         require(
@@ -961,7 +968,12 @@ class Application:
 
     async def _amend_scope(self, item_id, input_path):
         from .estimation import validate_preparation_invocation
-        from .scope_admission import validate_coverage, validate_request, validate_retained_usage
+        from .scope_admission import (
+            coverage_bindings,
+            validate_coverage,
+            validate_request,
+            validate_retained_usage,
+        )
 
         require(isinstance(self.provider, AgentProvider), "Scope amendment requires agent provider management")
         self.require_legacy_execution(item_id)
@@ -1006,9 +1018,14 @@ class Application:
             require(len(matches) == 1, "Scope amendment provider operation is absent or ambiguous")
             retained_record = matches[0]
         item = Item(**retained_record["item"]) if retained_record else self.provider.item(item_id)
-        request, workflow, previous_result, acceptance, scope_answer = validate_request(
-            self, item, supplied, Path(input_path), current
-        )
+        (
+            request,
+            workflow,
+            previous_result,
+            acceptance,
+            scope_answer,
+            added_review_requirements,
+        ) = validate_request(self, item, supplied, Path(input_path), current)
         request_digest = digest(request)
         request_path = self._stage_path(item_id, "scope-amendment-request-" + request_digest)
         if request_path.exists():
@@ -1025,21 +1042,33 @@ class Application:
             "original admission; the proposed scope below is current only if every preserved candidate "
             "change remains included and current configuration authorizes every path and command. Preserve "
             "all existing checks and all review, proof, design, approval, accounting and delivery gates. "
-            "Assess every requirement in the appended content. Return only JSON with operation "
-            "amend-content or assess, authorized boolean, item_id, expected_revision, request_digest, "
+            "Assess source acceptance in the appended provider content against the supplied eligible "
+            "coverage bindings. The additive review_requirements selection is authorized to change; "
+            "use its exact added requirement ids rather than hashing it. Provider transaction, source "
+            "history, and scope-admission publication are harness-enforced preconditions. Later duplicate "
+            "Abandoned disposition remains a Coordinator/provider lifecycle duty retained in authority "
+            "evidence; do not claim it complete or assign it to candidate source review. Return only JSON "
+            "with operation amend-content or assess, authorized boolean, item_id, expected_revision, "
+            "operator_request_digest, "
             "previous_admission_digest, candidate, scope, amended_content_sha256, remaining_high, reason, "
             "coverage_complete, unsupported_new_requirements, and requirements_coverage. remaining_high "
             "is a positive prospective estimate of remaining work; it cannot reset prior usage or the "
             "original ceiling. requirements_coverage is a nonempty list of {excerpt,kind,value}; excerpt "
-            "must occur in the appended bytes, kind is check with an exact selected argv or gate with the "
-            "canonical digest of one unchanged non-scope workflow value. If authority, capacity, coverage, "
+            "must occur in the appended bytes; kind is check with an exact selected argv, review_requirement "
+            "with an exact added requirement id, or gate with one supplied retained source-proof/design "
+            "digest. The operator_request_digest below is the precomputed digest of the operator input. It "
+            "is not the invocation envelope request_digest or any transport marker. If authority, capacity, coverage, "
             "scope or checks are insufficient, return assess/false and the exact blocker. When "
             "resolved_scope_answer is present, also echo question_digest and answer_digest and return "
             "question_disposition approve only when that exact answer resolves this amendment question.\n"
             + json.dumps(
                 {
                     "request": request,
+                    "operator_request_digest": request_digest,
                     "effective_workflow": workflow,
+                    "eligible_coverage_bindings": coverage_bindings(
+                        workflow, added_review_requirements
+                    ),
                     "usage": usage,
                     "previous_result_digest": digest(previous_result),
                     "acceptance_session": acceptance["session"],
@@ -1067,7 +1096,7 @@ class Application:
             "authorized": True,
             "item_id": item_id,
             "expected_revision": item.revision,
-            "request_digest": request_digest,
+            "operator_request_digest": request_digest,
             "previous_admission_digest": request["previous_admission_digest"],
             "candidate": request["candidate"],
             "scope": request["scope"],
@@ -1089,7 +1118,12 @@ class Application:
             and answer["reason"].strip(),
             "Scope amendment estimate exceeds retained authority",
         )
-        validate_coverage(answer, request["amended_content"][len(item.content) :], workflow)
+        validate_coverage(
+            answer,
+            request["amended_content"][len(item.content) :],
+            workflow,
+            added_review_requirements,
+        )
         approved = {
             **request,
             "remaining_estimate": remaining,
@@ -1107,9 +1141,14 @@ class Application:
             atomic_json(approved_path, approved, exclusive=True)
         latest = load_config(self.config_path)
         item = Item(**retained_record["item"]) if retained_record else self.provider.item(item_id)
-        reread, latest_workflow, _, latest_acceptance, latest_answer = validate_request(
-            self, item, request, Path(input_path), latest
-        )
+        (
+            reread,
+            latest_workflow,
+            _,
+            latest_acceptance,
+            latest_answer,
+            latest_added_reviews,
+        ) = validate_request(self, item, request, Path(input_path), latest)
         require(
             reread == request
             and latest.file_digest == current.file_digest
@@ -1117,7 +1156,11 @@ class Application:
             and latest_acceptance == acceptance,
             "Scope amendment authority changed before provider dispatch",
         )
-        require(latest_answer == scope_answer, "Scope amendment answer changed before dispatch")
+        require(
+            latest_answer == scope_answer
+            and latest_added_reviews == added_review_requirements,
+            "Scope amendment answer or review selection changed before dispatch",
+        )
         before = json.loads(self.provider.cache_path.read_text())
         manifest = retained_record["source_manifest"] if retained_record else self.provider.source_manifest()
         receipt = await self.invoke_provider_amendment(item, approved, decision, workflow)

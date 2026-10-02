@@ -26,6 +26,7 @@ _REQUEST_KEYS = {
     "scope_answer",
     "candidate",
     "scope",
+    "review_requirements",
     "amended_content",
 }
 
@@ -159,8 +160,102 @@ def _validate_scope(scope):
     return {"allowed_paths": paths, "checks": checks}
 
 
-def effective_workflow(app, request, previous, current):
-    """Apply only the admitted path/check change while retaining every other gate."""
+def _review_extension(prior, proposed, provider_path, amended_content):
+    """Permit only an additive review selection for the deterministic amended revision."""
+    prior_review = prior.get("review_requirements")
+    if prior_review is None:
+        require(proposed is None, "Scope amendment invents a source-review route")
+        return None, []
+    require(isinstance(proposed, dict), "Scope amendment review selection is missing")
+    from .contracts import ConfigError, validate_review_requirements
+
+    try:
+        validate_review_requirements(proposed)
+    except ConfigError as exc:
+        raise TransitionBlocked(str(exc)) from exc
+    expected_revision = sha256(
+        provider_path.encode() + b"\0" + amended_content.encode()
+    ).hexdigest()
+    require(
+        proposed.get("provider_revision") == expected_revision,
+        "Scope amendment review revision differs from amended content",
+    )
+    for key, value in prior_review.items():
+        if key not in {"provider_revision", "requirements"}:
+            require(proposed.get(key) == value, "Scope amendment changed review lineage")
+    require(
+        set(proposed) == set(prior_review),
+        "Scope amendment changed review selection shape",
+    )
+    retained = prior_review["requirements"]
+    selected = proposed["requirements"]
+    require(
+        len(selected) > len(retained) and selected[: len(retained)] == retained,
+        "Scope amendment must append source-review requirements",
+    )
+    return plain(proposed), plain(selected[len(retained) :])
+
+
+def _retained_review_selection(app, request, prior, decision):
+    """Recognize the exact decision contract used by retained pre-extension admissions."""
+    _, current_shape = validate_decision_contract(app, request, decision)
+    require(not current_shape, "Retained scope admission review selection is missing")
+    return plain(prior.get("review_requirements"))
+
+
+def validate_decision_contract(app, request, decision):
+    """Bind a retained decision to its exact old or current operator input contract."""
+    require(isinstance(decision, dict), "Scope admission decision is missing")
+    operator_request = {
+        key: value for key, value in request.items() if key not in {"remaining_estimate", "authority"}
+    }
+    current_shape = set(operator_request) == _REQUEST_KEYS
+    legacy_shape = set(operator_request) == _REQUEST_KEYS - {"review_requirements"}
+    require(
+        current_shape or legacy_shape,
+        "Invalid retained scope amendment input fields",
+    )
+    require(
+        set(request) == set(operator_request) | {"remaining_estimate", "authority"},
+        "Invalid retained scope admission fields",
+    )
+    authority = request.get("authority")
+    _exact(
+        authority,
+        {
+            "operator_request_digest",
+            "decision_digest",
+            "invocation_id",
+            "scope_answer_digest",
+        },
+        "retained scope amendment authority",
+    )
+    operator_digest = digest(operator_request)
+    result = app.result_json(decision)
+    digest_field = "operator_request_digest" if current_shape else "request_digest"
+    require(
+        type(request["remaining_estimate"]) is int
+        and request["remaining_estimate"] > 0
+        and isinstance(decision.get("invocation_id"), str)
+        and bool(decision["invocation_id"])
+        and (
+            authority["scope_answer_digest"] is None
+            or (
+                isinstance(authority["scope_answer_digest"], str)
+                and _DIGEST.fullmatch(authority["scope_answer_digest"])
+            )
+        )
+        and result.get(digest_field) == operator_digest
+        and authority["operator_request_digest"] == operator_digest
+        and authority["decision_digest"] == digest(decision)
+        and authority["invocation_id"] == decision.get("invocation_id"),
+        "Retained scope admission decision contract differs",
+    )
+    return result, current_shape
+
+
+def effective_workflow(app, request, previous, current, *, retained_decision=None):
+    """Apply admitted scope and additive review changes while retaining every other gate."""
     from .estimation import configured_workflow, validate_preparation_scope
 
     frozen = json.loads(app._stage_path(request["item_id"], "assignment").read_text())["workflow"]
@@ -171,17 +266,45 @@ def effective_workflow(app, request, previous, current):
     configured_controls = {
         key: value
         for key, value in selected.items()
-        if key not in {"allowed_paths", "checks", "preparation"}
+        if key not in {"allowed_paths", "checks", "preparation", "review_requirements"}
+    }
+    frozen_controls = {
+        key: value
+        for key, value in frozen.items()
+        if key
+        not in {"allowed_paths", "checks", "preparation_evidence", "review_requirements"}
     }
     prior_controls = {
         key: value
         for key, value in prior.items()
-        if key not in {"allowed_paths", "checks", "preparation_evidence"}
+        if key
+        not in {"allowed_paths", "checks", "preparation_evidence", "review_requirements"}
     }
-    require(configured_controls == prior_controls, "Scope amendment changed workflow gates")
+    require(
+        configured_controls == frozen_controls == prior_controls,
+        "Scope amendment changed workflow gates",
+    )
+    require(
+        selected.get("review_requirements") == frozen.get("review_requirements"),
+        "Configured source-review selection changed after assignment",
+    )
     validate_preparation_scope(scope, selected, current)
+    provider_path = json.loads(
+        app._stage_path(request["item_id"], "assignment").read_text()
+    )["provider_path"]
+    if "review_requirements" in request:
+        review, _ = _review_extension(
+            prior,
+            request["review_requirements"],
+            provider_path,
+            request["amended_content"],
+        )
+    else:
+        review = _retained_review_selection(app, request, prior, retained_decision)
     result = plain(prior)
     result.update(scope)
+    if review is not None:
+        result["review_requirements"] = review
     return result
 
 
@@ -304,6 +427,11 @@ def validate_request(app, item: Item, supplied, input_path, current):
     require(request["item_id"] == item.item_id, "Scope amendment names another item")
     require(request["expected_revision"] == item.revision, "Scope amendment revision is stale")
     require(item.state == "Running", "Scope amendment requires Running work")
+    amended = request["amended_content"]
+    require(
+        isinstance(amended, str) and amended.startswith(item.content) and amended != item.content,
+        "Scope amendment must append to the exact current provider content",
+    )
     authority_sources = _validate_authority_sources(request, Path(input_path).resolve())
     chain = admission_receipts(app, item.item_id)
     previous = chain[-1] if chain else None
@@ -348,16 +476,39 @@ def validate_request(app, item: Item, supplied, input_path, current):
     candidate_repo = Path(root).resolve() / component(item.item_id)
     require((candidate_repo / ".git").is_dir(), "Scope amendment candidate is absent")
     workflow = effective_workflow(app, request, previous, current)
-    _validate_candidate(request["candidate"], candidate_repo, base, workflow["allowed_paths"])
-    amended = request["amended_content"]
-    require(
-        isinstance(amended, str) and amended.startswith(item.content) and amended != item.content,
-        "Scope amendment must append to the exact current provider content",
+    _, added_review_requirements = _review_extension(
+        previous["workflow"] if previous else json.loads(
+            app._stage_path(item.item_id, "assignment").read_text()
+        )["workflow"],
+        request["review_requirements"],
+        item.path,
+        request["amended_content"],
     )
-    return request, workflow, previous_result, acceptance, resolved_answer
+    _validate_candidate(request["candidate"], candidate_repo, base, workflow["allowed_paths"])
+    return (
+        request,
+        workflow,
+        previous_result,
+        acceptance,
+        resolved_answer,
+        added_review_requirements,
+    )
 
 
-def validate_coverage(result, appended, workflow):
+def coverage_bindings(workflow, added_review_requirements):
+    """Expose only candidate-facing evidence routes to the admission decision."""
+    return {
+        "checks": workflow["checks"],
+        "review_requirements": added_review_requirements,
+        "retained_gates": [
+            {"kind": key, "digest": digest(workflow[key])}
+            for key in ("proof_requirements", "design_review")
+            if workflow.get(key)
+        ],
+    }
+
+
+def validate_coverage(result, appended, workflow, added_review_requirements):
     require(
         result.get("coverage_complete") is True
         and result.get("unsupported_new_requirements") == [],
@@ -365,11 +516,10 @@ def validate_coverage(result, appended, workflow):
     )
     coverage = result.get("requirements_coverage")
     require(isinstance(coverage, list) and coverage, "Amended requirement evidence is missing")
-    gates = {
-        digest(value)
-        for key, value in workflow.items()
-        if key not in {"allowed_paths", "checks"}
-    }
+    bindings = coverage_bindings(workflow, added_review_requirements)
+    review_ids = {row["id"] for row in added_review_requirements}
+    gates = {row["digest"] for row in bindings["retained_gates"]}
+    covered_reviews = set()
     for row in coverage:
         _exact(row, {"excerpt", "kind", "value"}, "requirement coverage")
         require(
@@ -380,8 +530,15 @@ def validate_coverage(result, appended, workflow):
         )
         if row["kind"] == "check":
             require(row["value"] in workflow["checks"], "Requirement coverage check is unauthorized")
+        elif row["kind"] == "review_requirement":
+            require(row["value"] in review_ids, "Requirement coverage review differs")
+            covered_reviews.add(row["value"])
         else:
             require(row["kind"] == "gate" and row["value"] in gates, "Requirement coverage gate differs")
+    require(
+        covered_reviews == review_ids,
+        "Added source-review requirements lack amendment coverage",
+    )
 
 
 def validate_retained_usage(usage):

@@ -86,6 +86,44 @@ def _review_gate(value):
     return value
 
 
+def validate_review_requirements(value):
+    """Validate the one source-review selection shape used by config and admissions."""
+    review = _object(value, "review_requirements")
+    required = {"provider_revision", "preparation_digest", "requirements"}
+    correction = {"original_preparation_digest", "correction_resolution_digest"}
+    if set(review) - required - correction or not required <= set(review):
+        raise ConfigError("Review requirements need exact preparation binding and requirements")
+    present_correction = set(review) & correction
+    if present_correction and present_correction != correction:
+        raise ConfigError("Corrected review requirements need the complete preparation lineage")
+    for field in required - {"requirements"}:
+        _text(review.get(field), "review_requirements." + field)
+    for field in correction:
+        if field in review:
+            _text(review[field], "review_requirements." + field)
+    requirements = review["requirements"]
+    if not isinstance(requirements, list) or not requirements:
+        raise ConfigError("Review requirements must be nonempty")
+    identifiers, gates = set(), set()
+    for requirement in requirements:
+        if not isinstance(requirement, dict) or set(requirement) != {
+            "id",
+            "canonical_reference",
+            "acceptance_text",
+            "required_gate",
+        }:
+            raise ConfigError("Invalid explicit review requirement")
+        for field in ("id", "canonical_reference", "acceptance_text"):
+            _text(requirement[field], "review requirement " + field)
+        gate = _review_gate(requirement["required_gate"])
+        gate_digest = digest(gate)
+        if requirement["id"] in identifiers or gate_digest in gates:
+            raise ConfigError("Review requirement ids and required gates must be unique")
+        identifiers.add(requirement["id"])
+        gates.add(gate_digest)
+    return review
+
+
 def _path(value, label, *, directory=True):
     path = Path(_text(value, label))
     if not path.is_absolute() or not (path.is_dir() if directory else path.is_file()):
@@ -429,52 +467,7 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
                         )
                     identifiers.add(requirement["id"])
             if "review_requirements" in selected:
-                review = _object(selected["review_requirements"], "review_requirements")
-                required = {
-                    "provider_revision",
-                    "preparation_digest",
-                    "requirements",
-                }
-                correction = {
-                    "original_preparation_digest",
-                    "correction_resolution_digest",
-                }
-                if set(review) - required - correction or not required <= set(review):
-                    raise ConfigError(
-                        "Review requirements need exact preparation binding and requirements"
-                    )
-                present_correction = set(review) & correction
-                if present_correction and present_correction != correction:
-                    raise ConfigError(
-                        "Corrected review requirements need the complete preparation lineage"
-                    )
-                for field in required - {"requirements"}:
-                    _text(review.get(field), "review_requirements." + field)
-                for field in correction:
-                    if field in review:
-                        _text(review[field], "review_requirements." + field)
-                requirements = review["requirements"]
-                if not isinstance(requirements, list) or not requirements:
-                    raise ConfigError("Review requirements must be nonempty")
-                identifiers, gates = set(), set()
-                for requirement in requirements:
-                    if not isinstance(requirement, dict) or set(requirement) != {
-                        "id",
-                        "canonical_reference",
-                        "acceptance_text",
-                        "required_gate",
-                    }:
-                        raise ConfigError("Invalid explicit review requirement")
-                    for field in ("id", "canonical_reference", "acceptance_text"):
-                        _text(requirement[field], "review requirement " + field)
-                    gate = _review_gate(requirement["required_gate"])
-                    gate_digest = digest(gate)
-                    if requirement["id"] in identifiers or gate_digest in gates:
-                        raise ConfigError(
-                            "Review requirement ids and required gates must be unique"
-                        )
-                    identifiers.add(requirement["id"])
-                    gates.add(gate_digest)
+                validate_review_requirements(selected["review_requirements"])
             if selected.get("engine", "legacy") not in {"legacy", "langgraph"}:
                 raise ConfigError("Item workflow engine must be legacy or langgraph")
             if not isinstance(selected.get("allowed_paths"), list) or not selected["allowed_paths"]:
