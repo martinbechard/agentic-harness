@@ -58,6 +58,13 @@ class Application:
         self.trace_cache = {}
 
     @staticmethod
+    def _provider_invocation_snapshot(snapshot):
+        """Bind provider-purpose calls to the authoritative repository workspace."""
+        data = plain(snapshot.data)
+        data["workspace"] = str(snapshot.repository)
+        return replace(snapshot, data=freeze(data))
+
+    @staticmethod
     def provider_observer_digest(current):
         from .provider_observation import (
             PROVIDER_OBSERVATION_SCHEMA,
@@ -825,15 +832,26 @@ class Application:
             self.validate_invocation_result(outcome)
             value = self.result_json(outcome)
             if item.state == "Ready":
-                from .estimation import validate_preparation_invocation
+                from .estimation import (
+                    configured_workflow,
+                    effective_preparation_decision,
+                    validate_preparation_invocation,
+                )
 
                 prepared = json.loads(self._stage_path(item.item_id, "preparation").read_text())
+                effective = effective_preparation_decision(
+                    self,
+                    item.item_id,
+                    prepared,
+                    configured_workflow(self.config, item.item_id),
+                    self.config,
+                )
                 validate_preparation_invocation(
                     outcome, prepared["invocation_config_digest"], self.root
                 )
                 require(
                     prepared["item"] == asdict(item)
-                    and prepared["decision"] == outcome
+                    and effective == outcome
                     and outcome.get("role") == "coordinator"
                     and value.get("item_id") == item.item_id
                     and value.get("provider_revision") == item.revision
@@ -1522,9 +1540,7 @@ class Application:
             verify_design_acceptance(self, item_id)
 
         if purpose == "provider":
-            data = plain(snapshot.data)
-            data["workspace"] = str(snapshot.repository)
-            snapshot = replace(snapshot, data=freeze(data))
+            snapshot = self._provider_invocation_snapshot(snapshot)
         elif "candidate_root" in snapshot.data:
             data = plain(snapshot.data)
             data["workspace"] = str(self.candidate_repository(item_id))
@@ -2954,9 +2970,7 @@ class Application:
                 "Provider observation native session identity differs",
             )
             observer = self.provider_observer_digest(snapshot)
-            provider_data = plain(snapshot.data)
-            provider_data["workspace"] = str(snapshot.repository)
-            binding = replace(snapshot, data=freeze(provider_data)).binding("coordinator")
+            binding = self._provider_invocation_snapshot(snapshot).binding("coordinator")
             previous_binding = AgentBinding(**prior["binding"])
             require(
                 resume_binding_compatible(previous_binding, binding),

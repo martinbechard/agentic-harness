@@ -16,6 +16,40 @@ def legacy_dispatch(*args):
 
 
 def dispatch(prompt, cwd, native_home, argv, session_id):
+    if "Correct one retained preparation response representation" in prompt:
+        from backlog_harness.contracts import digest
+
+        original = json.loads(prompt.split("Immutable original response envelope: ", 1)[1])
+        value = json.loads(original["text"])
+        workflow = value["workflow"]
+        gates = workflow.pop("gates")
+        supplied = json.loads(os.environ["PREPARATION_CLASSIFICATIONS"])
+        classifications = []
+        constraints = list(workflow.get("implementation_constraints", []))
+        required = list(workflow.get("required_gates", []))
+        for index, (gate, row) in enumerate(zip(gates, supplied, strict=True)):
+            destination = row["destination"]
+            classifications.append(
+                {
+                    "index": index,
+                    "text": gate,
+                    "destination": destination,
+                    "runtime_obligation": row.get("runtime_obligation"),
+                    "no_additional_proof": destination == "implementation_constraints",
+                    "rationale": row["rationale"],
+                }
+            )
+            (constraints if destination == "implementation_constraints" else required).append(gate)
+        if constraints:
+            workflow["implementation_constraints"] = constraints
+        if required:
+            workflow["required_gates"] = required
+        value["preparation_correction"] = {
+            "original_decision_digest": digest(original),
+            "schema_error": "Preparation contains unsupported workflow fields: gates",
+            "classifications": classifications,
+        }
+        return value
     if "Prepare this selected canonical Ready item" in prompt:
         item = json.JSONDecoder().raw_decode(prompt.split("Canonical item: ", 1)[1])[0]
         config = json.loads(Path(os.environ["PREPARATION_FIXTURE"]).read_text())

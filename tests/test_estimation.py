@@ -856,6 +856,354 @@ def test_preparation_metadata_invalid_fields_block(field, value):
         )
 
 
+@pytest.mark.parametrize(
+    "fault,match",
+    [
+        (None, None),
+        ("missing", "classify every original gates entry"),
+        ("duplicate", "classify every original gates entry"),
+        ("text", "classification differs from original gates"),
+        ("obligation", "unsupported runtime obligation"),
+        ("attestation", "no additional proof"),
+        ("demote", "existing required_gates changed"),
+        ("path", "changed preparation authority"),
+        ("estimate", "changed preparation authority"),
+    ],
+)
+def test_preparation_correction_is_representation_only(fault, match):
+    from copy import deepcopy
+
+    from backlog_harness.estimation import validate_preparation_correction
+
+    gates = [
+        "Reserve and accept the item before implementation.",
+        "Obtain fresh browser proof before delivery.",
+    ]
+    original = {
+        "item_id": "one",
+        "provider_revision": "revision",
+        "workflow": {
+            "allowed_paths": ["answer.py"],
+            "checks": [["git", "diff", "--check"]],
+            "gates": gates,
+            "required_gates": ["Preserve an existing explicit proof gate."],
+        },
+        "historical_original_high": None,
+        "historical_usage": "unknown",
+        "prospective_high": 1000,
+        "estimate": {"kind": "prospective_pre_execution", "generated_tokens": {"high": 1000}},
+        "authority_evidence": [{"path": "PROJECT.yaml", "sha256": "a" * 64, "reason": "Policy"}],
+    }
+    error = "Preparation contains unsupported workflow fields: gates"
+    corrected = deepcopy(original)
+    corrected["workflow"].pop("gates")
+    corrected["workflow"]["implementation_constraints"] = [gates[0]]
+    corrected["workflow"]["required_gates"] = [
+        "Preserve an existing explicit proof gate.",
+        gates[1],
+    ]
+    corrected["preparation_correction"] = {
+        "original_decision_digest": "original-digest",
+        "schema_error": error,
+        "classifications": [
+            {
+                "index": 0,
+                "text": gates[0],
+                "destination": "implementation_constraints",
+                "runtime_obligation": "reservation_acceptance",
+                "no_additional_proof": True,
+                "rationale": "The normal admission transitions already enforce this obligation.",
+            },
+            {
+                "index": 1,
+                "text": gates[1],
+                "destination": "required_gates",
+                "runtime_obligation": None,
+                "no_additional_proof": False,
+                "rationale": "The configured workflow has no browser-proof selection.",
+            },
+        ],
+    }
+    if fault == "missing":
+        corrected["preparation_correction"]["classifications"].pop()
+    elif fault == "duplicate":
+        corrected["preparation_correction"]["classifications"][1]["index"] = 0
+    elif fault == "text":
+        corrected["preparation_correction"]["classifications"][0]["text"] = "Changed"
+    elif fault == "obligation":
+        corrected["preparation_correction"]["classifications"][0]["runtime_obligation"] = (
+            "browser_proof"
+        )
+    elif fault == "attestation":
+        corrected["preparation_correction"]["classifications"][0]["no_additional_proof"] = False
+    elif fault == "demote":
+        corrected["workflow"]["required_gates"].pop(0)
+    elif fault == "path":
+        corrected["workflow"]["allowed_paths"] = ["other.py"]
+    elif fault == "estimate":
+        corrected["prospective_high"] = 2000
+    if fault:
+        with pytest.raises(TransitionBlocked, match=match):
+            validate_preparation_correction(
+                original,
+                corrected,
+                "original-digest",
+                error,
+                {"reservation_acceptance"},
+            )
+    else:
+        validate_preparation_correction(
+            original,
+            corrected,
+            "original-digest",
+            error,
+            {"reservation_acceptance"},
+        )
+
+
+@pytest.mark.parametrize("correction_fault", [None, "unsupported-obligation"])
+@pytest.mark.parametrize("coordinator_permission", ["read", "workspace-write"])
+def test_prepare_item_retains_and_replays_one_linked_contract_correction(
+    config_file, monkeypatch, correction_fault, coordinator_permission
+):
+    import asyncio
+    from copy import deepcopy
+    from hashlib import sha256
+
+    from backlog_harness.estimation import prepare_item
+
+    config, data = config_file
+    repository = config.parent / "project"
+    (repository / "PROJECT.yaml").write_text("workflow_selection: {}\n")
+    (repository / "answer.py").write_text("answer = 1\n")
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": data["workflow"]["checks"],
+    }
+    data["profiles"]["control"]["permissions"] = [coordinator_permission]
+    if coordinator_permission == "workspace-write":
+        data["provider_interaction"] = "agent"
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    item = Item("one", "one.md", "revision", "Ready", None, 100, "Canonical requirements")
+    error = "Preparation contains unsupported workflow fields: gates"
+    gate = "Reserve and accept the item before implementation."
+    original_value = {
+        "item_id": item.item_id,
+        "provider_revision": item.revision,
+        "workflow": {
+            "allowed_paths": ["answer.py"],
+            "checks": data["workflow"]["checks"],
+            "gates": [gate],
+        },
+        "historical_original_high": None,
+        "historical_usage": "unknown",
+        "prospective_high": 1000,
+        "estimate": {"kind": "prospective_pre_execution", "generated_tokens": {"high": 1000}},
+        "authority_evidence": [
+            {
+                "path": "PROJECT.yaml",
+                "sha256": sha256((repository / "PROJECT.yaml").read_bytes()).hexdigest(),
+                "reason": "Project policy",
+            }
+        ],
+    }
+    calls = []
+
+    def result(stage, value):
+        path = app.root / (stage + "-native")
+        envelope = {
+            "role": "coordinator",
+            "invocation_id": stage,
+            "request_digest": stage + "-request",
+            "binding": asdict(app._provider_invocation_snapshot(app.config).binding("coordinator")),
+            "evidence_path": str(path),
+            "outcome": "returned",
+            "text": json.dumps(value),
+        }
+        atomic_json(
+            path / "intent.json",
+            {
+                "invocation_id": envelope["invocation_id"],
+                "request_digest": envelope["request_digest"],
+                "binding": envelope["binding"],
+                "config_digest": app.config.file_digest,
+            },
+        )
+        return envelope
+
+    original = result("prepare", original_value)
+    corrected_value = deepcopy(original_value)
+    corrected_value["workflow"].pop("gates")
+    corrected_value["workflow"]["implementation_constraints"] = [gate]
+    corrected_value["preparation_correction"] = {
+        "original_decision_digest": digest(original),
+        "schema_error": error,
+        "classifications": [
+            {
+                "index": 0,
+                "text": gate,
+                "destination": "implementation_constraints",
+                "runtime_obligation": "reservation_acceptance",
+                "no_additional_proof": True,
+                "rationale": "The normal admission transitions already enforce this obligation.",
+            }
+        ],
+    }
+    if correction_fault == "unsupported-obligation":
+        corrected_value["preparation_correction"]["classifications"][0]["runtime_obligation"] = (
+            "browser_proof"
+        )
+    corrected = result("preparation-contract-correction", corrected_value)
+
+    async def invoke(item_id, stage, role, prompt, **kwargs):
+        assert item_id == item.item_id
+        assert role == "coordinator"
+        assert kwargs["purpose"] == "provider"
+        if stage == "prepare":
+            calls.append(stage)
+            return original
+        assert stage == "preparation-contract-correction"
+        assert kwargs["read_only"] is True
+        assert error in prompt
+        assert item.content in prompt
+        assert json.dumps(original, sort_keys=True) in prompt
+        retained = app._stage_path(item_id, stage)
+        if retained.exists():
+            return json.loads(retained.read_text())
+        calls.append(stage)
+        atomic_json(retained, corrected, exclusive=True)
+        return corrected
+
+    monkeypatch.setattr(app, "invoke", invoke)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(app, "validate_call_limits", lambda *_: None)
+    if correction_fault:
+        for _ in range(2):
+            with pytest.raises(TransitionBlocked, match="unsupported runtime obligation"):
+                asyncio.run(prepare_item(app, item))
+        assert calls == ["prepare", "preparation-contract-correction"]
+        assert not app._stage_path(item.item_id, "preparation-contract-resolution").exists()
+        assert not app._stage_path(item.item_id, "estimate-input").exists()
+        return
+    assert asyncio.run(prepare_item(app, item)) == item
+    preparation = app._stage_path(item.item_id, "preparation")
+    original_bytes = preparation.read_bytes()
+    resolution = json.loads(
+        app._stage_path(item.item_id, "preparation-contract-resolution").read_text()
+    )
+    assert resolution["original_decision_digest"] == digest(original)
+    assert resolution["corrected_decision_digest"] == digest(corrected)
+    workflow = app.item_workflow(item.item_id)
+    assert workflow["preparation_evidence"]["metadata"]["implementation_constraints"] == [gate]
+    assert workflow["preparation_evidence"]["original_decision_digest"] == digest(original)
+    assert asyncio.run(prepare_item(app, item)) == item
+    assert calls == ["prepare", "preparation-contract-correction"]
+    assert preparation.read_bytes() == original_bytes
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "identity",
+        "refusal",
+        "path",
+        "check",
+        "missing-authority",
+        "stale-authority",
+        "tampered-authority",
+        "config",
+        "binding",
+    ],
+)
+def test_preparation_authority_failures_do_not_invoke_contract_correction(
+    config_file, monkeypatch, fault
+):
+    import asyncio
+    from hashlib import sha256
+
+    from backlog_harness.estimation import configured_workflow, prepare_item
+
+    config, data = config_file
+    repository = config.parent / "project"
+    (repository / "PROJECT.yaml").write_text("workflow_selection: {}\n")
+    (repository / "answer.py").write_text("answer = 1\n")
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": data["workflow"]["checks"],
+    }
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    item = Item("one", "one.md", "revision", "Ready", None, 100, "Canonical requirements")
+    value = {
+        "item_id": "other" if fault == "identity" else item.item_id,
+        "provider_revision": item.revision,
+        "workflow": {
+            "allowed_paths": ["other.py"] if fault == "path" else ["answer.py"],
+            "checks": [["false"]] if fault == "check" else data["workflow"]["checks"],
+            "gates": ["Reserve and accept the item before implementation."],
+        },
+        "authority_evidence": [
+            {
+                "path": "PROJECT.yaml",
+                "sha256": sha256((repository / "PROJECT.yaml").read_bytes()).hexdigest(),
+                "reason": "Project policy",
+            }
+        ],
+    }
+    if fault == "refusal":
+        value["blocked"] = "Canonical authority is unresolved"
+    elif fault == "missing-authority":
+        value.pop("authority_evidence")
+    elif fault == "stale-authority":
+        value["authority_evidence"][0]["sha256"] = "0" * 64
+    elif fault == "tampered-authority":
+        value["authority_evidence"][0]["path"] = "missing-policy.md"
+    binding = asdict(app._provider_invocation_snapshot(app.config).binding("coordinator"))
+    if fault == "binding":
+        binding = {**binding, "permission_digest": "changed"}
+    decision = {
+        "role": "coordinator",
+        "invocation_id": "prepare",
+        "request_digest": "prepare-request",
+        "binding": binding,
+        "evidence_path": str(app.root / "prepare-native"),
+        "outcome": "returned",
+        "text": json.dumps(value),
+    }
+    atomic_json(
+        app.root / "prepare-native/intent.json",
+        {
+            "invocation_id": decision["invocation_id"],
+            "request_digest": decision["request_digest"],
+            "binding": decision["binding"],
+            "config_digest": app.config.file_digest,
+        },
+    )
+    if fault == "config":
+        data["poll_seconds"] = 2
+        config.write_text(yaml.safe_dump(data))
+    atomic_json(
+        app._stage_path(item.item_id, "preparation"),
+        {
+            "item": asdict(item),
+            "decision": decision,
+            "workflow_config_digest": digest(configured_workflow(app.config, item.item_id)),
+            "invocation_config_digest": app.config.file_digest,
+        },
+    )
+
+    async def no_invocation(*_args, **_kwargs):
+        raise AssertionError("authority failures must not invoke correction")
+
+    monkeypatch.setattr(app, "invoke", no_invocation)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    with pytest.raises(TransitionBlocked):
+        asyncio.run(prepare_item(app, item))
+    assert not app._stage_path(item.item_id, "preparation-contract-correction").exists()
+    assert not app._stage_path(item.item_id, "estimate-input").exists()
+
+
 @pytest.mark.parametrize("fault", [None, "revision", "decision", "old_checks", "old_scope"])
 @pytest.mark.parametrize("selection", ["proof", "design", "both"])
 def test_explicit_selection_preserves_frozen_preparation(

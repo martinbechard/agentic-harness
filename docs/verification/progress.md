@@ -168,3 +168,27 @@ They cover canonical allow/deny evidence, operational output and alias rejection
 invalid-policy repair, changed inventory rejection, invocation reuse and capability
 drift. Live backlog resumption and installed verification are recorded separately
 from these source-level results.
+
+## Preparation Contract Correction
+
+The a46 preparation prompt states the closed workflow schema. A retained response
+with only an unsupported nonempty `gates` string list can receive one read-only
+representation correction. Indexed classification preserves every obligation and
+existing required gates; additional proof stays blocking. The original preparation
+and invocation remain immutable, with a separate validated correction resolution.
+
+Before calling the Coordinator, the harness validates the exact item, configuration,
+effective provider binding, scope, checks and authority source hashes. The binding
+uses the same repository workspace transformation as provider invocation and recovery.
+Write-capable management profiles remain supported while this invocation is read-only.
+
+Final source verification passed all 88 estimation tests. Independent review accepted
+the final candidate after 18 focused correction/preflight tests and 22 provider
+observation/recovery tests. Installed testing exposed and corrected both a profile
+permission mismatch and a provider-workspace binding mismatch. The final two affected
+installed scenarios passed: ordinary obligations permit completion and replay without
+another correction call; additional proof stops before provider advancement. Three
+existing installed metadata scenarios passed before these binding-only corrections.
+Original live preparation records remain byte-identical. Detailed package and test
+evidence is retained under `.agent-ops/preparation-contract-a46`; live backlog delivery
+remains a separate acceptance result.
