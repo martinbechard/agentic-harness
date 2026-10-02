@@ -1,233 +1,155 @@
-"""Installed terminal entry point. Inspection and validation make no model calls."""
+"""Foreground harness with human pause/resume controls."""
 
 import argparse
 import asyncio
 import json
+import queue
 import sys
-from dataclasses import asdict
+import threading
+import time
+import uuid
 from pathlib import Path
 
-from . import __version__
-from .contracts import load_config, load_control_config
+import yaml
+
+from .engine import Harness
+from .process import Agents
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(prog="agentic-harness")
-    parser.add_argument("--version", action="version", version=__version__)
-    parser.add_argument("--config", type=Path, required=True)
-    commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("validate")
-    commands.add_parser("status")
-    commands.add_parser("app")
-    commands.add_parser("reconcile")
-    commands.add_parser("refresh-provider")
-    reassess = commands.add_parser("reassess-policy")
-    reassess.add_argument("--observation", type=Path)
-    batch = commands.add_parser("run")
-    modes = batch.add_mutually_exclusive_group(required=True)
-    modes.add_argument("--until-terminal", action="store_true")
-    modes.add_argument("--watch", action="store_true")
-    review = commands.add_parser("review-hold")
-    review.add_argument("item_id")
-    review.add_argument("--ceiling", type=float)
-    review.add_argument("--reference")
-    submit_answer = commands.add_parser("answer")
-    submit_answer.add_argument("item_id")
-    submit_answer.add_argument("--question-id", required=True)
-    submit_answer.add_argument("--revision", required=True)
-    submit_answer.add_argument("--text", required=True)
-    answer = commands.add_parser("resume-answer")
-    answer.add_argument("item_id")
-    recover = commands.add_parser("recover-provider")
-    recover.add_argument("operation_id")
-    effect = commands.add_parser("reconcile-provider-effect")
-    effect.add_argument("operation_id")
-    effect.add_argument("--evidence", type=Path, required=True)
-    followup = commands.add_parser("continue-work")
-    followup.add_argument("item_id")
-    followup.add_argument("--instruction", type=Path, required=True)
-    proof_followup = commands.add_parser("continue-proof")
-    proof_followup.add_argument("item_id")
-    proof_followup.add_argument("--instruction", type=Path, required=True)
-    integration = commands.add_parser("reconcile-integration")
-    integration.add_argument("item_id")
-    integration.add_argument("--instruction", type=Path, required=True)
-    integration.add_argument("--amendment", type=Path)
-    deliver = commands.add_parser("authorize-delivery")
-    deliver.add_argument("item_id")
-    deliver.add_argument("--authorization", type=Path, required=True)
-    proof = commands.add_parser("run-proof")
-    proof.add_argument("item_id")
-    proof.add_argument("--instruction", type=Path, required=True)
-    proof.add_argument("--prepare-only", action="store_true")
-    recover_item = commands.add_parser("recover-item")
-    recover_item.add_argument("item_id")
-    recover_item.add_argument("--evidence", type=Path, required=True)
-    stopped = commands.add_parser("reconcile-stopped-owner")
-    stopped.add_argument("item_id")
-    stopped.add_argument("--evidence", type=Path, required=True)
-    estimate = commands.add_parser("record-estimate")
-    estimate.add_argument("item_id")
-    estimate.add_argument("--decision", type=Path, required=True)
-    defer_item = commands.add_parser("defer-item")
-    defer_item.add_argument("item_id")
-    defer_item.add_argument("--question", type=Path, required=True)
-    amend_scope = commands.add_parser("amend-scope")
-    amend_scope.add_argument("item_id")
-    amend_scope.add_argument("--input", type=Path, required=True)
-    resume_observation = commands.add_parser("resume-provider-observation")
-    resume_observation.add_argument("operation_id")
-    resume_observation.add_argument("native_session_id")
-    dashboard = commands.add_parser("dashboard")
-    dashboard.add_argument("--port", type=int, default=8767)
-    run = commands.add_parser("run-item")
-    run.add_argument("item_id")
-    args = parser.parse_args(argv)
-    try:
-        control_only = args.command in {
-            "status",
-            "dashboard",
-            "app",
-            "reconcile",
-            "recover-provider",
-        }
-        config = (load_control_config if control_only else load_config)(args.config)
-        if args.command == "validate":
-            result = {
-                "valid": True,
-                "config_digest": config.file_digest,
-                "bindings": {r: asdict(config.binding(r)) for r in config.data["agents"]},
-            }
-        elif args.command in ("status", "dashboard"):
-            from .application import Application
-            from .projections import snapshot
+class Events:
+    """Write every activity to the console, JSONL log, and OTLP JSON log export."""
 
-            app = Application(args.config, control_only=True)
-            if args.command == "dashboard":
-                from .dashboard import create_dashboard_server
+    def __init__(self, root):
+        self.root = Path(root)
+        self.root.mkdir(parents=True, exist_ok=True)
+        self.run = uuid.uuid4().hex
 
-                with create_dashboard_server(lambda: snapshot(app), port=args.port) as server:
-                    print(f"Read-only dashboard: http://127.0.0.1:{server.server_port}", flush=True)
-                    server.serve_forever()
-                return 0
-            result = snapshot(app)
-        elif args.command == "run-item":
-            from .application import Application
-
-            result = asyncio.run(Application(args.config).run_item(args.item_id))
-        else:
-            from .application import Application
-
-            app = Application(args.config, control_only=control_only)
-            if args.command in {
-                "resume-answer",
-                "continue-work",
-                "continue-proof",
-                "run-proof",
-                "recover-item",
-                "authorize-delivery",
-                "reconcile-integration",
-                "reconcile-stopped-owner",
-                "amend-scope",
-            }:
-                app.require_legacy_execution(args.item_id)
-            if args.command == "reconcile":
-                result = app.reconcile()
-            elif args.command == "reassess-policy":
-                result = asyncio.run(app.reassess_policy(args.observation))
-            elif args.command == "refresh-provider":
-                from .provider import AgentProvider, TransitionBlocked
-
-                if not isinstance(app.provider, AgentProvider):
-                    raise TransitionBlocked("refresh-provider requires provider_interaction: agent")
-                asyncio.run(app.refresh_provider())
-                observed = app.provider.observation()
-                result = {
-                    "source_revision": observed["source_revision"],
-                    "invocation_id": observed["invocation_id"],
-                    "item_count": len(observed["items"]),
-                    "policy": observed["policy"],
+    def __call__(self, event, **fields):
+        timestamp = time.time_ns()
+        entry = {"event": event, "run": self.run, **fields}
+        line = json.dumps(entry)
+        print(line, flush=True)
+        with (self.root / "activities.jsonl").open("a") as stream:
+            stream.write(json.dumps({"timeUnixNano": str(timestamp), **entry}) + "\n")
+        export = {
+            "resourceLogs": [
+                {
+                    "resource": {
+                        "attributes": [
+                            {"key": "service.name", "value": {"stringValue": "agentic-harness"}}
+                        ]
+                    },
+                    "scopeLogs": [
+                        {
+                            "scope": {"name": "backlog_harness"},
+                            "logRecords": [
+                                {
+                                    "timeUnixNano": str(timestamp),
+                                    "severityNumber": 9,
+                                    "severityText": "INFO",
+                                    "body": {"stringValue": line},
+                                }
+                            ],
+                        }
+                    ],
                 }
-            elif args.command == "reconcile-integration":
-                result = asyncio.run(app.reconcile_integration(args.item_id, args.instruction, args.amendment))
-            elif args.command == "authorize-delivery":
-                from .recovery_flow import authorize_retained_delivery
+            ]
+        }
+        with (self.root / "otel.jsonl").open("a") as stream:
+            stream.write(json.dumps(export) + "\n")
 
-                result = asyncio.run(
-                    authorize_retained_delivery(app, args.item_id, args.authorization)
-                )
-            elif args.command == "answer":
-                result = asyncio.run(
-                    app.answer(args.item_id, args.question_id, args.revision, args.text)
-                )
-            elif args.command == "resume-answer":
-                result = asyncio.run(app.resume_answer(args.item_id))
-            elif args.command == "recover-provider":
-                result = app.recover_provider(args.operation_id)
-            elif args.command == "reconcile-provider-effect":
-                from .recovery_flow import reconcile_starting_effect
 
-                result = reconcile_starting_effect(app, args.operation_id, args.evidence)
-            elif args.command == "continue-work":
-                from .recovery_flow import register_work_continuation
+def load_config(path):
+    config = yaml.safe_load(path.read_text())
+    allowed = {"project", "state", "access", "development", "merge", "access_timeout", "scheduling"}
+    if not isinstance(config, dict) or set(config) - allowed:
+        raise ValueError(
+            "Configuration must contain only project, state, agent commands, and timing settings"
+        )
+    for key in ("project", "state"):
+        value = config.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{key} must be a directory path")
+        expanded = Path(value).expanduser()
+        config[key] = str((path.parent / expanded).resolve())
+    if not Path(config["project"]).is_dir():
+        raise ValueError("project directory does not exist")
+    for role in ("access", "development", "merge"):
+        command = config.get(role)
+        if (
+            not isinstance(command, list)
+            or not command
+            or not all(isinstance(arg, str) and arg for arg in command)
+        ):
+            raise ValueError(f"{role} must be a nonempty command argument list")
+    duration = config.get("access_timeout", 120)
+    if type(duration) not in (int, float) or not 0 < duration < float("inf"):
+        raise ValueError("access_timeout must be positive and finite")
+    scheduling = config.get("scheduling", {})
+    if not isinstance(scheduling, dict) or set(scheduling) - {
+        "capacity",
+        "timeout",
+        "poll_interval",
+        "merge_interval",
+        "merge_timeout",
+    }:
+        raise ValueError("Unknown scheduling setting")
+    return config
 
-                result = register_work_continuation(app, args.item_id, args.instruction)
-            elif args.command == "continue-proof":
-                from .recovery_flow import register_proof_continuation
 
-                result = register_proof_continuation(app, args.item_id, args.instruction)
-            elif args.command == "run-proof":
-                from .recovery_flow import run_artifact_proof
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", required=True, type=Path)
+    parser.add_argument("--epic")
+    args = parser.parse_args()
+    try:
+        config = load_config(args.config)
+        events = Events(config["state"])
+        agents = Agents(config, events)
+        harness = Harness(
+            agents,
+            agents.deliver,
+            agents.integrate,
+            events,
+            epic=args.epic,
+            **config.get("scheduling", {}),
+        )
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        parser.error(str(exc))
+    controls = queue.Queue()
 
-                result = asyncio.run(
-                    run_artifact_proof(
-                        app, args.item_id, args.instruction, prepare_only=args.prepare_only
-                    )
-                )
-            elif args.command == "recover-item":
-                from .recovery_flow import recover_item
+    def read_controls():
+        for line in sys.stdin:
+            controls.put(line.strip())
 
-                result = asyncio.run(recover_item(app, args.item_id, args.evidence))
-            elif args.command == "reconcile-stopped-owner":
-                from .recovery_flow import reconcile_stopped_owner
+    threading.Thread(target=read_controls, daemon=True).start()
+    events("started", instruction="Human user: enter pause or resume; Ctrl-C exits")
 
-                result = asyncio.run(reconcile_stopped_owner(app, args.item_id, args.evidence))
-            elif args.command == "record-estimate":
-                from .estimation import record_estimate
+    async def run():
+        async def control_loop():
+            while True:
+                while not controls.empty():
+                    command = controls.get_nowait()
+                    if command == "pause":
+                        harness.pause()
+                    elif command == "resume":
+                        harness.resume()
+                    else:
+                        events("unknown_control", instruction="Human user: enter pause or resume")
+                await asyncio.sleep(0.05)
 
-                result = asyncio.run(record_estimate(app, args.item_id, args.decision))
-            elif args.command == "defer-item":
-                from .recovery_flow import defer_item
+        controller = asyncio.create_task(control_loop())
+        try:
+            await harness.run()
+        finally:
+            controller.cancel()
+            await asyncio.gather(controller, return_exceptions=True)
 
-                result = asyncio.run(defer_item(app, args.item_id, args.question))
-            elif args.command == "amend-scope":
-                result = asyncio.run(app.amend_scope(args.item_id, args.input))
-            elif args.command == "resume-provider-observation":
-                result = asyncio.run(
-                    app.resume_provider_observation(args.operation_id, args.native_session_id)
-                )
-            elif args.command == "review-hold":
-                result = asyncio.run(
-                    app.review_hold(
-                        args.item_id, requested_ceiling=args.ceiling, reference=args.reference
-                    )
-                )
-            elif args.command == "app":
-                from .terminal import terminal
+    try:
+        asyncio.run(run())
+    except KeyboardInterrupt:
+        events("exiting")
 
-                return asyncio.run(terminal(app))
-            else:
-                from .coordination import RunController
 
-                result = asyncio.run(
-                    RunController(app, lambda value: print(json.dumps(value), flush=True)).run(
-                        "until-terminal" if args.until_terminal else "watch"
-                    )
-                )
-        print(json.dumps(result, indent=2))
-        if args.command == "run" and result.get("outcome") not in {"successful", "stopped"}:
-            return 2
-        return 0
-    except (ValueError, OSError, RuntimeError) as exc:
-        print(json.dumps({"error": str(exc)}), file=sys.stderr)
-        return 2
+if __name__ == "__main__":
+    main()

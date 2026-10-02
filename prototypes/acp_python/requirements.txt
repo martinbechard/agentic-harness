@@ -1,6 +1,0 @@
-agent-client-protocol==0.12.1
-langgraph==1.2.12
-langgraph-checkpoint-sqlite==3.1.1
-pytest==9.1.1
-pytest-asyncio==1.4.0
--e ../..

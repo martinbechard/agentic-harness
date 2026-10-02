@@ -6,3 +6,6 @@ __pycache__/
 dist/
 .agent-ops/
 *.egg-info/
+
+# Local generated outputs from retired prototypes; not runtime sources.
+/prototypes/

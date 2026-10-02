@@ -1,0 +1,284 @@
+"""Real subprocesses and Git worktrees in a separate, disposable test project."""
+
+import asyncio
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+from backlog_harness.cli import Events
+from backlog_harness.engine import Harness
+from backlog_harness.process import Agents
+
+FIXTURE = Path(__file__).parent / "fixtures" / "project_agent.py"
+
+
+def git(root, *args):
+    return subprocess.check_output(["git", "-C", str(root), *args], text=True).strip()
+
+
+@pytest.fixture
+def project(tmp_path):
+    root = tmp_path / "project"
+    root.mkdir()
+    control = tmp_path / "control"
+    control.mkdir()
+    git(root, "init", "-b", "main")
+    git(root, "config", "user.email", "fixture@example.invalid")
+    git(root, "config", "user.name", "Harness test project")
+    (root / "fixture.json").write_text(json.dumps({"main": str(root), "control": str(control)}))
+    (root / "check.py").write_text(
+        "from pathlib import Path\n"
+        "assert all(p.read_text() == 'verified' for p in Path('products').glob('*.txt'))\n"
+    )
+    (root / "README.md").write_text("Separate disposable harness test project.\n")
+    (root / "backlog" / "ready").mkdir(parents=True)
+    git(root, "add", ".")
+    git(root, "commit", "-m", "Create separate test project")
+    config = {
+        "project": str(root),
+        "state": str(tmp_path / "state"),
+        **{
+            role: [sys.executable, str(FIXTURE.resolve())]
+            for role in ("access", "development", "merge")
+        },
+        "access_timeout": 3,
+    }
+    return root, control, config
+
+
+def add(root, identity, **fields):
+    path = root / "backlog" / "ready" / f"{identity}.json"
+    path.write_text(json.dumps({"id": identity, "status": "ready", **fields}))
+    git(root, "add", ".")
+    git(root, "commit", "-m", f"Create {identity}")
+
+
+async def until(predicate, timeout=10):
+    async def poll():
+        while not predicate():
+            await asyncio.sleep(0.01)
+
+    await asyncio.wait_for(poll(), timeout)
+
+
+async def execute(config, predicate, **options):
+    events = Events(config["state"])
+    agents = Agents(config, events)
+    options.setdefault("timeout", 3)
+    harness = Harness(
+        agents,
+        agents.deliver,
+        agents.integrate,
+        events,
+        poll_interval=0.04,
+        merge_interval=0.1,
+        **options,
+    )
+    task = asyncio.create_task(harness.run())
+    try:
+        await until(lambda: predicate(harness) or task.done())
+        if task.done() or (harness.epic and harness.complete and not harness.active):
+            await asyncio.wait_for(task, 10)
+        assert predicate(harness)
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+    return harness
+
+
+def test_parallel_delivery_dependencies_defects_and_merge(project):
+    root, control, config = project
+    add(root, "a", epic="release", mode="blocking_defect", commit_delay=0.25)
+    add(root, "b", epic="release", dependencies=["a"])
+    add(root, "outside", mode="unrelated_defect")
+
+    async def scenario():
+        h = await execute(config, lambda h: h.complete and not h.active, epic="release", capacity=2)
+        assert h.complete
+
+    asyncio.run(scenario())
+    assert (root / "backlog/completed/a.json").exists()
+    assert (root / "backlog/completed/b.json").exists()
+    assert (root / "backlog/completed/a-defect.json").exists()
+    # The unrelated item is published by its delivery merge; the harness can then select it.
+    assert list((root / "backlog").glob("*/outside-defect.json"))
+    entries = [
+        json.loads(line)
+        for line in (Path(config["state"]) / "activities.jsonl").read_text().splitlines()
+    ]
+    dispatched = [e["item"] for e in entries if e["event"] == "dispatched"]
+    assert dispatched[:2] == ["a", "outside"]
+    assert dispatched.count("a") == 1
+    assert dispatched.count("b") == 1
+    assert int((control / "a.attempts").read_text()) == 1
+    subprocess.run([sys.executable, str(root / "check.py")], cwd=root, check=True)
+
+
+@pytest.mark.parametrize("mode", ["interrupted", "restart", "transient"])
+def test_real_process_recovery_and_retry(project, mode):
+    root, control, config = project
+    add(root, "one", mode=mode)
+    asyncio.run(execute(config, lambda h: (root / "backlog/completed/one.json").exists()))
+    workspace = root.parent / "worktrees/one"
+    assert int((control / "one.attempts").read_text()) == 2
+    if mode != "transient":
+        assert (workspace / "unrelated.txt").read_text() == "preserve me"
+        assert git(workspace, "branch", "--show-current") == "item/one"
+    if mode == "interrupted":
+        assert (workspace / "partial.txt").read_text() == "resumed"
+    elif mode == "restart":
+        assert not (workspace / "partial.txt").exists()
+
+
+@pytest.mark.parametrize(
+    "mode,folder", [("failure", "holding"), ("user_action", "user-action-required")]
+)
+def test_nondelivery_status_stays_in_worktree_without_main_mutation(project, mode, folder):
+    root, control, config = project
+    add(root, "one", mode=mode)
+    workspace = root.parent / "worktrees/one"
+    target = workspace / "backlog" / folder / "one.json"
+    asyncio.run(execute(config, lambda h: target.exists() and not h.active))
+    assert (root / "backlog/ready/one.json").exists()
+    assert int((control / "one.attempts").read_text()) == 1
+    if mode == "user_action":
+        assert "Human user:" in json.loads(target.read_text())["question"]
+
+
+def test_failed_combined_tests_prevent_merge(project):
+    root, control, config = project
+    add(root, "one", mode="bad_merge")
+    before = git(root, "rev-parse", "HEAD")
+    asyncio.run(execute(config, lambda h: (control / "merge-rejected").exists()))
+    assert git(root, "rev-parse", "HEAD") == before
+    assert not (root / "products/one.txt").exists()
+    assert (root / "backlog/ready/one.json").exists()
+
+
+def test_actual_timeout_processes_are_reaped_before_hold(project):
+    root, _, config = project
+    add(root, "one", mode="timeout")
+    target = root.parent / "worktrees/one/backlog/holding/one.json"
+    asyncio.run(execute(config, lambda h: target.exists() and not h.active, timeout=0.12))
+    events = [
+        json.loads(line)
+        for line in (Path(config["state"]) / "activities.jsonl").read_text().splitlines()
+    ]
+    started = [e for e in events if e["event"] == "agent_started" and e["role"] == "development"]
+    stopped = {e["invocation"] for e in events if e["event"] == "agent_group_stopped"}
+    assert len(started) == 3
+    assert all(e["invocation"] in stopped for e in started)
+    assert len(json.loads(target.read_text())["failures"]) == 3
+
+
+def test_foreground_cli_pause_resume_and_epic_exit(project):
+    import yaml
+
+    root, _, config = project
+    add(root, "one", epic="release")
+    config["scheduling"] = {"poll_interval": 0.03, "merge_interval": 0.05}
+    path = root.parent / "config.yaml"
+    path.write_text(yaml.safe_dump(config))
+
+    async def scenario():
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "backlog_harness",
+            "--config",
+            str(path),
+            "--epic",
+            "release",
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        events = []
+
+        async def collect():
+            while line := await process.stdout.readline():
+                events.append(json.loads(line))
+
+        reader = asyncio.create_task(collect())
+        try:
+            process.stdin.write(b"pause\n")
+            await process.stdin.drain()
+            await until(lambda: any(e["event"] == "paused" for e in events))
+            await asyncio.sleep(0.1)
+            assert not any(e["event"] == "dispatched" for e in events)
+            process.stdin.write(b"unknown\nresume\n")
+            await process.stdin.drain()
+            process.stdin.close()
+            await asyncio.wait_for(process.wait(), 10)
+            await reader
+            assert process.returncode == 0, (await process.stderr.read()).decode()
+            assert any(e["event"] == "unknown_control" for e in events)
+            assert any(e["event"] == "resumed" for e in events)
+            assert (root / "backlog/completed/one.json").exists()
+        finally:
+            if process.returncode is None:
+                process.kill()
+                await process.wait()
+            await reader
+
+    asyncio.run(scenario())
+
+
+def test_cli_interrupt_reaps_agent_group_and_preserves_worktree(project):
+    import os
+    import signal
+
+    import yaml
+
+    root, _, config = project
+    add(root, "one", mode="timeout")
+    path = root.parent / "config.yaml"
+    path.write_text(yaml.safe_dump(config))
+
+    async def scenario():
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "backlog_harness",
+            "--config",
+            str(path),
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        events = []
+
+        async def collect():
+            while line := await process.stdout.readline():
+                events.append(json.loads(line))
+
+        reader = asyncio.create_task(collect())
+        try:
+            await until(
+                lambda: any(
+                    e["event"] == "agent_output" and "Delivering one" in e["text"] for e in events
+                )
+            )
+            process.send_signal(signal.SIGINT)
+            await asyncio.wait_for(process.wait(), 10)
+            await reader
+            assert process.returncode == 0, (await process.stderr.read()).decode()
+            assert any(e["event"] == "exiting" for e in events)
+            pid = next(
+                e["pid"]
+                for e in events
+                if e["event"] == "agent_started" and e["role"] == "development"
+            )
+            with pytest.raises(ProcessLookupError):
+                os.kill(pid, 0)
+            assert (root.parent / "worktrees/one/backlog/running/one.json").exists()
+        finally:
+            if process.returncode is None:
+                process.kill()
+                await process.wait()
+            await reader
+
+    asyncio.run(scenario())
