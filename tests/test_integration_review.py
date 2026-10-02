@@ -277,3 +277,88 @@ def test_native_response_item_prompt_and_supporting_evidence(tmp_path, fault):
         assert result["supporting_evidence"] == value["supporting_evidence"]
         assert "evidence" not in result
     assert path.read_bytes() == original
+
+
+@pytest.mark.parametrize("changed", [False, True])
+def test_frozen_pre_fix_review_request_replays_without_new_invocation(
+    config_file, monkeypatch, changed
+):
+    """Historical prompt wording is part of its identity, including its loose evidence label."""
+    import ast
+    import asyncio
+    import inspect
+
+    from backlog_harness import integration_flow
+    from backlog_harness.application import Application
+    from backlog_harness.evidence import atomic_json
+
+    historical_task = (
+        "Independently review this exact integration candidate and its delta against "
+        "both parents. Return candidate, verdict ACCEPT or REJECT, "
+        "unresolved_findings, and supporting evidence. Do not modify source."
+    )
+    # Use the actual production prompt literal rather than a second copy of today's wording.
+    syntax = ast.parse(inspect.getsource(integration_flow))
+    current_task = next(
+        value.value
+        for node in ast.walk(syntax)
+        if isinstance(node, ast.Dict)
+        for key, value in zip(node.keys, node.values)
+        if isinstance(key, ast.Constant)
+        and key.value == "task"
+        and isinstance(value, ast.Constant)
+        and value.value.startswith("Independently review this exact integration")
+    )
+    candidate = {
+        "candidate": "a" * 40,
+        "original_candidate": "b" * 40,
+        "primary": "c" * 40,
+        "base": "d" * 40,
+        "tree": "e" * 40,
+        "workspace": "/sanitized/integration-workspace",
+    }
+    frozen = {
+        "task": historical_task,
+        "item_id": "retained-item",
+        "candidate_record": candidate,
+        "original_evidence": {},
+        "checks": [],
+    }
+    prefix = "Integration review identity: " + digest(candidate) + "\n"
+    original_prompt = prefix + json.dumps(frozen, sort_keys=True)
+    requested = {**frozen, "task": current_task + (" New obligation." if changed else "")}
+    requested_prompt = prefix + json.dumps(requested, sort_keys=True)
+    config, _ = config_file
+    app = Application(config)
+    receipt = {
+        "request_digest": digest(original_prompt),
+        "outcome": "returned",
+        "invocation_id": "historical-review",
+        "text": "retained exact native verdict",
+    }
+    path = app._stage_path("retained-item", "integration-review-2")
+    atomic_json(path, receipt)
+    before = path.read_bytes()
+    verified = []
+    # Receipt validation has its own native/telemetry tests. This isolates replay admission.
+    monkeypatch.setattr(app, "validate_invocation_result", lambda result: verified.append(result))
+    if changed:
+        with pytest.raises(TransitionBlocked, match="Stage request changed"):
+            asyncio.run(
+                app.invoke("retained-item", "integration-review-2", "coordinator", requested_prompt)
+            )
+        assert verified == []
+    else:
+        assert digest(requested_prompt) == receipt["request_digest"]
+        for _ in range(2):
+            assert (
+                asyncio.run(
+                    app.invoke(
+                        "retained-item", "integration-review-2", "coordinator", requested_prompt
+                    )
+                )
+                == receipt
+            )
+        assert verified == [receipt, receipt]
+    assert path.read_bytes() == before
+    assert not list((app.root / "runs").glob("*/operations/*/invocations/*/intent.json"))
