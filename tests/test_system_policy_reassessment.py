@@ -62,10 +62,19 @@ def test_public_reassessment_repairs_retained_inventory_once(
     content = (harness.repo / item["path"]).read_bytes()
     assert item["content"].encode() == content
     assert item["revision"] == sha256(item["path"].encode() + b"\0" + content).hexdigest()
+    assert item["state"] == "READY"
     assert accepted["policy"]["eligible"] is True
     assert accepted["invocation_id"] == json.loads(envelope.read_text())["invocation_id"]
     assert files(observation_evidence) == retained_evidence
     assert len(calls(harness)) == 2
+
+    accepted_bytes = cache.read_bytes()
+    status = harness.run("status")
+    assert status.returncode == 0, status.stdout + status.stderr
+    visible = json.loads(status.stdout)
+    assert visible["items"][0]["state"] == "Ready"
+    assert len(calls(harness)) == 2
+    assert cache.read_bytes() == accepted_bytes
 
     policy_envelopes = list(
         (harness.repo / ".agent-ops/backlog-harness/workflow-evidence").rglob(
@@ -75,7 +84,6 @@ def test_public_reassessment_repairs_retained_inventory_once(
     assert len(policy_envelopes) == 1
     policy_evidence = invocation_evidence(policy_envelopes[0])
     retained_policy_evidence = files(policy_evidence)
-    accepted_bytes = cache.read_bytes()
 
     replayed = harness.run("reassess-policy", "--observation", envelope)
     assert replayed.returncode == 0, replayed.stdout + replayed.stderr

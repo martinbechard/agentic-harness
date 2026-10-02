@@ -77,6 +77,21 @@ class Item:
     original_high: int | None
     content: str
 
+    def __post_init__(self):
+        canonical = (
+            {
+                "USER_ACTION_REQUIRED": "User Action Required",
+                "AWAITING_REVIEW": "Awaiting Review",
+            }.get(self.state)
+            if isinstance(self.state, str)
+            else None
+        )
+        if canonical is None and isinstance(self.state, str) and self.state.isascii():
+            canonical = {state.casefold(): state for state in STATES}.get(self.state.casefold())
+        if canonical is None:
+            raise TransitionBlocked("Unknown lifecycle state")
+        object.__setattr__(self, "state", canonical)
+
 
 def parse_item(path, content):
     text = content.decode("utf-8")

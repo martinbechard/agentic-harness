@@ -227,3 +227,26 @@ Both builds produced the same wheel SHA-256:
 `0d22bc2e491596eb00fdece6f1f97b7cae5a6e7b33fa5d98176d3b9be0ed0b04`.
 All 35 Python modules matched the tested source. Independent policy review accepted the frozen candidate after independently
 repeating the 77 focused tests. Live installation remains pending at this checkpoint.
+
+## Lifecycle State Representation
+
+The shared immutable Item boundary accepts canonical lifecycle names without
+ASCII case sensitivity and the exact machine aliases USER_ACTION_REQUIRED and
+AWAITING_REVIEW. Unknown, nonstring, whitespace, and punctuation variants fail.
+Only the in-memory state changes; provider interpretation, raw observations,
+cache bytes, ownership, estimates, revisions, and fingerprints remain unchanged.
+
+Focused provider, observation, and recovery tests passed 125 cases. The installed
+public policy/status scenario passed with raw READY retained in cache, Ready
+exposed to workflow consumers, and zero additional calls or cache changes on
+status and replay. Reading the live 138-item cache through the candidate preserved
+its byte hash and observer fingerprint. Independent review and installation remain
+pending at this checkpoint.
+
+Independent review exposed Unicode case-fold expansions in the initial state
+normalization. The corrected lookup requires ASCII and rejects three reproduced
+noncanonical spellings; all 52 affected tests passed after the correction.
+
+The corrected candidate received independent ACCEPT. The final installed public
+policy/status and replay scenario passed in 9.03 seconds. Its exact tested wheel
+is retained under `.agent-ops/state-normalization-a48/final`.

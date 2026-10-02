@@ -15,7 +15,7 @@ wheels = [
 
 [[package]]
 name = "agentic-harness"
-version = "0.1.0a47"
+version = "0.1.0a48"
 source = { editable = "." }
 dependencies = [
     { name = "agent-client-protocol" },

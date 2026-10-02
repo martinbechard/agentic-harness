@@ -1,6 +1,6 @@
 import pytest
 
-from backlog_harness.provider import TransitionBlocked, git
+from backlog_harness.provider import STATES, Item, TransitionBlocked, git
 from backlog_harness.workflow import validate_candidate, validate_transition
 
 
@@ -12,6 +12,52 @@ def authority(role, **values):
         "item_id": "item-one",
         **values,
     }
+
+
+@pytest.mark.parametrize("canonical", sorted(STATES))
+@pytest.mark.parametrize("spelling", [str.upper, str.lower, lambda value: value])
+def test_item_canonicalizes_exact_lifecycle_spellings(canonical, spelling):
+    item = Item("item-one", "item-one.md", "revision", spelling(canonical), None, None, "")
+    assert item.state == canonical
+    assert item.owner is None
+
+
+@pytest.mark.parametrize(
+    ("spelling", "canonical"),
+    [
+        ("USER_ACTION_REQUIRED", "User Action Required"),
+        ("AWAITING_REVIEW", "Awaiting Review"),
+    ],
+)
+def test_item_canonicalizes_exact_machine_lifecycle_aliases(spelling, canonical):
+    assert Item("item-one", "item-one.md", "revision", spelling, None, None, "").state == canonical
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        None,
+        1,
+        "",
+        " READY",
+        "READY ",
+        "USER-ACTION-REQUIRED",
+        "user_action_required",
+        "AWAITING__REVIEW",
+        "In Progress",
+        "ſtarting",
+        "ſtalled",
+        "ſuperseded",
+    ],
+)
+def test_item_rejects_unknown_lifecycle_spellings(state):
+    with pytest.raises(TransitionBlocked, match="Unknown lifecycle state"):
+        Item("item-one", "item-one.md", "revision", state, None, None, "")
+
+
+def test_canonical_transition_accepts_machine_ready_item():
+    item = Item("item-one", "item-one.md", "revision", "READY", "Unowned", 100, "")
+    validate_transition(item, "Starting", authority("coordinator", operation="new"))
 
 
 @pytest.mark.parametrize("coordination", ["none", "resource-claim"])
@@ -325,18 +371,18 @@ def test_agent_observation_refresh_is_cached_and_never_parses_headers(
 
     async def observe(*args, **kwargs):
         calls.append(kwargs)
+        compact = {
+            key: value
+            for key, value in asdict(item).items()
+            if key not in {"content", "revision"}
+        }
+        compact["state"] = "READY"
         return {
             "invocation_id": "observation",
             "events": [{"type": "turn.completed", "usage": {"output_tokens": 10}}],
             "text": json.dumps(
                 {
-                    "items": [
-                        {
-                            key: value
-                            for key, value in asdict(item).items()
-                            if key not in {"content", "revision"}
-                        }
-                    ],
+                    "items": [compact],
                     "dependencies": {item.item_id: []},
                     "policy": {
                         "eligible": True,
@@ -350,9 +396,13 @@ def test_agent_observation_refresh_is_cached_and_never_parses_headers(
 
     monkeypatch.setattr(app, "invoke", observe)
     asyncio.run(app.refresh_provider())
+    cached_bytes = app.provider.cache_path.read_bytes()
+    assert json.loads(cached_bytes)["items"][0]["state"] == "READY"
     assert app.provider.item(item.item_id) == item
+    assert app.provider.cache_path.read_bytes() == cached_bytes
     asyncio.run(app.refresh_provider())
     assert len(calls) == 1
+    assert app.provider.cache_path.read_bytes() == cached_bytes
     assert calls[0]["purpose"] == "provider"
     assert app.provider.policy()["mode"] == "SOLO"
     from backlog_harness.contracts import digest

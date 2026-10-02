@@ -35,6 +35,7 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
             row = asdict(item)
             row.pop("content")
             row.pop("revision")
+            row["state"] = item.state.upper()
             items.append(row)
         return {
             "items": items,
