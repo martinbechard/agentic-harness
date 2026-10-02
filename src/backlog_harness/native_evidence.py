@@ -25,7 +25,9 @@ def native_records(session_id, sessions_root=None):
     return records, sha256(data).hexdigest()
 
 
-def verify_native_review(producer, reviewer, candidate, sessions_root=None):
+def verify_native_review(
+    producer, reviewer, candidate, sessions_root=None, *, accepted_verdicts=("ACCEPT",)
+):
     require(reviewer and reviewer != producer, "Distinct native reviewer session is required")
     parent, parent_hash = native_records(producer, sessions_root)
     native_reviewer = reviewer
@@ -121,8 +123,13 @@ def verify_native_review(producer, reviewer, candidate, sessions_root=None):
     verdict = json.loads(text)
     require(
         verdict.get("candidate") == candidate
-        and verdict.get("verdict") == "ACCEPT"
-        and verdict.get("unresolved_findings") == [],
+        and verdict.get("verdict") in accepted_verdicts
+        and (
+            verdict.get("unresolved_findings") == []
+            if verdict.get("verdict") == "ACCEPT"
+            else isinstance(verdict.get("unresolved_findings"), list)
+            and bool(verdict["unresolved_findings"])
+        ),
         "Native review did not accept the exact candidate",
     )
     # Parent-provided verdicts never substitute for the independently recorded child result.

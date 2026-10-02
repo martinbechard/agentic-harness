@@ -857,7 +857,10 @@ def test_preparation_metadata_invalid_fields_block(field, value):
 
 
 @pytest.mark.parametrize("fault", [None, "revision", "decision", "old_checks", "old_scope"])
-def test_explicit_proof_selection_preserves_frozen_preparation(config_file, monkeypatch, fault):
+@pytest.mark.parametrize("selection", ["proof", "design", "both"])
+def test_explicit_selection_preserves_frozen_preparation(
+    config_file, monkeypatch, fault, selection
+):
     from backlog_harness.contracts import load_config
     from backlog_harness.estimation import configured_workflow, prepared_workflow
 
@@ -881,7 +884,7 @@ def test_explicit_proof_selection_preserves_frozen_preparation(config_file, monk
                 "workflow": {
                     "allowed_paths": ["answer.py"],
                     "checks": [["git", "diff", "--check"]],
-                    "required_gates": ["Independent browser evidence for the candidate"],
+                    "required_gates": ["Independently review the selected acceptance evidence"],
                 },
             }
         ),
@@ -909,11 +912,22 @@ def test_explicit_proof_selection_preserves_frozen_preparation(config_file, monk
             }
         ],
     }
-    selected = {"allowed_paths": data["workflow"]["allowed_paths"], "proof_requirements": contract}
+    design = {
+        "provider_revision": "revision",
+        "preparation_digest": digest(decision),
+        "canonical_reference": "item-one#design",
+        "acceptance_text": "Review proposed treatment before source production",
+    }
+    selected = {"allowed_paths": data["workflow"]["allowed_paths"]}
+    if selection in {"proof", "both"}:
+        selected["proof_requirements"] = contract
+    if selection in {"design", "both"}:
+        selected["design_review"] = design
+    fault_contract = design if selection == "design" else contract
     if fault == "revision":
-        contract["provider_revision"] = "other"
+        fault_contract["provider_revision"] = "other"
     elif fault == "decision":
-        contract["preparation_digest"] = "0" * 64
+        fault_contract["preparation_digest"] = "0" * 64
     elif fault == "old_checks":
         selected["checks"] = [["git", "status"]]
     elif fault == "old_scope":
@@ -927,9 +941,12 @@ def test_explicit_proof_selection_preserves_frozen_preparation(config_file, monk
     else:
         first = prepared_workflow(app, "one", current)
         assert prepared_workflow(app, "one", current) == first
-        assert first["proof_requirements"] == contract
+        if selection in {"proof", "both"}:
+            assert first["proof_requirements"] == contract
+        if selection in {"design", "both"}:
+            assert first["design_review"] == design
         assert first["preparation_evidence"]["decision_digest"] == digest(decision)
         assert first["preparation_evidence"]["metadata"]["required_gates"] == [
-            "Independent browser evidence for the candidate"
+            "Independently review the selected acceptance evidence"
         ]
     assert path.read_bytes() == original

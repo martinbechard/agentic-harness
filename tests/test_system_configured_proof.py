@@ -22,7 +22,21 @@ def calls(root):
     return (root / "agent-calls.jsonl").read_bytes()
 
 
-@pytest.mark.parametrize("fault", [None, "missing", "invalid", "generic"])
+@pytest.mark.parametrize(
+    "fault",
+    [
+        None,
+        "missing",
+        "invalid",
+        "generic",
+        "verification-valid",
+        "verification-graph",
+        "verification-missing",
+        "verification-reject",
+        "verification-tamper",
+        "verification-overlap",
+    ],
+)
 def test_installed_configured_proof_completion_and_replay(configured_proof_python, tmp_path, fault):
     harness = InstalledHarness.create(
         tmp_path,
@@ -35,6 +49,10 @@ def test_installed_configured_proof_completion_and_replay(configured_proof_pytho
         "allowed_roots": ["answer.txt"],
         "check_commands": config["workflow"]["checks"],
     }
+    if fault == "verification-graph":
+        config["workflow"]["items"] = {
+            "item-one": {"engine": "langgraph", "allowed_paths": ["answer.txt"]}
+        }
     harness.config_path.write_text(yaml.safe_dump(config))
     packet = {
         "allowed_paths": ["answer.txt"],
@@ -46,6 +64,9 @@ def test_installed_configured_proof_completion_and_replay(configured_proof_pytho
     harness.env["PREPARATION_FIXTURE"] = str(supplied)
     first = harness.run("run-item", "item-one")
     assert first.returncode != 0 and "unsupported acceptance gates" in first.stderr
+    assert "Status: Ready" in (harness.repo / "backlog/feature-backlog/item-one.md").read_text()
+    assert not (harness.candidate / "answer.txt").exists()
+    assert not list(tmp_path.rglob("assignment.json"))
     preparation = next(tmp_path.rglob("preparation.json"))
     original = preparation.read_bytes()
     saved = json.loads(original)
@@ -66,13 +87,48 @@ def test_installed_configured_proof_completion_and_replay(configured_proof_pytho
             },
         }
     }
+    if fault == "verification-graph":
+        config["workflow"]["items"]["item-one"].update(
+            engine="langgraph",
+            design_review={
+                "provider_revision": saved["item"]["revision"],
+                "preparation_digest": digest(saved["decision"]),
+                "canonical_reference": "item-one#design",
+                "acceptance_text": "Independently review design before implementation",
+            },
+        )
+    if fault and fault.startswith("verification-"):
+        config["workflow"]["items"]["item-one"]["proof_requirements"]["verification_required"] = (
+            True
+        )
     harness.config_path.write_text(yaml.safe_dump(config))
     if fault:
         harness.env["CONFIGURED_PROOF_FAULT"] = fault
     result = harness.run("run-item", "item-one")
-    if fault is None:
+    if fault in (None, "verification-valid", "verification-graph"):
         assert result.returncode == 0, result.stdout + result.stderr
         assert (harness.repo / "answer.txt").read_text() == "done\n"
+        if fault == "verification-graph":
+            inputs = json.loads(
+                next(tmp_path.rglob("acceptance-verification-inputs.json")).read_text()
+            )
+            assert {"design-acceptance", "accepted-design"} <= inputs["receipts"].keys()
+            assert next(tmp_path.rglob("design-acceptance.json")).is_file()
+            prompts = [
+                json.loads(line)["prompt"]
+                for line in (tmp_path / "agent-calls.jsonl").read_text().splitlines()
+            ]
+            design_index = next(
+                i
+                for i, p in enumerate(prompts)
+                if "Prepare only a preimplementation design artifact" in p
+            )
+            source_index = next(
+                i
+                for i, p in enumerate(prompts)
+                if "Implement only the assigned candidate paths" in p
+            )
+            assert design_index < source_index
         assert (
             "Status: Completed" in next((harness.repo / "backlog").rglob("item-one.md")).read_text()
         )
@@ -87,10 +143,25 @@ def test_installed_configured_proof_completion_and_replay(configured_proof_pytho
             "missing": "requirement",
             "invalid": "hash differs",
             "generic": "Independent proof review binding differs",
+            "verification-missing": "Independent acceptance verification",
+            "verification-reject": "Independent acceptance verification",
+            "verification-tamper": "receipts changed",
+            "verification-overlap": "Independent proof review binding differs",
         }
         assert expected[fault] in result.stderr, result.stdout + result.stderr
     before_calls = calls(tmp_path)
-    receipts = {p: p.read_bytes() for p in tmp_path.rglob("result.json")}
+    names = [
+        "intent.json",
+        "requested.json",
+        "native-request.json",
+        "configured-proof*.json",
+        "design-attempt*.json",
+        "design-acceptance.json",
+    ]
+    if fault and fault.startswith("verification-"):
+        names += ["source-checks.json", "source-checks-execution.json", "review.json"]
+    receipts = {p: p.read_bytes() for name in names for p in tmp_path.rglob(name)}
+    assert receipts
     replay = harness.run("run-item", "item-one")
     assert replay.returncode == result.returncode, replay.stdout + replay.stderr
     assert calls(tmp_path) == before_calls

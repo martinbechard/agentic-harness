@@ -43,12 +43,12 @@ dev-methodology. No exact-candidate human approval requirement is inferred.
 | Saved obligation | Enforcing stage or outstanding coverage |
 | --- | --- |
 | execution_admission | Existing admission/provider transition evidence and claim-free crisis restrictions. |
-| design_and_acceptance | **Unresolved:** packet requires proposed shared print treatment review before implementation. Retained item stages contain only `prepare` and `preparation`; the canonical item cites earlier UX recommendations, not an accepted proposed treatment. A final proof review does not establish the earlier ordering. Establish applicable pre-implementation evidence and its enforcement before enabling. |
+| design_and_acceptance | Optional design stage binds original preparation, clean source base and design artifact to independent native review before coding. Independent source review and installed fixtures accepted this enforcement. Retained real-item stages contain only `prepare` and `preparation`; prior UX recommendations do not constitute accepted design. The design must justify its portrait treatment or explicitly flag any proposed change to the open landscape question. |
 | fresh_browser_evidence | Proposed print requirement: before/after portrait Letter evidence, complete identifiers, scanability and all six wide-table margins. |
 | screen_and_accessibility | Proposed browser requirement: desktop/narrow behavior, keyboard scrolling, visible focus, table semantics, accessible names, links/fragments/resources and console. |
 | shared_css_regression | Selected design-system checks plus review of directly affected consumers; proposed proof must include relevant rendered consumers. |
 | independent_review | Existing native source review plus fresh native artifact/UX proof review. Full applicable DDS checklist and expected suite navigation must be supplied and evidenced; generic ACCEPT is insufficient. |
-| independent_verification | Fresh independent proof reviewer must challenge complete canonical acceptance and exact bytes; source tests cannot substitute for print/browser evidence. |
+| independent_verification | Optional `proof_requirements.verification_required` supplies exact hashed assignment, accepted design, native source-review and check/execution receipts to the fresh proof reviewer. A separate overall assessment must bind those inputs, candidate and requirements, with coverage and findings. Its actual native identity must differ from source/proof producers and source reviewer. This reuses one review invocation while keeping visual and overall conclusions distinct. Independent source review and installed fixtures accepted this extension. |
 | main_branch_delivery | Existing integration/checks/main observation. Changed reviewed bytes or rendering assumptions require renewed applicable proof; stale proof blocks delivery. |
 | provider_completion | Existing delivery prerequisite and separate verified provider closure. |
 
@@ -64,9 +64,11 @@ without added calls and preserves original preparation and invocation receipts.
 These establish harness behavior only; they do not establish either item's actual
 visual acceptance.
 
-Do not enable either configuration until its exact selection and complete packet
-coverage are independently accepted. The authority agent has separately asked
-Martin to confirm the dashboard product target; admission awaits that answer.
-Resolve the portrait pre-implementation
-review obligation explicitly. Missing authority, permission or evidence keeps
-the corresponding transition stopped, without blocking unrelated eligible work.
+The authority agent accepted the portrait selection's semantic coverage, and a44
+installed fixtures verify the combined design/proof/overall-verification route.
+This does not authorize browser operations or establish real-item acceptance.
+The portrait configuration remains disabled under the existing browser restrictions.
+The authority agent has separately asked Martin to confirm the dashboard product
+target; its mapping and admission remain provisional. Missing authority, permission
+or evidence keeps the corresponding transition stopped, without blocking unrelated
+eligible work.

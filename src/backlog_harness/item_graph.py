@@ -159,6 +159,13 @@ def build_graph(app, checkpointer):
             app.provider.item(item_id).owner == state["acceptance"]["session"]["session_id"],
             "Canonical owner differs",
         )
+        accepted_design = None
+        if state["assignment"]["workflow"].get("design_review"):
+            from .recovery_flow import ensure_design_acceptance
+
+            accepted_design = await ensure_design_acceptance(
+                app, item_id, state["base"], state["acceptance"]
+            )
         prompt = (
             "Implement only the assigned candidate paths; agents own organization and native delegation. "
             "Use claims yourself only if effective policy requires them. Never mutate provider lifecycle. "
@@ -180,6 +187,11 @@ def build_graph(app, checkpointer):
                 "\nRetained Coordinator preparation evidence (not permission or completed checks). "
                 "Preserve its constraints and supply it in full to the independent reviewer: "
                 + json.dumps(state["assignment"]["workflow"]["preparation_evidence"])
+            )
+        if accepted_design:
+            prompt += (
+                "\nImplement the independently accepted design; read its bound artifact and preserve "
+                "its scope and constraints. Accepted design: " + json.dumps(accepted_design)
             )
         result = await app.invoke(
             item_id,
@@ -315,7 +327,18 @@ def build_graph(app, checkpointer):
             app.native_sessions_root(produced["binding"]),
         )
         repo = app.candidate_repository(state["item_id"])
-        checks = app.checks(repo, state["item_id"], state["candidate"], "source-checks")
+        from .acceptance_verification import required as verification_required
+        from .acceptance_verification import retain_review
+
+        if verification_required(app, state["item_id"]):
+            review = retain_review(app, state["item_id"], review)
+        if (
+            verification_required(app, state["item_id"])
+            and app._stage_path(state["item_id"], "acceptance-verification-inputs").exists()
+        ):
+            checks = json.loads(app._stage_path(state["item_id"], "source-checks").read_text())
+        else:
+            checks = app.checks(repo, state["item_id"], state["candidate"], "source-checks")
         validate_candidate(
             repo,
             state["candidate"],

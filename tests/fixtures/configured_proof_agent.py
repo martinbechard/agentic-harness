@@ -1,6 +1,7 @@
 """Simulated native proof collection/review; production validators remain unchanged."""
 
 import importlib.util
+import json
 import os
 from hashlib import sha256
 from pathlib import Path
@@ -37,7 +38,10 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
         if fault == "invalid":
             artifact["sha256"] = "0" * 64
         return result
-    if "Arrange one fresh native read-only child review" in prompt:
+    if (
+        "Arrange one fresh native read-only child review" in prompt
+        and "\nProof result digest: " in prompt
+    ):
         request = object_after(prompt, "Bound request: ")
         proof = object_after(prompt, "Proof result: ")
         extra = (
@@ -57,10 +61,30 @@ def dispatch(prompt, cwd, native_home, argv, session_id):
                 ],
             }
         )
+        if request.get("verification_inputs") and fault != "verification-missing":
+            bound = request["verification_inputs"]
+            extra["acceptance_verification"] = {
+                "role": "independent-verifier",
+                "candidate": request["candidate"],
+                "requirements_digest": request["requirements_digest"],
+                "inputs_digest": sha256(
+                    json.dumps(bound, sort_keys=True, separators=(",", ":")).encode()
+                ).hexdigest(),
+                "inspected_receipts": bound["receipts"],
+                "verdict": "REJECT" if fault == "verification-reject" else "ACCEPT",
+                "acceptance_coverage": "Inspected canonical assignment, native source review, and passing exact candidate checks",
+                "unresolved_findings": [],
+            }
         reviewer = native_review(native_home, session_id, request["candidate"], **extra)
+        if fault == "verification-overlap":
+            receipt = Path(request["verification_inputs"]["receipts"]["review"]["path"])
+            reviewer = json.loads(receipt.read_text())["reviewer_session"]
+        if fault == "verification-tamper":
+            receipt = Path(request["verification_inputs"]["receipts"]["source-checks"]["path"])
+            receipt.write_text(receipt.read_text() + " ")
         return {
             "item_id": request["item_id"],
             "candidate": request["candidate"],
             "proof_reviewer_session": reviewer,
         }
-    return helper("preparation_agent").dispatch(prompt, cwd, native_home, argv, session_id)
+    return helper("design_review_agent").dispatch(prompt, cwd, native_home, argv, session_id)

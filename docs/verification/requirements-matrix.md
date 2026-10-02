@@ -85,10 +85,19 @@ The exact installed a41 artifact additionally replays the actual pre-fix request
 
 The first dev-methodology `run --until-terminal` after the recovered delivery returned an explicit blocked report: 106 Completed, 6 Abandoned, 4 Blocked, 13 Ready, and 10 User Action Required. These are total inventory counts, not deliveries attributed to this run. Two retained preparation responses place explanatory constraints and mandatory gates inside `workflow`: `add-whats-happening-now-dashboard-panel` and `improve-generic-agent-definitions-portrait-print-readability`.
 
-Their browser/print, independent usability, and exact-candidate approval obligations are not currently bound and enforced by the generic preparation-to-acceptance route. This is a workflow coverage gap separate from the existing browser permission denial. A generic native ACCEPT cannot establish those obligations by itself. Compatibility handling must preserve the original receipts and all obligations, validate authority selectors, allow only supported configuration, and stop unsupported obligations before dispatch. Restoring schema compatibility alone is not acceptance of these workflows.
+At that revision, their browser/print, independent usability, and exact-candidate approval obligations were not bound and enforced by the generic preparation-to-acceptance route. That workflow coverage gap is separate from the existing browser permission denial. A generic native ACCEPT cannot establish those obligations by itself. Compatibility handling must preserve the original receipts and all obligations, validate authority selectors, allow only supported configuration, and stop unsupported obligations before dispatch. Restoring schema compatibility alone is not acceptance of these workflows.
 
 
-The smallest identified extension is to bind the existing independent proof/review result to the preparation obligation digest and exact candidate, require supporting artifact evidence for each declared obligation, and reuse the existing candidate-specific approval check for ordinary delivery as well as recovery. This route is not yet implemented or accepted. Browser permission remains a separate requirement; a metadata packet cannot grant it.
+Version a43 implements explicit per-item proof requirements bound to original preparation and exact candidate, supporting artifact evidence for every configured requirement, native independent review, and ordinary legacy-workflow candidate approval. Independent source review and four installed cases accepted that bounded route. Browser permission remains a separate requirement; a metadata packet cannot grant it.
 
 
 Version a42 verifies this limited contract in 51 focused tests and three installed public-CLI scenarios (42.42 seconds). Compatible metadata-only preparation reaches source merge/provider closure. Each actual retained gate array is preserved verbatim and stops before producer or provider effects, even though the fixture producer would otherwise return generic ACCEPT. Replays preserve preparation bytes and add zero calls. The exact installed wheel SHA-256 is `175f622767cef7f32fd08b8a8fe67b462cfd0c85ea0c2436cf7796b055a6f618`.
+
+Version a44's optional pre-implementation design stage and separate overall
+verification assessment have independent source and installed fixture acceptance.
+The installed graph regression also exposed and verified correction of a preparation
+bypass: graph admission now runs existing preparation first. The [item coverage table](dev-methodology-proof-coverage.md) records
+the exact stage responsibilities and remaining activation restrictions. The
+dev-methodology authority accepted the portrait selection's semantic coverage;
+this does not grant browser permissions or establish actual visual acceptance.
+Dashboard coverage remains provisional pending the product-target decision.

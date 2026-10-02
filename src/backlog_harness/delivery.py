@@ -98,6 +98,10 @@ def integrate(
                 and current.revision == expected_revision,
                 "Canonical delivery ownership or revision changed",
             )
+        if hasattr(app, "item_workflow") and app.item_workflow(item_id).get("design_review"):
+            from .recovery_flow import verify_design_acceptance
+
+            verify_design_acceptance(app, item_id, base)
         superseding = app._stage_path(item_id, "superseding-delivery-authorization")
         if superseding.exists():
             from .integration_flow import load_integration

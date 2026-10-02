@@ -119,3 +119,32 @@ the dashboard product-target question and portrait pre-implementation design
 review gap. Graph execution rejects configured candidate approval before dispatch;
 the existing legacy route supports it. Prior browser/server denials, historical
 usage uncertainty, and immutable receipts remain effective.
+
+Version `0.1.0a44` adds optional independent design acceptance before source
+production and optional overall verification within the existing fresh proof
+review. The latter binds canonical assignment, accepted design, native source
+review and check/execution receipts. It rejects overlapping producer/reviewer
+identities, failed verification, missing evidence and changed receipts. Independent
+source review accepted each change, including a graph entry-point correction
+found by installed testing: existing preparation now runs before graph admission.
+Focused results include 66 preparation, 15 design, 33 verification-evidence and
+13 graph tests; these are scoped results, not a claimed deduplicated suite total.
+
+Installed design scenarios verify ordering, one rejection/correction, and three
+invalid-evidence stops. The final wheel's combined graph scenario reaches Completed
+through design, implementation, proof and overall verification. Four further
+cases block missing/rejected verification, receipt tampering and source-reviewer
+reuse. A replay-only supplement checks actual nonempty immutable evidence sets:
+46 files for the combined graph and 36 for each negative case, with zero added
+invocation calls. Earlier tests used an empty `result.json` glob; immutability
+claims rely on this corrected supplement, not that earlier assertion.
+
+The a44 release differs from the final tested wheel only in the verified version
+constant. All 35 Python modules match source, wheel and project-local installation.
+Release SHA-256 is `34655316de6f39e3705e36431113d59d5759e041d5e43b748b7421d320065b93`;
+manifests and detailed scope are retained under `.agent-ops/pre-backlog-a44`.
+The authority agent accepted portrait configuration coverage, including final
+verification against the accepted design. The actual configuration remains
+disabled under existing browser restrictions. Dashboard scope still awaits the
+product-target decision. No real backlog item or browser session was launched
+by these release fixtures.

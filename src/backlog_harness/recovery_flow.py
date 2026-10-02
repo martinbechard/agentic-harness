@@ -1252,7 +1252,7 @@ def configured_proof_request(app, item_id, candidate, acceptance):
         app.config.data["profiles"][binding.profile_name].get("artifact_output") is True,
         "Configured proof requires artifact_output permission",
     )
-    return {
+    request = {
         "item_id": item_id,
         "revision": contract["provider_revision"],
         "owner": acceptance["session"]["session_id"],
@@ -1262,6 +1262,11 @@ def configured_proof_request(app, item_id, candidate, acceptance):
         "requirements_digest": digest(contract),
         "preparation_receipt_digest": digest(preparation),
     }
+    if contract.get("verification_required"):
+        from .acceptance_verification import inputs
+
+        request["verification_inputs"] = inputs(app, item_id, candidate)
+    return request
 
 
 async def ensure_configured_proof(app, item_id, candidate, acceptance):
@@ -1324,6 +1329,20 @@ async def ensure_configured_proof(app, item_id, candidate, acceptance):
         + "\nOriginal preparation receipt: "
         + preparation
     )
+    if request["proof_requirements"].get("verification_required"):
+        review_prompt += (
+            "\nThe same fresh reviewer also acts as independent verifier, separately from visual "
+            "assessment. It must differ from source producer, proof producer and source reviewer. "
+            "Read full canonical acceptance from assignment and inspect every bound source-review "
+            "and check receipt, verifying exact file hashes. If present, inspect accepted design "
+            "and design acceptance; assess implementation against it and review justified deviations. "
+            "Challenge overall acceptance coverage. "
+            "Add acceptance_verification:{role:independent-verifier,candidate,requirements_digest,"
+            "inputs_digest,inspected_receipts:<exact request verification_inputs.receipts>,"
+            "verdict:ACCEPT|REJECT,acceptance_coverage:<substantive coverage and limits>,"
+            "unresolved_findings:[]}. Never certify future integration or provider closure. "
+            "Verification inputs digest: " + digest(request["verification_inputs"])
+        )
     if not app._stage_path(item_id, review_stage).exists():
         await app.enforce_guard(item_id)
     reviewed = await app.invoke(
@@ -1348,6 +1367,9 @@ async def ensure_configured_proof(app, item_id, candidate, acceptance):
         app.native_sessions_root(reviewed["binding"]),
     )
     validate_requirement_review(request["proof_requirements"], result, proof, review)
+    from .acceptance_verification import validate as validate_verification
+
+    validate_verification(app, item_id, candidate, request["proof_requirements"], result, review)
     record = {
         "request_digest": digest(request),
         "result_digest": digest(result),
@@ -1410,6 +1432,9 @@ def verify_configured_proof(app, item_id, candidate):
         app.native_sessions_root(reviewed["binding"]),
     )
     validate_requirement_review(request["proof_requirements"], result, proof, review)
+    from .acceptance_verification import validate as validate_verification
+
+    validate_verification(app, item_id, candidate, request["proof_requirements"], result, review)
 
 
 def verify_candidate_approval(app, item_id, candidate, *, include_recovery=True):
@@ -1436,3 +1461,162 @@ def verify_candidate_approval(app, item_id, candidate, *, include_recovery=True)
             else "Exact candidate approval is required before delivery"
         ),
     )
+
+
+def design_request(app, item_id, base, acceptance):
+    selected = plain(app.item_workflow(item_id).get("design_review"))
+    if not selected:
+        return None
+    preparation_path = app._stage_path(item_id, "preparation")
+    require(preparation_path.exists(), "Design review requires original preparation evidence")
+    preparation = json.loads(preparation_path.read_text())
+    require(
+        selected["provider_revision"] == preparation["item"]["revision"]
+        and selected["preparation_digest"] == digest(preparation["decision"]),
+        "Design selection differs from original preparation",
+    )
+    binding = app.config.binding("orchestrator")
+    require(
+        app.config.data["profiles"][binding.profile_name].get("artifact_output") is True,
+        "Design review requires artifact_output permission",
+    )
+    return {
+        "item_id": item_id,
+        "owner": acceptance["session"]["session_id"],
+        "candidate": base,
+        "design_review": selected,
+        "preparation_receipt_digest": digest(preparation),
+        "binding": asdict(binding),
+    }
+
+
+def validated_design_attempt(app, item_id, request, acceptance, attempt):
+    from .native_evidence import verify_native_review
+
+    stage = "design-attempt-" + str(attempt) + "-" + digest(request)
+    path = app._stage_path(item_id, stage)
+    require(path.exists(), "Design attempt evidence is missing")
+    result = json.loads(path.read_text())
+    app.validate_invocation_result(result)
+    value = validate_artifact_proof(app, item_id, stage, request, result, acceptance)
+    require(value["status"] == "evidence-ready", "Design remains blocked")
+    artifact = value.get("design")
+    require(
+        isinstance(artifact, dict) and artifact in value["artifacts"], "Design artifact is unbound"
+    )
+    review = verify_native_review(
+        result["session"]["native_session_id"],
+        value.get("reviewer_session"),
+        request["candidate"],
+        app.native_sessions_root(result["binding"]),
+        accepted_verdicts=("ACCEPT", "REJECT"),
+    )
+    require(
+        review.get("candidate") == request["candidate"]
+        and review.get("design_digest") == artifact["sha256"]
+        and review.get("request_digest") == digest(request),
+        "Independent design review binding differs",
+    )
+    return result, value, review
+
+
+def verify_design_acceptance(app, item_id, base=None):
+    """Recheck exact artifacts and native decision before allowing source writes or delivery."""
+    if not app.item_workflow(item_id).get("design_review"):
+        return None
+    path = app._stage_path(item_id, "design-acceptance")
+    request_path = app._stage_path(item_id, "design-request")
+    require(
+        path.exists() and request_path.exists(),
+        "Independent design acceptance is required before source implementation",
+    )
+    saved = json.loads(path.read_text())
+    request = json.loads(request_path.read_text())
+    acceptance = json.loads(app._stage_path(item_id, "accept").read_text())
+    require(
+        request
+        == design_request(
+            app, item_id, base if base is not None else request["candidate"], acceptance
+        )
+        and saved.get("request_digest") == digest(request)
+        and saved.get("source_base") == request["candidate"]
+        and type(saved.get("attempt")) is int
+        and saved["attempt"] in (1, 2),
+        "Accepted design request or source base changed",
+    )
+    if saved["attempt"] == 2:
+        _, _, prior = validated_design_attempt(app, item_id, request, acceptance, 1)
+        require(prior["verdict"] == "REJECT", "Design correction lacks independent rejection")
+    result, value, review = validated_design_attempt(
+        app, item_id, request, acceptance, saved["attempt"]
+    )
+    require(
+        saved["result_digest"] == digest(result)
+        and saved["design"] == value["design"]
+        and review["verdict"] == "ACCEPT",
+        "Accepted design evidence changed",
+    )
+    return saved
+
+
+async def ensure_design_acceptance(app, item_id, base, acceptance):
+    """At most one correction follows a genuine native rejection; failed evidence never retries."""
+    request = design_request(app, item_id, base, acceptance)
+    if request is None:
+        return None
+    if app._stage_path(item_id, "design-acceptance").exists():
+        return verify_design_acceptance(app, item_id, base)
+    repo = app.candidate_repository(item_id)
+    require(
+        git(repo, "rev-parse", "HEAD") == base and not git(repo, "status", "--porcelain"),
+        "Source changed before independent design acceptance",
+    )
+    path = app._stage_path(item_id, "design-request")
+    if path.exists():
+        require(json.loads(path.read_text()) == request, "Design request changed")
+    else:
+        atomic_json(path, request, exclusive=True)
+    feedback = None
+    for attempt in (1, 2):
+        stage = "design-attempt-" + str(attempt) + "-" + digest(request)
+        prompt = (
+            "Prepare only a preimplementation design artifact for the bound requirement. Source and "
+            "provider are read-only; write only to the invocation artifact-output directory. No source "
+            "implementation, commits or lifecycle actions. Preserve permissions and denials. Arrange "
+            "one fresh native read-only child reviewer with fork_turns=none or fork_context=false. "
+            "Give the child the source base, full original preparation, design artifact and hash, and "
+            "request digest. The child must return JSON {candidate:<source base>,design_digest:<file "
+            "sha256>,request_digest,verdict:ACCEPT|REJECT,unresolved_findings:[]}; REJECT needs concrete "
+            "findings. Wait for the native result. Return JSON {item_id,candidate:<source base>,"
+            "status:evidence-ready|blocked,artifacts:[{path,sha256}],design:{path,sha256},"
+            "reviewer_session:<native child identity>,blockers:[]}. A rejected design is evidence-ready "
+            "but is not accepted. Do not correct it within this invocation after the reviewer verdict; "
+            "the harness permits at most one bounded correction. Request digest: "
+            + digest(request)
+            + "\nBound design request: "
+            + json.dumps(request)
+            + "\nOriginal preparation: "
+            + app._stage_path(item_id, "preparation").read_text()
+            + "\nPrior rejected design and findings: "
+            + json.dumps(feedback)
+        )
+        if not app._stage_path(item_id, stage).exists():
+            await app.enforce_guard(item_id)
+        await app.invoke(item_id, stage, "orchestrator", prompt, read_only=False, purpose="proof")
+        require(
+            git(repo, "rev-parse", "HEAD") == base and not git(repo, "status", "--porcelain"),
+            "Source changed before independent design acceptance",
+        )
+        result, value, review = validated_design_attempt(app, item_id, request, acceptance, attempt)
+        if review["verdict"] == "ACCEPT":
+            saved = {
+                "request_digest": digest(request),
+                "result_digest": digest(result),
+                "attempt": attempt,
+                "design": value["design"],
+                "source_base": base,
+            }
+            atomic_json(app._stage_path(item_id, "design-acceptance"), saved, exclusive=True)
+            return saved
+        feedback = {"design": value["design"], "review": review}
+    require(False, "Independent design review rejected both bounded attempts")

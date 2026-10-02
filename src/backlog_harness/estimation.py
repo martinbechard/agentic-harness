@@ -93,19 +93,25 @@ def prepared_workflow(app, item_id, config):
             not selected.get("proof_requirements"),
             "Explicit proof selection requires retained preparation evidence",
         )
+        require(
+            not selected.get("design_review"),
+            "Explicit design selection requires retained preparation evidence",
+        )
         selected.pop("preparation", None)
         return selected
     saved = json.loads(path.read_text())
     proof_selection = selected.get("proof_requirements")
+    design_selection = selected.get("design_review")
     original_selection = {
         key: value
         for key, value in selected.items()
-        if key not in {"proof_requirements", "candidate_approval_required"}
+        if key not in {"proof_requirements", "candidate_approval_required", "design_review"}
     }
     require(
         saved["workflow_config_digest"] == digest(selected)
         or (
-            bool(proof_selection) and saved["workflow_config_digest"] == digest(original_selection)
+            bool(proof_selection or design_selection)
+            and saved["workflow_config_digest"] == digest(original_selection)
         ),
         "Prepared workflow configuration changed; reconcile before dispatch",
     )
@@ -128,6 +134,13 @@ def prepared_workflow(app, item_id, config):
             and bool(proof_selection["requirements"]),
             "Explicit proof selection differs from retained preparation authority",
         )
+    if design_selection:
+        require(
+            isinstance(design_selection, dict)
+            and design_selection.get("provider_revision") == saved["item"]["revision"]
+            and design_selection.get("preparation_digest") == digest(decision),
+            "Explicit design selection differs from retained preparation authority",
+        )
     refusal = value.get("blocked") or (
         (value.get("blockers") or value.get("blocker") or "Coordinator reported blocked")
         if value.get("status") == "blocked"
@@ -141,10 +154,10 @@ def prepared_workflow(app, item_id, config):
         "canonical_primary_branch": selected["primary_branch"],
     }
     parameters, metadata = normalize_preparation_workflow(parameters, echoes)
-    # A reviewed operator selection names the supported proof requirements for this
+    # A reviewed operator selection names the supported requirements for this
     # exact packet. Free-form gates themselves never select an execution route.
     require(
-        not metadata.get("required_gates") or bool(proof_selection),
+        not metadata.get("required_gates") or bool(proof_selection or design_selection),
         "Preparation requires unsupported acceptance gates before dispatch: "
         + json.dumps(metadata.get("required_gates", [])),
     )
@@ -180,7 +193,7 @@ def prepared_workflow(app, item_id, config):
     selected["checks"] = selected["checks"] + [
         argv for argv in checks if argv not in selected["checks"]
     ]
-    if metadata or proof_selection:
+    if metadata or proof_selection or design_selection:
         selected["preparation_evidence"] = {
             "item_id": item_id,
             "provider_revision": saved["item"]["revision"],

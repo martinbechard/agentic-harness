@@ -1458,6 +1458,16 @@ class Application:
                 "Accepted workspace changed; reconcile before another invocation",
             )
         require(purpose in {"implementation", "provider", "proof"}, "Unknown invocation purpose")
+        if (
+            assignment.exists()
+            and not read_only
+            and purpose == "implementation"
+            and frozen.get("workflow", {}).get("design_review")
+        ):
+            from .recovery_flow import verify_design_acceptance
+
+            verify_design_acceptance(self, item_id)
+
         if purpose == "provider":
             data = plain(snapshot.data)
             data["workspace"] = str(snapshot.repository)
@@ -3113,6 +3123,10 @@ class Application:
                     project_mode == mode,
                     "Configuration execution mode differs from provider policy",
                 )
+                if engine == "langgraph":
+                    from .estimation import prepare_item
+
+                    await prepare_item(self, self.provider.item(item_id))
                 if mode == "MULTITASK":
                     mine = set(self.item_workflow(item_id)["allowed_paths"])
                     for other in self.provider.snapshot():
@@ -3440,6 +3454,11 @@ class Application:
                 base_path, {"commit": git(candidate_repo, "rev-parse", "HEAD")}, exclusive=True
             )
         base = json.loads(base_path.read_text())["commit"]
+        accepted_design = None
+        if workflow.get("design_review"):
+            from .recovery_flow import ensure_design_acceptance
+
+            accepted_design = await ensure_design_acceptance(self, item_id, base, acceptance)
         prompt = (
             "Running is now recorded for your exact session. Implement the Work Item in this candidate "
             "repository only. You own task organization and may use native delegation. "
@@ -3502,6 +3521,12 @@ class Application:
                 "candidate, reviewer_session, and question {question_id,text,candidate}, after completing "
                 "the exact-candidate review and checks and identifying their evidence. "
                 "Do not integrate or claim completion before approval."
+            )
+        if accepted_design:
+            prompt += (
+                "\nImplement the independently accepted design; preserve its scope and constraints. "
+                "Read the artifact at its bound path before source work. Accepted design: "
+                + json.dumps(accepted_design)
             )
         if workflow.get("candidate_approval_required"):
             prompt += (
@@ -3655,8 +3680,14 @@ class Application:
             candidate,
             self.native_sessions_root(produced["binding"]),
         )
-        atomic_json(self._stage_path(item_id, "review"), review)
-        if self._stage_path(item_id, "superseding-delivery-authorization").exists():
+        from .acceptance_verification import required as verification_required
+        from .acceptance_verification import retain_review
+
+        review = retain_review(self, item_id, review)
+        if self._stage_path(item_id, "superseding-delivery-authorization").exists() or (
+            verification_required(self, item_id)
+            and self._stage_path(item_id, "acceptance-verification-inputs").exists()
+        ):
             # Superseding integration binds these original receipts immutably;
             # its own merged-tree checks are validated at the delivery gate.
             checks = json.loads(self._stage_path(item_id, "source-checks").read_text())

@@ -155,6 +155,27 @@ before dispatch. A normal clarification answer does not grant candidate approval
 The actual dev-methodology selections remain disabled pending their separate
 [coverage review](verification/dev-methodology-proof-coverage.md).
 
+When preparation requires design acceptance before implementation, the optional
+per-item `design_review` object contains `provider_revision`,
+`preparation_digest`, `canonical_reference` and `acceptance_text`. The harness
+uses the existing artifact-only invocation permissions to obtain a design and
+fresh native child review at the admitted source base. Source-writing invocation
+requires accepted review bound to that design artifact and preparation. A genuine
+independent rejection permits one correction; missing or invalid evidence does
+not permit a retry. The accepted artifact is supplied to the producer and checked
+again before delivery. Existing workflows are unchanged when this option is absent.
+
+If acceptance also requires independent overall verification, set
+`proof_requirements.verification_required: true`. The fresh proof reviewer receives
+the canonical assignment, accepted source review, source-check results and check
+execution receipt with exact file hashes. In addition to visual assessments, it
+must record a separate overall verification conclusion, acceptance coverage,
+inspected receipts and unresolved findings. Its native identity must differ from
+the source producer, proof producer and source reviewer. This reuses one review
+invocation; it does not certify future integration or provider closure. Bound
+check receipts are retained across interrupted or approval-waiting replay, while
+their candidate, commands, output integrity and native source review are revalidated.
+
 `run-proof ITEM --instruction /absolute/proof.txt` runs one separate proof invocation.
 Add `--prepare-only` to persist the exact invocation intent and report its artifact
 directory without launching a process or granting access. This makes a proposed

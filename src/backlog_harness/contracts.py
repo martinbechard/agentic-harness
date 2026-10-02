@@ -351,22 +351,46 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
                 "checks",
                 "engine",
                 "proof_requirements",
+                "design_review",
                 "candidate_approval_required",
             }:
                 raise ConfigError(
-                    "Item workflow may only override allowed_paths, checks, engine, proof_requirements and candidate_approval_required"
+                    "Item workflow may only override allowed_paths, checks, engine, proof_requirements, design_review and candidate_approval_required"
                 )
             if (
                 "candidate_approval_required" in selected
                 and type(selected["candidate_approval_required"]) is not bool
             ):
                 raise ConfigError("candidate_approval_required must be boolean")
+            if "design_review" in selected:
+                design = _object(selected["design_review"], "design_review")
+                if set(design) != {
+                    "provider_revision",
+                    "preparation_digest",
+                    "canonical_reference",
+                    "acceptance_text",
+                }:
+                    raise ConfigError(
+                        "Design review needs exact preparation binding and acceptance"
+                    )
+                for field, value in design.items():
+                    _text(value, "design_review." + field)
             if "proof_requirements" in selected:
                 proof = _object(selected["proof_requirements"], "proof_requirements")
-                if set(proof) != {"provider_revision", "preparation_digest", "requirements"}:
+                if set(proof) - {
+                    "provider_revision",
+                    "preparation_digest",
+                    "requirements",
+                    "verification_required",
+                } or not {"provider_revision", "preparation_digest", "requirements"} <= set(proof):
                     raise ConfigError(
                         "Proof requirements need exact preparation binding and requirements"
                     )
+                if (
+                    "verification_required" in proof
+                    and type(proof["verification_required"]) is not bool
+                ):
+                    raise ConfigError("verification_required must be boolean")
                 for field in ("provider_revision", "preparation_digest"):
                     _text(proof.get(field), "proof_requirements." + field)
                 requirements = proof["requirements"]
