@@ -250,3 +250,15 @@ noncanonical spellings; all 52 affected tests passed after the correction.
 The corrected candidate received independent ACCEPT. The final installed public
 policy/status and replay scenario passed in 9.03 seconds. Its exact tested wheel
 is retained under `.agent-ops/state-normalization-a48/final`.
+
+## Structured Review Gate Selection
+
+Configuration now accepts the same required-gate forms as retained preparation:
+a nonempty string or an exact object with nonempty gate and requirement strings.
+Values remain unchanged; canonical digests identify duplicates independent of
+object key order. Existing ordered coverage and candidate review binding remain
+unchanged. Focused configuration, preparation, and native-evidence tests passed
+164 cases, and independent review accepted the source and exact provider-name-scan
+selection coverage. This representation-only change adds no invocation or recovery
+path. The built wheel matches all 35 source modules; installation is deferred until
+the active a48 Diagnostician invocation is terminal.

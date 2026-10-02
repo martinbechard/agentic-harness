@@ -1431,3 +1431,97 @@ def test_source_review_selection_binds_corrected_preparation_lineage(
             "correction_resolution_digest": digest(resolution),
             "metadata": {"required_gates": [gate]},
         }
+
+
+def test_source_review_selection_binds_mixed_structured_required_gates_without_invocation(
+    config_file, monkeypatch
+):
+    from copy import deepcopy
+
+    from backlog_harness.contracts import load_config
+    from backlog_harness.estimation import configured_workflow, prepared_workflow
+
+    config, data = config_file
+    data["workflow"]["preparation"] = {
+        "allowed_roots": ["answer.py"],
+        "check_commands": [["git", "diff", "--check"]],
+    }
+    data["workflow"]["checks"] = [["git", "diff", "--check"]]
+    config.write_text(yaml.safe_dump(data))
+    app = Application(config)
+    monkeypatch.setattr(app, "validate_invocation_result", lambda _: None)
+    monkeypatch.setattr(
+        "backlog_harness.estimation.validate_preparation_invocation", lambda *a: None
+    )
+
+    structured = {
+        "gate": "Deterministic generated-report boundary",
+        "requirement": "Prove the maintained-source result with reports present and absent.",
+    }
+    gates = ["Maintained-source rejection", structured]
+    decision = {
+        "role": "coordinator",
+        "invocation_id": "preparation",
+        "text": json.dumps(
+            {
+                "item_id": "one",
+                "provider_revision": "revision",
+                "workflow": {
+                    "allowed_paths": ["answer.py"],
+                    "checks": [["git", "diff", "--check"]],
+                    "required_gates": gates,
+                },
+            }
+        ),
+    }
+    preparation = app._stage_path("one", "preparation")
+    atomic_json(
+        preparation,
+        {
+            "item": {"revision": "revision"},
+            "decision": decision,
+            "workflow_config_digest": digest(configured_workflow(app.config, "one")),
+            "invocation_config_digest": app.config.file_digest,
+        },
+    )
+    preparation_bytes = preparation.read_bytes()
+    requirements = [
+        {
+            "id": "source-rejection",
+            "canonical_reference": "item-one#source-rejection",
+            "acceptance_text": "Unexpected retired names remain rejected",
+            "required_gate": gates[0],
+        },
+        {
+            "id": "generated-report",
+            "canonical_reference": "item-one#generated-report",
+            "acceptance_text": "Reports do not change the maintained-source result",
+            "required_gate": structured,
+        },
+    ]
+    contract = {
+        "provider_revision": "revision",
+        "preparation_digest": digest(decision),
+        "requirements": requirements,
+    }
+    data["workflow"]["items"] = {
+        "one": {"allowed_paths": ["answer.py"], "review_requirements": contract}
+    }
+    config.write_text(yaml.safe_dump(data))
+
+    async def no_invocation(*_args, **_kwargs):
+        raise AssertionError("review selection must not invoke a model")
+
+    monkeypatch.setattr(app, "invoke", no_invocation)
+    workflow = prepared_workflow(app, "one", load_config(config))
+    assert workflow["review_requirements"] == contract
+    assert workflow["preparation_evidence"]["metadata"]["required_gates"] == gates
+    assert preparation.read_bytes() == preparation_bytes
+
+    mismatched = deepcopy(contract)
+    mismatched["requirements"][1]["required_gate"]["requirement"] = "Different requirement"
+    data["workflow"]["items"]["one"]["review_requirements"] = mismatched
+    config.write_text(yaml.safe_dump(data))
+    with pytest.raises(TransitionBlocked, match="exact retained required gates"):
+        prepared_workflow(app, "one", load_config(config))
+    assert preparation.read_bytes() == preparation_bytes

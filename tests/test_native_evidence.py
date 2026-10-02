@@ -121,7 +121,10 @@ def test_selected_source_review_binds_pre_spawn_checks_and_conclusions(tmp_path,
                 "id": "role-suite",
                 "canonical_reference": "item#acceptance",
                 "acceptance_text": "Preserve evaluation strength",
-                "required_gate": "Verify role-suite agreement without weakening evaluation",
+                "required_gate": {
+                    "gate": "Role-suite agreement",
+                    "requirement": "Verify role-suite agreement without weakening evaluation",
+                },
             }
         ],
     }

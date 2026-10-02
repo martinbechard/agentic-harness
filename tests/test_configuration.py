@@ -2,7 +2,7 @@ import pytest
 import yaml
 
 from backlog_harness.adapters.registry import AdapterRegistry
-from backlog_harness.contracts import ConfigError, load_config
+from backlog_harness.contracts import ConfigError, load_config, plain
 
 
 def test_reload_is_deeply_immutable(config_file):
@@ -253,6 +253,116 @@ def test_explicit_source_review_requirement_contract(config_file, fault):
             load_config(path)
     else:
         assert load_config(path).data["workflow"]["items"]["one"]["review_requirements"]
+
+
+def test_source_review_contract_preserves_mixed_structured_gate_values(config_file):
+    path, data = config_file
+    structured = {
+        "gate": "Deterministic generated-report boundary",
+        "requirement": "Prove the boundary with reports present and absent.",
+    }
+    requirements = [
+        {
+            "id": "generated-report",
+            "canonical_reference": "item-one#generated-report",
+            "acceptance_text": "Generated reports do not change the maintained-source result",
+            "required_gate": structured,
+        },
+        {
+            "id": "source-rejection",
+            "canonical_reference": "item-one#source-rejection",
+            "acceptance_text": "Unexpected retired names remain rejected",
+            "required_gate": "Maintained-source rejection",
+        },
+    ]
+    contract = {
+        "provider_revision": "revision",
+        "preparation_digest": "1" * 64,
+        "requirements": requirements,
+    }
+    data["workflow"]["items"] = {
+        "one": {"allowed_paths": ["answer.py"], "review_requirements": contract}
+    }
+    path.write_text(yaml.safe_dump(data))
+    loaded = load_config(path)
+    assert plain(loaded.data["workflow"]["items"]["one"]["review_requirements"]) == contract
+
+
+def test_source_review_contract_rejects_duplicate_structured_gate_regardless_of_key_order(
+    config_file,
+):
+    path, data = config_file
+    first = {
+        "gate": "Deterministic generated-report boundary",
+        "requirement": "Prove reports present and absent.",
+    }
+    reversed_order = {
+        "requirement": "Prove reports present and absent.",
+        "gate": "Deterministic generated-report boundary",
+    }
+    requirements = [
+        {
+            "id": "first",
+            "canonical_reference": "item-one#first",
+            "acceptance_text": "First requirement",
+            "required_gate": first,
+        },
+        {
+            "id": "second",
+            "canonical_reference": "item-one#second",
+            "acceptance_text": "Second requirement",
+            "required_gate": reversed_order,
+        },
+    ]
+    data["workflow"]["items"] = {
+        "one": {
+            "allowed_paths": ["answer.py"],
+            "review_requirements": {
+                "provider_revision": "revision",
+                "preparation_digest": "1" * 64,
+                "requirements": requirements,
+            },
+        }
+    }
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+    with pytest.raises(ConfigError, match="required gates must be unique"):
+        load_config(path)
+
+
+@pytest.mark.parametrize(
+    "gate",
+    [
+        {},
+        {"gate": "Named gate"},
+        {"requirement": "Named requirement"},
+        {"gate": "", "requirement": "Named requirement"},
+        {"gate": "Named gate", "requirement": 1},
+        {"gate": "Named gate", "requirement": "Named requirement", "unknown": "value"},
+        ["Named gate", "Named requirement"],
+    ],
+)
+def test_source_review_contract_rejects_malformed_structured_gate(config_file, gate):
+    path, data = config_file
+    data["workflow"]["items"] = {
+        "one": {
+            "allowed_paths": ["answer.py"],
+            "review_requirements": {
+                "provider_revision": "revision",
+                "preparation_digest": "1" * 64,
+                "requirements": [
+                    {
+                        "id": "gate",
+                        "canonical_reference": "item-one#gate",
+                        "acceptance_text": "Review the exact gate",
+                        "required_gate": gate,
+                    }
+                ],
+            },
+        }
+    }
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match="required_gate"):
+        load_config(path)
 
 
 @pytest.mark.parametrize("setting", ["true", 1, None])

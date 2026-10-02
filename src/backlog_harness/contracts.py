@@ -74,6 +74,18 @@ def _text(value, label):
     return value
 
 
+def _review_gate(value):
+    if isinstance(value, str):
+        return _text(value, "review requirement required_gate")
+    if not isinstance(value, dict) or set(value) != {"gate", "requirement"}:
+        raise ConfigError(
+            "review requirement required_gate must be a string or exact gate/requirement mapping"
+        )
+    _text(value["gate"], "review requirement required_gate.gate")
+    _text(value["requirement"], "review requirement required_gate.requirement")
+    return value
+
+
 def _path(value, label, *, directory=True):
     path = Path(_text(value, label))
     if not path.is_absolute() or not (path.is_dir() if directory else path.is_file()):
@@ -453,14 +465,16 @@ def load_config(path: Path, *, adapters=frozenset({"codex"})) -> ConfigSnapshot:
                         "required_gate",
                     }:
                         raise ConfigError("Invalid explicit review requirement")
-                    for field, value in requirement.items():
-                        _text(value, "review requirement " + field)
-                    if requirement["id"] in identifiers or requirement["required_gate"] in gates:
+                    for field in ("id", "canonical_reference", "acceptance_text"):
+                        _text(requirement[field], "review requirement " + field)
+                    gate = _review_gate(requirement["required_gate"])
+                    gate_digest = digest(gate)
+                    if requirement["id"] in identifiers or gate_digest in gates:
                         raise ConfigError(
                             "Review requirement ids and required gates must be unique"
                         )
                     identifiers.add(requirement["id"])
-                    gates.add(requirement["required_gate"])
+                    gates.add(gate_digest)
             if selected.get("engine", "legacy") not in {"legacy", "langgraph"}:
                 raise ConfigError("Item workflow engine must be legacy or langgraph")
             if not isinstance(selected.get("allowed_paths"), list) or not selected["allowed_paths"]:
