@@ -38,7 +38,7 @@ scheduling:
 access_timeout: 120
 ```
 
-Use a model available to your Codex account. The bundled adapter inherits the configured Codex sandbox, authentication, and other settings. Add `--profile PROFILE` to any agent command to select a configured profile. Agents need project instructions and provider/delivery skills that describe the backlog, worktree preparation, required tests, and merge convention.
+Use a model available to your Codex account. The bundled adapter inherits the configured Codex sandbox, authentication, and other settings. Add `--profile PROFILE` to any agent command to select a configured profile. Use `--context-file /absolute/path/launch-context.txt` to send deployment-specific instructions directly in the Codex prompt, before the role request. An unreadable file stops the invocation before Codex starts. This transports instructions; it does not enforce agent compliance. Agents need project instructions and provider/delivery skills that describe the backlog, worktree preparation, required tests, and merge convention.
 
 ```sh
 uv run agentic-harness --config config.yaml

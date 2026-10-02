@@ -55,7 +55,8 @@ def access(request, root, main, control):
         committed = committed_items(main)
         completed = {i["id"] for i in committed if i["status"] == "completed"}
         for item in sorted(committed, key=lambda i: i["id"]):
-            if item["status"] != "ready":
+            recovering = item.get("interrupted_candidate", False) and item["status"] == "running"
+            if item["status"] != "ready" and not recovering:
                 continue
             if item["id"] in request["excluded"]:
                 continue
@@ -69,7 +70,10 @@ def access(request, root, main, control):
             branch = "item/" + item["id"]
             if worktree.exists():
                 _, local = load(worktree, item["id"])
-                if local["status"] != "ready":
+                if recovering and local["status"] == "running":
+                    # Fixture provider reconciles an explicitly recorded stopped attempt.
+                    save(worktree, local, "ready")
+                elif local["status"] != "ready":
                     continue
             else:
                 worktree.parent.mkdir(exist_ok=True)
@@ -175,6 +179,8 @@ def merge(request, root, main, control):
                     item = json.loads(git(main, "show", f"{candidate}:{relative}"))
                 except subprocess.CalledProcessError:
                     continue  # The working-tree status has not been committed yet.
+                if not item.get("approved", True):
+                    continue
                 if (main / "backlog" / "completed" / path.name).exists():
                     continue
                 before = git(main, "rev-parse", "HEAD")

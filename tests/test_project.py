@@ -282,3 +282,61 @@ def test_cli_interrupt_reaps_agent_group_and_preserves_worktree(project):
             await reader
 
     asyncio.run(scenario())
+
+
+def test_provider_reconciles_legacy_candidate_and_excludes_unpublished_work(project):
+    """Provider double owns reconciliation; harness only dispatches its returned item."""
+    root, control, config = project
+    add(root, "legacy", interrupted_candidate=True)
+    add(root, "live")
+    add(root, "unreviewed", approved=False)
+    legacy_record = root / "backlog/ready/legacy.json"
+    item = json.loads(legacy_record.read_text())
+    item["status"] = "running"
+    (root / "backlog/running").mkdir()
+    legacy_record.unlink()
+    (root / "backlog/running/legacy.json").write_text(json.dumps(item))
+    git(root, "add", "backlog")
+    git(root, "commit", "-m", "Record legacy assignment")
+    worktrees = root.parent / "worktrees"
+    worktrees.mkdir()
+    for identity, status in [
+        ("legacy", "running"),
+        ("live", "running"),
+        ("unreviewed", "awaiting-merge"),
+    ]:
+        workspace = worktrees / identity
+        git(root, "worktree", "add", "-b", "item/" + identity, str(workspace), "main")
+        if identity != "legacy":
+            old = workspace / f"backlog/ready/{identity}.json"
+            record = json.loads(old.read_text())
+            record["status"] = status
+            old.unlink()
+            target = workspace / f"backlog/{status}/{identity}.json"
+            target.parent.mkdir(exist_ok=True)
+            target.write_text(json.dumps(record))
+        (workspace / f"{identity}-candidate.txt").write_text("preserve candidate")
+        git(workspace, "add", ".")
+        git(workspace, "commit", "-m", f"Preserve {identity} candidate")
+    legacy = worktrees / "legacy"
+    candidate = git(legacy, "rev-parse", "HEAD")
+    (legacy / "unrelated.txt").write_text("keep local")
+    other_heads = {i: git(worktrees / i, "rev-parse", "HEAD") for i in ("live", "unreviewed")}
+    asyncio.run(
+        execute(
+            config,
+            lambda h: (
+                "backlog/completed/legacy.json"
+                in git(root, "ls-tree", "-r", "--name-only", "HEAD").splitlines()
+            ),
+        )
+    )
+    git(root, "merge-base", "--is-ancestor", candidate, "HEAD")
+    assert (root / "legacy-candidate.txt").read_text() == "preserve candidate"
+    assert (legacy / "unrelated.txt").read_text() == "keep local"
+    assert not (root / "unrelated.txt").exists()
+    assert (control / "legacy.attempts").read_text() == "1"
+    for identity, revision in other_heads.items():
+        assert not (control / f"{identity}.attempts").exists()
+        assert git(worktrees / identity, "rev-parse", "HEAD") == revision
+        assert not (root / f"{identity}-candidate.txt").exists()

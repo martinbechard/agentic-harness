@@ -151,6 +151,9 @@ def test_codex_bridge_preserves_profile_and_uses_structured_final_message(tmp_pa
         "target.write_text(json.dumps({'items':[]}))\n"
     )
     fake.chmod(0o755)
+    context = "Current authorization supersedes the historical hold.\nClaim-free operation. café\n"
+    context_path = tmp_path / "launch context.txt"
+    context_path.write_text(context, encoding="utf-8")
 
     async def scenario():
         process = await Process.start(
@@ -160,7 +163,18 @@ def test_codex_bridge_preserves_profile_and_uses_structured_final_message(tmp_pa
                 "backlog_harness.codex",
                 "--executable",
                 str(fake),
-                *(["--profile", "test", "--model", "chosen-model"] if configured else []),
+                *(
+                    [
+                        "--profile",
+                        "test",
+                        "--model",
+                        "chosen-model",
+                        "--context-file",
+                        str(context_path),
+                    ]
+                    if configured
+                    else []
+                ),
             ],
             {"role": "access", "action": "ready"},
             tmp_path,
@@ -176,7 +190,13 @@ def test_codex_bridge_preserves_profile_and_uses_structured_final_message(tmp_pa
         assert "--sandbox" not in arguments
         schema = json.loads(Path(arguments[arguments.index("--output-schema") + 1]).read_text())
         assert schema["required"] == ["items"]
-        assert "installed provider/delivery skills" in (tmp_path / "prompt.txt").read_text()
+        prompt = (tmp_path / "prompt.txt").read_text()
+        assert "installed provider/delivery skills" in prompt
+        assert prompt.startswith(context + "\n\n") == configured
+        assert json.loads(prompt.split("Request data follows:\n", 1)[1]) == {
+            "role": "access",
+            "action": "ready",
+        }
 
     asyncio.run(scenario())
 
@@ -238,3 +258,31 @@ def test_codex_provider_schema_is_strict(action):
     schema = schema_for({"role": "access", "action": action})
     assert schema["additionalProperties"] is False
     assert set(schema["required"]) == set(schema["properties"])
+
+
+def test_codex_missing_context_fails_before_executable_start(tmp_path):
+    fake = tmp_path / "codex"
+    fake.write_text(f"#!{sys.executable}\nfrom pathlib import Path\nPath('started').touch()\n")
+    fake.chmod(0o755)
+
+    async def scenario():
+        process = await Process.start(
+            [
+                sys.executable,
+                "-m",
+                "backlog_harness.codex",
+                "--executable",
+                str(fake),
+                "--context-file",
+                str(tmp_path / "missing.txt"),
+            ],
+            {"role": "access", "action": "ready"},
+            tmp_path,
+            tmp_path / "state",
+            lambda *a, **kw: None,
+        )
+        await process.wait()
+        assert process.process.returncode != 0
+        assert not (tmp_path / "started").exists()
+
+    asyncio.run(scenario())

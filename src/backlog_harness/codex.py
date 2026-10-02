@@ -41,6 +41,9 @@ def main():
     parser.add_argument("--model")
     parser.add_argument("--effort", default="high")
     parser.add_argument("--profile")
+    parser.add_argument(
+        "--context-file", type=Path, help="Project launch instructions sent in the prompt"
+    )
     args = parser.parse_args()
     request = json.loads(Path(os.environ["HARNESS_REQUEST"]).read_text())
     result = Path(os.environ["HARNESS_RESULT"])
@@ -74,6 +77,8 @@ def main():
         "Operate on filesystem work items in the current worktree. Report your activities "
         "in the agent output. Request data follows:\n" + json.dumps(request)
     )
+    if args.context_file:
+        prompt = args.context_file.read_text(encoding="utf-8") + "\n\n" + prompt
     # Inherit the configured Codex profile and sandbox; never bypass them here.
     completed = subprocess.run([*command, "-"], input=prompt, text=True, check=False)
     raise SystemExit(completed.returncode)

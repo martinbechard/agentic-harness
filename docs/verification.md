@@ -35,8 +35,8 @@ The scope is `functional-spec.md`. Historical acceptance records in `archive/pre
 
 Verified on 2026-10-02 with Python 3.12:
 
-- 73 tests passed, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
-- Coverage: 100% of 446 production statements and 130 branches. The existing 100% gate remains enabled.
+- 75 tests passed, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
+- Coverage: 100% of 449 production statements and 132 branches. The existing 100% gate remains enabled.
 - Ruff lint and format checks passed.
 - Source distribution and wheel built successfully. Wheel contents were inspected for retired modules.
 
@@ -55,4 +55,12 @@ uv run coverage report
 uv build --offline --out-dir .agent-ops/verification/dist
 ```
 
-Agent-owned decisions are verified through deterministic test agents. The Codex bridge is verified against a controlled executable and the locally installed CLI's command interface; these checks do not claim a paid-model run or a live GitHub-provider run. OTEL output is a local OTLP JSON log export, not network collector delivery.
+The automated suite verifies agent-owned decisions through deterministic test agents and checks the Codex bridge against a controlled executable. Subsequent [live Codex verification](live-codex-verification.md) passed actual filesystem delivery, tested integration, and interrupted-agent recovery with Codex in all three roles. No live GitHub-provider run was performed. OTEL output is a local OTLP JSON log export, not network collector delivery.
+
+## Deployment regressions
+
+The Codex bridge now accepts `--context-file` and sends that file verbatim before its role prompt. `test_codex_bridge_preserves_profile_and_uses_structured_final_message` captures the executable's actual stdin with and without context; `test_codex_missing_context_fails_before_executable_start` verifies an unreadable context prevents launch. These assert transport, not model compliance.
+
+`test_provider_reconciles_legacy_candidate_and_excludes_unpublished_work` uses a separate Git project and deterministic provider agents. An explicitly interrupted candidate survives provider-owned reconciliation and the tested delivery merge; its commit remains an ancestor of main. Unrelated local files remain uncommitted. A live assignment is not duplicated and an unreviewed committed candidate is not merged. The fixture's explicit interruption record stands in for provider knowledge; this does not prove a model can diagnose arbitrary historical attempts.
+
+Full regression run: 75 tests passed, 100% statement and branch coverage; Ruff and diff checks passed.
