@@ -141,7 +141,35 @@ def test_cancellation_reaps_sdk_app_server(tmp_path):
     asyncio.run(scenario())
 
 
-def test_exact_instructions_are_received_by_sdk_server(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    ("assignment", "expected_name"),
+    [
+        ({"role": "access", "action": "ready"}, "Backlog — Find ready work"),
+        (
+            {"role": "access", "action": "status", "item": {"id": "fix"}},
+            "Backlog — Check status — fix",
+        ),
+        (
+            {"role": "access", "action": "failure", "item": {"id": "fix"}},
+            "Backlog — Record failure — fix",
+        ),
+        ({"role": "access", "action": "hold", "item": {"id": "fix"}}, "Backlog — Hold item — fix"),
+        (
+            {"role": "access", "action": "decision", "submission": {"item_id": "fix"}},
+            "Backlog — Process decision — fix",
+        ),
+        (
+            {"role": "access", "action": "epic_complete", "epic": "release"},
+            "Backlog — Check epic completion — release",
+        ),
+        ({"role": "development", "item": {"id": "fix"}}, "Develop — fix"),
+        ({"role": "merge"}, "Merge — {project}"),
+        ({"instruction": "Return receipt"}, "Harness — {project}"),
+    ],
+)
+def test_exact_instructions_are_received_by_sdk_server(
+    tmp_path, monkeypatch, assignment, expected_name
+):
     from openai_codex import Codex, CodexConfig
 
     from backlog_harness import codex
@@ -163,7 +191,6 @@ def test_exact_instructions_are_received_by_sdk_server(tmp_path, monkeypatch):
         ),
     )
     instructions = 'Follow the assigned provider.\nPreserve café.txt and literal "$HOME".\n'
-    assignment = {"role": "access", "action": "ready", "instruction": "Only ready items"}
     schema = {"type": "object", "properties": {"items": {"type": "array"}}, "required": ["items"]}
     result = codex.CodexAdapter().run(
         instructions=instructions,
@@ -176,6 +203,14 @@ def test_exact_instructions_are_received_by_sdk_server(tmp_path, monkeypatch):
     calls = [json.loads(line) for line in capture.read_text().splitlines()]
     start = next(c["params"] for c in calls if c["method"] == "thread/start")
     turn = next(c["params"] for c in calls if c["method"] == "turn/start")
+    name = next(c["params"] for c in calls if c["method"] == "thread/name/set")
+    assert name == {
+        "threadId": "thread-fixture",
+        "name": expected_name.format(project=tmp_path.name),
+    }
+    methods = [c["method"] for c in calls]
+    assert methods.index("thread/start") < methods.index("thread/name/set")
+    assert methods.index("thread/name/set") < methods.index("turn/start")
     assert start["developerInstructions"] == instructions
     assert json.loads(turn["input"][0]["text"]) == assignment
     assert turn["outputSchema"] == schema

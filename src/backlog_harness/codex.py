@@ -2,11 +2,37 @@
 
 import argparse
 import json
+from pathlib import Path
 
 from openai_codex import ApprovalMode, Codex, CodexConfig
 from openai_codex.types import ReasoningEffort
 
 from .adapter import execute
+
+
+def thread_name(request, cwd):
+    role = request.get("role")
+    if role == "development":
+        return f"Develop — {request['item']['id']}"
+    if role == "merge":
+        return f"Merge — {Path(cwd).name}"
+    if role == "access":
+        action = request["action"]
+        label = {
+            "ready": "Find ready work",
+            "status": "Check status",
+            "failure": "Record failure",
+            "hold": "Hold item",
+            "decision": "Process decision",
+            "epic_complete": "Check epic completion",
+        }[action]
+        subject = request.get("item", {}).get("id")
+        if action == "decision":
+            subject = request["submission"]["item_id"]
+        elif action == "epic_complete":
+            subject = request["epic"]
+        return f"Backlog — {label}" + (f" — {subject}" if subject else "")
+    return f"Harness — {Path(cwd).name}"
 
 
 class CodexAdapter:
@@ -25,6 +51,7 @@ class CodexAdapter:
                 approval_mode=ApprovalMode.deny_all,
             )
             emit({"event": "thread_started", "thread": thread.id})
+            thread.set_name(thread_name(request, cwd))
             turn = thread.turn(json.dumps(request), effort=self.effort, output_schema=schema)
             response = None
             completed = False

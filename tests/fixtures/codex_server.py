@@ -48,6 +48,8 @@ for line in sys.stdin:
                 "turns": [],
             },
         }
+    elif method == "thread/name/set":
+        result = {}
     elif method == "turn/start":
         result = {
             "turn": {"id": "turn-fixture", "items": [], "itemsView": "full", "status": "inProgress"}
