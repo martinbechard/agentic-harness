@@ -50,8 +50,11 @@ def schema_for(request):
                     "detail",
                 )
             },
-            "status": {"type": "string", "enum": ["applied", "already_applied", "rejected"]},
-            "persisted": {"type": "boolean"},
+            "status": {
+                "type": "string",
+                "enum": ["applied", "already_applied", "already_resolved", "rejected", "unknown"],
+            },
+            "persisted": {"type": ["boolean", "null"]},
             "resolution": {"type": "string", "enum": ["approved", "cancelled", "answered", "none"]},
         },
         "epic_complete": {"complete": {"type": "boolean"}},

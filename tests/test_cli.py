@@ -52,6 +52,7 @@ def test_configuration_paths_are_relative_to_config_file(tmp_path):
         {"state": None},
         {"run_item": "one"},
         {"access_timeout": 0},
+        {"decision_timeout": 0},
         {"scheduling": {"manual_item": "one"}},
     ],
 )

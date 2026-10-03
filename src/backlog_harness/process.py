@@ -9,7 +9,7 @@ import uuid
 from pathlib import Path
 
 from .engine import Item, Outcome
-from .provider_lock import provider_lock, require_coordinator
+from .provider_lock import CoordinationUnavailable, provider_lock, require_coordinator
 
 
 class Process:
@@ -156,43 +156,79 @@ class Agents:
         return agent
 
     async def ask(self, action, **payload):
-        async with self.access_lock, provider_lock(self.config["state"]):
-            if action == "decision":
-                require_coordinator(self.config)
-            self.emit("provider_request", action=action)
-            cwd = payload.pop("cwd", None)
-            agent = await self.start("access", {"action": action, **payload}, cwd)
-            try:
-                result = await asyncio.wait_for(
-                    agent.response(), self.config.get("access_timeout", 120)
-                )
-                if agent.process.returncode != 0 or not isinstance(result, dict):
-                    raise RuntimeError("Work item access agent failed")
-                required = {
-                    "ready": "items",
-                    "status": "status",
-                    "failure": "transient",
-                    "epic_complete": "complete",
-                    "hold": "updated",
-                    "decision": "status",
-                }[action]
-                if required not in result:
-                    raise ValueError(f"Provider response missing {required}")
-                if (
-                    action in {"failure", "epic_complete", "hold"}
-                    and type(result[required]) is not bool
-                ):
-                    raise ValueError(f"Provider {required} must be boolean")
-                if action == "hold" and not result["updated"]:
-                    raise RuntimeError("Provider did not put item on hold")
-                if action == "status" and not isinstance(result["status"], str):
-                    raise ValueError("Provider status must be text")
-                self.emit("provider_response", action=action)
-                return result
-            except TimeoutError:
-                raise RuntimeError("Work item access agent timed out") from None
-            finally:
-                await agent.kill()
+        decision = action == "decision"
+        identity = {"action": action}
+        if decision:
+            identity.update(
+                decision_id=payload["submission"]["decision_id"],
+                item=payload["submission"]["item_id"],
+            )
+        budget = self.config.get("decision_timeout", 120) if decision else None
+        self.emit("provider_waiting", **identity, timeout_seconds=budget)
+        started = False
+        try:
+            async with asyncio.timeout(budget):
+                async with self.access_lock, provider_lock(self.config["state"]):
+                    if decision:
+                        require_coordinator(self.config)
+                    # From here a child may start: timeout is conservatively unknown.
+                    started = True
+                    return await self.ask_locked(action, payload, identity)
+        except TimeoutError:
+            self.emit("provider_timeout", **identity, phase="running" if started else "waiting")
+            if not started:
+                raise CoordinationUnavailable(
+                    "Decision timed out waiting for provider access; no provider mutation was "
+                    "attempted. Retain and retry the identical saved submission."
+                ) from None
+            raise RuntimeError(
+                "Decision provider timed out; persistence is unconfirmed. Retain and retry "
+                "the identical saved submission to recover its recorded outcome."
+            ) from None
+
+    async def ask_locked(self, action, payload, identity):
+        self.emit("provider_request", action=action)
+        cwd = payload.pop("cwd", None)
+        agent = await self.start("access", {"action": action, **payload}, cwd)
+        self.emit(
+            "provider_started",
+            **identity,
+            invocation=agent.id,
+            role="access",
+            pid=agent.process.pid,
+        )
+        try:
+            result = await asyncio.wait_for(
+                agent.response(),
+                None if action == "decision" else self.config.get("access_timeout", 120),
+            )
+            if agent.process.returncode != 0 or not isinstance(result, dict):
+                raise RuntimeError("Work item access agent failed")
+            required = {
+                "ready": "items",
+                "status": "status",
+                "failure": "transient",
+                "epic_complete": "complete",
+                "hold": "updated",
+                "decision": "status",
+            }[action]
+            if required not in result:
+                raise ValueError(f"Provider response missing {required}")
+            if (
+                action in {"failure", "epic_complete", "hold"}
+                and type(result[required]) is not bool
+            ):
+                raise ValueError(f"Provider {required} must be boolean")
+            if action == "hold" and not result["updated"]:
+                raise RuntimeError("Provider did not put item on hold")
+            if action == "status" and not isinstance(result["status"], str):
+                raise ValueError("Provider status must be text")
+            self.emit("provider_response", action=action)
+            return result
+        except TimeoutError:
+            raise RuntimeError("Work item access agent timed out") from None
+        finally:
+            await agent.kill()
 
     async def ready(self, limit, epic, outside, excluded):
         response = await self.ask(
@@ -206,7 +242,17 @@ class Agents:
             "Prepare their worktrees and branches; respect exclusions. Consult known workspaces "
             "for unmerged status updates: never redispatch delivered or user-action items "
             "merely because main still has an older ready file. Follow provider conventions "
-            "to recognize subsequent human changes back to ready. Do not mark items running "
+            "to recognize subsequent human changes back to ready. For an item resumed after human "
+            "input, before returning it, "
+            "reconcile its latest authoritative human decision into the exact assigned worktree "
+            "and branch, preserving candidate commits, local progress and unrelated edits. "
+            "For Git-backed filesystem items, verify the decision is committed at its source "
+            "and publish/reconcile the owned item changes under provider conventions; do not "
+            "rely on a dirty main copy or merely change the local status. Read back the assigned "
+            "workspace's item and verify the original decision ID, exact answer/approval and "
+            "resolved question before returning it. If publication or reconciliation is incomplete "
+            "or conflicting, omit that item and report the concrete blocker; never dispatch the "
+            "stale question. Do not mark items running "
             "during selection; the development agent does that when starting.",
         )
         try:
@@ -234,6 +280,8 @@ class Agents:
 
     async def deliver(self, item, interrupted):
         instruction = (
+            "Read this workspace's current work item and recorded human decisions before starting; "
+            "honor the exact recorded answer/approval and do not re-raise a resolved question. "
             "Mark this work item running when starting, deliver it, and update its status and "
             "delivery information directly. Leave integration to the merge agent. "
             "Record questions/actions in the item and set User Action required when needed. "

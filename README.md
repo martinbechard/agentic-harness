@@ -37,6 +37,7 @@ scheduling:
   merge_timeout: 3600
   heartbeat_interval: 10
 access_timeout: 120
+decision_timeout: 120
 ```
 
 Use a model available to your Codex account. The bundled adapter uses the official `openai-codex` Python SDK and its matching local app-server runtime. It reuses Codex authentication and the configured sandbox; permission escalation is denied for these unattended invocations. Optional arguments are `--model` and `--effort`. Role instructions are supplied through the SDK's `developer_instructions` parameter and assignments through its turn input. Agents use project instructions and provider/delivery skills for backlog and integration conventions. There is no context-file or shell-wrapper requirement.
@@ -56,7 +57,7 @@ All harness activities and agent output appear on the console, in `activities.js
 uv run agentic-harness --config config.yaml --decision decision.json
 ```
 
-The request binds the human decision to the exact observed question, candidate and provider revision. The configured provider agent owns validation and persistence. A live upgraded runner using the same configuration/state directory is required for shared provider serialization; older runners are refused. See [decision request and result schemas](docs/operator-guide.md#human-decision-command). Submission alone never means the item was updated.
+The request binds the human decision to the exact observed question, candidate and provider revision. The configured provider agent owns validation and persistence. A live upgraded runner using the same configuration/state directory is required for shared provider serialization; older runners are refused. See [decision request and result schemas](docs/operator-guide.md#human-decision-command). Submission alone never means the item was updated. Queue/start events report progress; `decision_timeout` bounds queue and provider work together (120 seconds by default). Retain the unchanged saved submission when recovering a timeout.
 
 ## Agent interface and verification
 

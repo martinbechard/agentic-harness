@@ -63,7 +63,16 @@ class Events:
 
 def load_config(path):
     config = yaml.safe_load(path.read_text())
-    allowed = {"project", "state", "access", "development", "merge", "access_timeout", "scheduling"}
+    allowed = {
+        "project",
+        "state",
+        "access",
+        "development",
+        "merge",
+        "access_timeout",
+        "decision_timeout",
+        "scheduling",
+    }
     if not isinstance(config, dict) or set(config) - allowed:
         raise ValueError(
             "Configuration must contain only project, state, agent commands, and timing settings"
@@ -84,9 +93,10 @@ def load_config(path):
             or not all(isinstance(arg, str) and arg for arg in command)
         ):
             raise ValueError(f"{role} must be a nonempty command argument list")
-    duration = config.get("access_timeout", 120)
-    if type(duration) not in (int, float) or not 0 < duration < float("inf"):
-        raise ValueError("access_timeout must be positive and finite")
+    for setting in ("access_timeout", "decision_timeout"):
+        duration = config.get(setting, 120)
+        if type(duration) not in (int, float) or not 0 < duration < float("inf"):
+            raise ValueError(f"{setting} must be positive and finite")
     scheduling = config.get("scheduling", {})
     if not isinstance(scheduling, dict) or set(scheduling) - {
         "capacity",
@@ -126,7 +136,13 @@ def main():
         result = asyncio.run(submit(agents, decision))
         events("decision_result", project=config["project"], **result)
         raise SystemExit(
-            {"applied": 0, "already_applied": 0, "rejected": 3, "unknown": 1}[result["status"]]
+            {
+                "applied": 0,
+                "already_applied": 0,
+                "already_resolved": 3,
+                "rejected": 3,
+                "unknown": 1,
+            }[result["status"]]
         )
     controls = queue.Queue()
 

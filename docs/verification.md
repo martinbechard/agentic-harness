@@ -12,7 +12,7 @@ The scope is `functional-spec.md`. Historical acceptance records in `archive/pre
 | UC-004: no ready item | Polling interval with idle capacity | `test_no_ready_items_wait_and_pause_during_provider_query`; separate-project dependency wait |
 | UC-005: pause | Blocks new/retry dispatch, lets active attempts finish | `test_interrupted_recovery_preserves_workspace_and_waits_for_resume`; foreground CLI test |
 | UC-006: resume | Wakes polling and dispatch | `test_foreground_cli_pause_resume_and_epic_exit` |
-| UC-007: user action | Development agent records question/status; reports outcome; no answer handler | `test_nondelivery_status_stays_in_worktree_without_main_mutation[user_action-user-action-required]` |
+| UC-007: user action | Development agent records question/status; reports outcome; no automatic answer selection | `test_nondelivery_status_stays_in_worktree_without_main_mutation[user_action-user-action-required]` |
 | UC-008: concurrent backlog | Capacity-limited assignments with active exclusions and distinct worktrees | Scheduler concurrency and invalid-batch tests; real parallel subprocesses |
 | UC-009: epic dependencies | Epic selection and provider-owned readiness/completion | `test_parallel_delivery_dependencies_defects_and_merge`: B depends on merged A |
 | UC-010: spare capacity | Second access query outside epic after epic items receive priority | `test_concurrency_epic_priority_and_outside_capacity`; real outside-item delivery |
@@ -34,10 +34,10 @@ The scope is `functional-spec.md`. Historical acceptance records in `archive/pre
 
 ## Verification results
 
-Verified on 2026-10-02 with Python 3.12:
+Verified on 2026-10-03 with Python 3.12:
 
-- 141 automated tests passed; one opt-in live test skipped in the default suite, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
-- Coverage: 100% of 648 production statements and 190 branches. The existing 100% gate remains enabled.
+- 168 automated tests passed; one opt-in live test skipped in the default suite, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
+- Coverage: 100% of 678 production statements and 206 branches. The existing 100% gate remains enabled.
 - Ruff lint and format checks passed.
 - Source distribution and wheel built successfully. Wheel contents were inspected for retired modules.
 
@@ -74,7 +74,7 @@ The ordinary suite skips that paid model call. Backlog execution remains stopped
 
 `test_provider_reconciles_legacy_candidate_and_excludes_unpublished_work` uses a separate Git project and deterministic provider agents. An explicitly interrupted candidate survives provider-owned reconciliation and the tested delivery merge; its commit remains an ancestor of main. Unrelated local files remain uncommitted. A live assignment is not duplicated and an unreviewed committed candidate is not merged. The fixture's explicit interruption record stands in for provider knowledge; this does not prove a model can diagnose arbitrary historical attempts.
 
-Full regression run: 141 passed, one opt-in live test skipped; 100% statement and branch coverage. The live test passed separately. Ruff, diff checks, and package builds passed.
+Full regression run: 168 passed, one opt-in live test skipped; 100% statement and branch coverage. The live test passed separately. Ruff, diff checks, and package builds passed.
 
 
 ## Monitoring and process events
@@ -94,4 +94,13 @@ Concurrent identical CLI submissions produce one durable decision; the second re
 
 The provider-agent instruction requires native conditional-update safeguards and persisted readback. Synthetic evidence verifies the command/contract and the deterministic fixture's behavior; it does not establish that every model/provider implements atomic updates correctly. No real approvals, cancellations, or backlog runs were performed. Dashboard activation requires safe upgrade of the sole runner first.
 
-Current validation: 141 passed, one opt-in live SDK test skipped, 100% of 648 statements and 190 branches; Ruff, formatting and diff checks passed. SDK transport is unchanged.
+Current validation: 168 passed, one opt-in live SDK test skipped, 100% of 678 statements and 206 branches; Ruff, formatting and diff checks passed. SDK transport is unchanged.
+
+
+## Decision recovery and publication
+
+The 2026-10-03 suite covers unchanged requests after unrelated history updates, refusal of changed decision scope, conditional-update races, claim-free native transactions, binary permission grants, historical-resolution reporting, and explicit cancellation after historical approval. Actual subprocess tests observe waiting progress before lock acquisition and bound queue/execution time. A running timeout kills and reaps the provider; replay recovers a prior write with the same decision ID.
+
+`test_published_answer_reaches_preserved_workspace_before_delivery` uses a disposable Git repository and actual access/development subprocesses. It verifies an exact human answer is committed on the authoritative branch while unrelated staged files remain staged, reconciled into a preserved candidate worktree, and read by the development process before delivery. Candidate ancestry and local delivery evidence survive. A conflicting pending question prevents dispatch. A failing commit hook leaves a partial write unconfirmed and undispatchable; recovery with the original request publishes it once and preserves the request bytes and ID. Selection is tested with a new provider client without an in-memory workspace registry.
+
+These deterministic provider fixtures verify the boundary and intended provider behavior. They do not prove that a live model follows every publication/reconciliation instruction. This release makes that agent contract explicit; it does not add provider-specific Git transactions to the harness. No real decisions were replayed and no production runner was restarted during this work.

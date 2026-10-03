@@ -262,9 +262,11 @@ Precondition: A live compatible runner provides shared provider coordination. Th
 
 1. The human user submits Allow, Cancel item, or an exact selected/free-text answer through the decision CLI, using the same project/configuration and observed source as the dashboard.
 2. The harness serializes the request with its other work-item access calls and passes it to the configured provider agent with a stable decision identity.
-3. The provider agent validates the current authoritative main/worktree source, revision, pending question and candidate. It refuses stale/mismatched observations and refuses Allow when an explicit choice or answer is required.
-4. The provider agent records only that decision, preserves history/candidates, performs the provider-defined state transition, and reads back the persisted outcome. Cancel explicitly cancels the item.
-5. The harness returns the structured persisted result. Repeating the same request returns the recorded decision without applying it twice. If persistence cannot be confirmed, the outcome is unknown; submission is not success.
+3. The provider agent validates the current authoritative main/worktree source, revision, pending question and candidate. It preserves the original decision across verified unrelated record updates, revalidates the latest revision for the write, and refuses changed questions, candidates, scope or conditions. Allow can grant one named permission against withholding it; it cannot choose competing implementations, answer free text, or claim an external action is complete.
+4. The provider agent records only that decision, preserves history/candidates, performs the provider-defined state transition, and reads back the persisted outcome. For Git-backed filesystem records, it commits the owned item changes and verifies the committed decision before reporting success. Cancel explicitly cancels the item.
+5. The harness returns the structured persisted result. Repeating the same request returns the recorded decision without applying it twice. An existing historical resolution is reported without applying it again, including any stale-status reconciliation requirement. If persistence cannot be confirmed, the outcome is unknown; submission is not success.
+
+Before subsequent dispatch under UC-001, the provider reconciles the published decision into the assigned worktree and verifies the exact answer/approval there, preserving existing delivery work. An incomplete or conflicting handoff prevents selection.
 
 Delivery and integration do not run as part of this command. The provider remains responsible for its conditional-update and transaction semantics.
 
