@@ -128,6 +128,11 @@ def development(request, root, main, control):
             (root / "partial.txt").write_text("resumed")
     if mode == "timeout":
         time.sleep(30)
+    if mode == "controlled":
+        (control / f"{identity}.started").write_text(str(os.getpid()))
+        release = control / f"{identity}.release"
+        while not release.exists():
+            time.sleep(0.02)
     if mode == "failure" or (mode == "transient" and attempt == 1):
         return {"status": "failed", "transient": mode == "transient", "detail": "fixture failure"}
     if mode == "user_action":

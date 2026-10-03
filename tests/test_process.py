@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from backlog_harness.adapter import schema_for
-from backlog_harness.engine import Outcome
+from backlog_harness.engine import Item, Outcome
 from backlog_harness.process import Agents, Process
 
 
@@ -21,6 +21,49 @@ async def start(tmp_path, code):
         lambda event, **kw: events.append((event, kw)),
     )
     return agent, events
+
+
+def test_selected_scheduling_authority_is_supplied_to_every_agent_role(tmp_path):
+    async def scenario():
+        config = {
+            "project": str(tmp_path),
+            "state": str(tmp_path / "state"),
+            **{role: [sys.executable, "agent.py"] for role in ("access", "development", "merge")},
+        }
+        agents = Agents(config, lambda *_args, **_fields: None)
+        captured = []
+
+        async def ask(action, **payload):
+            captured.append(("access", payload))
+            return {"items": []}
+
+        async def launch(role, payload, cwd=None):
+            captured.append((role, payload))
+            return object()
+
+        agents.ask = ask
+        await agents.ready(
+            2,
+            None,
+            False,
+            [],
+            scheduling={"capacity": 2, "mode": "parallel", "revision": 1, "request_id": "r"},
+        )
+        agents.start = launch
+        await agents.deliver(Item("one", str(tmp_path), "one"), False)
+        await agents.integrate()
+
+        assert [role for role, _ in captured] == ["access", "development", "merge"]
+        for _, payload in captured:
+            instruction = payload["instruction"]
+            assert "human user selected parallel scheduling with capacity 2" in instruction
+            assert (
+                "supersedes project guidance that fixes Work item scheduling to SOLO" in instruction
+            )
+            assert "does not change claim-free restrictions" in instruction
+            assert "serial merge checks" in instruction
+
+    asyncio.run(scenario())
 
 
 def test_output_is_streamed_and_result_read_only_after_exit(tmp_path):

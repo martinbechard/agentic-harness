@@ -12,6 +12,7 @@ from pathlib import Path
 
 import yaml
 
+from .control import SchedulingControl
 from .decision import prepare, submit
 from .engine import Harness
 from .process import Agents
@@ -121,14 +122,19 @@ def main():
         config = load_config(args.config)
         decision = prepare(args.decision, config) if args.decision else None
         events = Events(config["state"])
+        configured_capacity = config.get("scheduling", {}).get("capacity", 1)
+        scheduling_control = SchedulingControl(config["state"], events.run, configured_capacity)
         agents = Agents(config, events)
+        scheduling = {**config.get("scheduling", {}), "capacity": scheduling_control.capacity}
         harness = Harness(
             agents,
             agents.deliver,
             agents.integrate,
             events,
             epic=args.epic,
-            **config.get("scheduling", {}),
+            scheduling_revision=scheduling_control.revision,
+            scheduling_request_id=scheduling_control.request_id,
+            **scheduling,
         )
     except (OSError, ValueError, yaml.YAMLError) as exc:
         parser.error(str(exc))
@@ -164,6 +170,7 @@ def main():
                         harness.resume()
                     else:
                         events("unknown_control", instruction="Human user: enter pause or resume")
+                await scheduling_control.process(harness)
                 await asyncio.sleep(0.05)
 
         controller = asyncio.create_task(control_loop())

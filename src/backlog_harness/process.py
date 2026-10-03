@@ -131,6 +131,23 @@ class Agents:
         self.access_lock = asyncio.Lock()
         self.workspaces = {}
         self.invocations = {}
+        self.scheduling = {"capacity": 1, "mode": "solo", "revision": 0, "request_id": None}
+
+    def set_scheduling(self, scheduling):
+        """Update the accepted admission context supplied to later agent invocations."""
+        self.scheduling = dict(scheduling)
+
+    def scheduling_instruction(self):
+        """Explain the narrow authority of the current human-selected admission limit."""
+        capacity = self.scheduling["capacity"]
+        mode = self.scheduling["mode"]
+        return (
+            f"The human user selected {mode} scheduling with capacity {capacity} for this "
+            "harness run. This choice governs only concurrently admitted Work items and "
+            "supersedes project guidance that fixes Work item scheduling to SOLO for this run. "
+            "It does not change claim-free restrictions, resource coordination, provider "
+            "lifecycle rules, agent collaboration, serial merge checks, or delivery authority."
+        )
 
     def running_invocations(self):
         return [
@@ -230,7 +247,9 @@ class Agents:
         finally:
             await agent.kill()
 
-    async def ready(self, limit, epic, outside, excluded):
+    async def ready(self, limit, epic, outside, excluded, scheduling=None):
+        if scheduling is not None:
+            self.set_scheduling(scheduling)
         response = await self.ask(
             "ready",
             limit=limit,
@@ -238,7 +257,8 @@ class Agents:
             outside=outside,
             excluded=excluded,
             workspaces=list(self.workspaces.values()),
-            instruction="Return ready items with satisfied dependencies. "
+            instruction=self.scheduling_instruction()
+            + " Return ready items with satisfied dependencies. "
             "Prepare their worktrees and branches; respect exclusions. Consult known workspaces "
             "for unmerged status updates: never redispatch delivered or user-action items "
             "merely because main still has an older ready file. Follow provider conventions "
@@ -280,7 +300,8 @@ class Agents:
 
     async def deliver(self, item, interrupted):
         instruction = (
-            "Read this workspace's current work item and recorded human decisions before starting; "
+            self.scheduling_instruction()
+            + " Read this workspace's current work item and recorded human decisions before starting; "
             "honor the exact recorded answer/approval and do not re-raise a resolved question. "
             "Mark this work item running when starting, deliver it, and update its status and "
             "delivery information directly. Leave integration to the merge agent. "
@@ -305,7 +326,8 @@ class Agents:
         return await self.start(
             "merge",
             {
-                "instruction": "Check for work ready to integrate using the project's convention (approved PR, "
+                "instruction": self.scheduling_instruction()
+                + " Check for work ready to integrate using the project's convention (approved PR, "
                 "work item status and branch, or configured equivalent). For each eligible item, "
                 "prepare integration against the latest target, run required tests on the combined "
                 "result, and merge only if tests pass. Integrate only committed candidates; do not "

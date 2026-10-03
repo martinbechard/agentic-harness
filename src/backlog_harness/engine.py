@@ -47,17 +47,22 @@ class Harness:
         merge_timeout=3600,
         heartbeat_interval=10,
         epic=None,
+        scheduling_revision=0,
+        scheduling_request_id=None,
     ):
         if (
             type(capacity) is not int
-            or capacity < 1
+            or not 1 <= capacity <= 8
+            or type(scheduling_revision) is not int
+            or scheduling_revision < 0
             or any(
                 type(v) not in (int, float) or not 0 < v < float("inf")
                 for v in (timeout, poll_interval, merge_interval, merge_timeout, heartbeat_interval)
             )
         ):
             raise ValueError(
-                "Capacity must be a positive integer; intervals must be positive finite numbers"
+                "Capacity must be an integer from 1 through 8; scheduling revision must be a "
+                "nonnegative integer; intervals must be positive finite numbers"
             )
         self.access, self.launch, self.merge, self.emit = access, launch, merge, emit
         self.capacity, self.timeout = capacity, timeout
@@ -65,6 +70,9 @@ class Harness:
         self.merge_timeout = merge_timeout
         self.heartbeat_interval = heartbeat_interval
         self.epic = epic
+        self.scheduling_revision = scheduling_revision
+        self.scheduling_request_id = scheduling_request_id
+        self.scheduling_lock = asyncio.Lock()
         self.active = {}
         self.pending = []
         self.retries = {}
@@ -72,6 +80,48 @@ class Harness:
         self.complete = False
         self.wake = asyncio.Event()
         self.merge_requested = asyncio.Event()
+        self._publish_scheduling_context()
+
+    def scheduling(self):
+        """Return the current user-selected work-item admission context."""
+        return {
+            "capacity": self.capacity,
+            "mode": "solo" if self.capacity == 1 else "parallel",
+            "revision": self.scheduling_revision,
+            "request_id": self.scheduling_request_id,
+        }
+
+    def _publish_scheduling_context(self):
+        update = getattr(self.access, "set_scheduling", None)
+        if update is not None:
+            update(self.scheduling())
+
+    async def set_capacity(self, capacity, revision, request_id, persist):
+        """Persist and apply one validated scheduling choice without cancelling active work."""
+        if type(capacity) is not int or not 1 <= capacity <= 8:
+            raise ValueError("Capacity must be an integer from 1 through 8")
+        if type(revision) is not int or revision != self.scheduling_revision + 1:
+            raise ValueError("Scheduling revision must advance by one")
+        if not isinstance(request_id, str) or not request_id:
+            raise ValueError("Scheduling request identity must be nonempty text")
+        async with self.scheduling_lock:
+            previous = self.capacity
+            persist()
+            self.capacity = capacity
+            self.scheduling_revision = revision
+            self.scheduling_request_id = request_id
+            self._publish_scheduling_context()
+            self.emit(
+                "scheduling_changed",
+                request_id=request_id,
+                previous_capacity=previous,
+                selected_capacity=capacity,
+                scheduling_mode=self.scheduling()["mode"],
+                scheduling_revision=revision,
+                active_item_count=len(self.active),
+                scheduling_transition=("draining" if len(self.active) > capacity else "applied"),
+            )
+            self.wake.set()
 
     def pause(self):
         self.paused = True
@@ -178,12 +228,16 @@ class Harness:
                     self.pending.append((attempt.item, result))
 
     async def fill(self, outside=False):
-        room = self.capacity - len(self.active)
-        if room == 0:
+        async with self.scheduling_lock:
+            requested_room = self.capacity - len(self.active)
+            scheduling = self.scheduling()
+        if requested_room <= 0:
             return
-        items = await self.access.ready(room, self.epic, outside, list(self.active))
+        items = await self.access.ready(
+            requested_room, self.epic, outside, list(self.active), scheduling=scheduling
+        )
         # Validate the full response before starting anything from it.
-        if len(items) > room or len({i.id for i in items}) != len(items):
+        if len(items) > requested_room or len({i.id for i in items}) != len(items):
             raise ValueError("Provider returned excess or duplicate ready items")
         worktrees = {str(Path(a.item.worktree).resolve()) for a in self.active.values()}
         for item in items:
@@ -191,11 +245,21 @@ class Harness:
             if item.id in self.active or path in worktrees:
                 raise ValueError("Provider returned an active item or shared worktree")
             worktrees.add(path)
-        # A pause may have arrived while the provider was preparing the response.
-        if self.paused:
-            return
-        for item in items:
-            self.dispatch(item)
+        # A pause or capacity change may arrive while the provider prepares its response.
+        async with self.scheduling_lock:
+            if self.paused:
+                return
+            room = max(0, self.capacity - len(self.active))
+            dispatchable, deferred = items[:room], items[room:]
+            for item in dispatchable:
+                self.dispatch(item)
+            if deferred:
+                self.emit(
+                    "prepared_items_deferred",
+                    items=[item.id for item in deferred],
+                    selected_capacity=self.capacity,
+                    active_item_count=len(self.active),
+                )
         if not items:
             self.emit("no_ready_items", epic=self.epic, outside=outside)
 
@@ -203,10 +267,12 @@ class Harness:
         self.reap()
         if self.paused or self.complete:
             return
-        while self.pending and len(self.active) < self.capacity:
-            item, interrupted = self.pending.pop(0)
-            self.dispatch(item, interrupted)
-        if len(self.active) >= self.capacity:
+        async with self.scheduling_lock:
+            while self.pending and len(self.active) < self.capacity:
+                item, interrupted = self.pending.pop(0)
+                self.dispatch(item, interrupted)
+            full = len(self.active) >= self.capacity
+        if full:
             return
         if self.epic and await self.access.epic_complete(self.epic):
             self.complete = True
@@ -255,6 +321,8 @@ class Harness:
         await merger
 
     def heartbeat(self):
+        active_count = len(self.active)
+        scheduling = self.scheduling()
         self.emit(
             "heartbeat",
             monitoring_status="paused" if self.paused else "active" if self.active else "idle",
@@ -264,6 +332,13 @@ class Harness:
                 for key, attempt in self.active.items()
             ],
             active_invocations=getattr(self.access, "running_invocations", list)(),
+            scheduling_revision=self.scheduling_revision,
+            scheduling_request_id=self.scheduling_request_id,
+            scheduling_mode=scheduling["mode"],
+            selected_capacity=self.capacity,
+            effective_capacity=self.capacity,
+            active_item_count=active_count,
+            scheduling_transition=("draining" if active_count > self.capacity else "applied"),
         )
 
     async def run(self):

@@ -39,8 +39,8 @@ class Access:
         self.finished = False
         self.queries = []
 
-    async def ready(self, limit, epic, outside, excluded):
-        self.queries.append((limit, epic, outside, excluded))
+    async def ready(self, limit, epic, outside, excluded, scheduling=None):
+        self.queries.append((limit, epic, outside, excluded, scheduling))
         result, self.items = self.items[:limit], self.items[limit:]
         return result
 
@@ -164,13 +164,17 @@ def test_concurrency_epic_priority_and_outside_capacity():
     async def scenario():
         h, access, launched, _, _ = make(capacity=3, epic="epic")
 
-        async def ready(limit, epic, outside, excluded):
-            access.queries.append((limit, epic, outside, excluded))
+        async def ready(limit, epic, outside, excluded, scheduling=None):
+            access.queries.append((limit, epic, outside, excluded, scheduling))
             return [Item("other", "/other", "other")] if outside else access.items
 
         access.ready = ready
         await started(h)
-        assert access.queries == [(3, "epic", False, []), (2, "epic", True, ["one"])]
+        assert [query[:4] for query in access.queries] == [
+            (3, "epic", False, []),
+            (2, "epic", True, ["one"]),
+        ]
+        assert all(query[4]["capacity"] == 3 for query in access.queries)
         assert [a[0].id for a in launched] == ["one", "other"]
         for _, _, agent in launched:
             agent.finish(Outcome("success"))
@@ -186,13 +190,116 @@ def test_no_ready_items_wait_and_pause_during_provider_query():
         await h.cycle()
         assert not launched and events[-1][0] == "no_ready_items"
 
-        async def ready(*args):
+        async def ready(*args, **kwargs):
             h.pause()
             return [Item("one", "/one", "one")]
 
         access.ready = ready
         await h.cycle()
         assert not launched
+
+    asyncio.run(scenario())
+
+
+def test_capacity_change_during_provider_query_rechecks_room_before_dispatch():
+    async def scenario():
+        h, access, launched, _, events = make(capacity=3)
+        querying = asyncio.Event()
+        release = asyncio.Event()
+        items = [
+            Item("one", "/one", "one"),
+            Item("two", "/two", "two"),
+            Item("three", "/three", "three"),
+        ]
+
+        async def ready(*_args, **_kwargs):
+            querying.set()
+            await release.wait()
+            return items
+
+        access.ready = ready
+        cycle = asyncio.create_task(h.cycle())
+        await querying.wait()
+        await h.set_capacity(1, 1, "request-one", lambda: None)
+        release.set()
+        await cycle
+        await asyncio.sleep(0)
+
+        assert [item.id for item, _, _ in launched] == ["one"]
+        deferred = next(fields for event, fields in events if event == "prepared_items_deferred")
+        assert deferred == {
+            "items": ["two", "three"],
+            "selected_capacity": 1,
+            "active_item_count": 1,
+        }
+        for _, _, agent in launched:
+            agent.finish(Outcome("success"))
+        await settle(h)
+
+    asyncio.run(scenario())
+
+
+def test_fill_does_not_query_provider_when_capacity_is_full():
+    async def scenario():
+        h, access, launched, _, _ = make()
+        await started(h)
+        assert len(launched) == 1
+        query_count = len(access.queries)
+
+        await h.fill()
+
+        assert len(access.queries) == query_count
+        launched[0][2].finish(Outcome("success"))
+        await settle(h)
+
+    asyncio.run(scenario())
+
+
+def test_lower_capacity_drains_without_cancelling_active_attempts():
+    async def scenario():
+        h, access, launched, _, events = make(capacity=2)
+        access.items = [Item("one", "/one", "one"), Item("two", "/two", "two")]
+        await started(h)
+        assert len(launched) == 2
+
+        await h.set_capacity(1, 1, "request-one", lambda: None)
+        h.heartbeat()
+        heartbeat = [fields for event, fields in events if event == "heartbeat"][-1]
+        assert heartbeat["scheduling_mode"] == "solo"
+        assert heartbeat["selected_capacity"] == heartbeat["effective_capacity"] == 1
+        assert heartbeat["active_item_count"] == 2
+        assert heartbeat["scheduling_transition"] == "draining"
+        assert heartbeat["scheduling_request_id"] == "request-one"
+        assert not any(agent.killed for _, _, agent in launched)
+
+        launched[0][2].finish(Outcome("success"))
+        await launched[0][2].wait()
+        await asyncio.sleep(0)
+        h.reap()
+        await h.cycle()
+        assert len(launched) == 2
+        assert not launched[1][2].killed
+
+        launched[1][2].finish(Outcome("success"))
+        await settle(h)
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        (0, 1, "request"),
+        (9, 1, "request"),
+        (1, 2, "request"),
+        (1, 1, ""),
+    ],
+)
+def test_invalid_live_capacity_change_is_rejected(args):
+    async def scenario():
+        h, *_ = make()
+        with pytest.raises(ValueError):
+            await h.set_capacity(*args, lambda: None)
 
     asyncio.run(scenario())
 
@@ -204,7 +311,7 @@ def test_slow_provider_does_not_delay_development_timeout():
         querying = asyncio.Event()
         release = asyncio.Event()
 
-        async def ready(*args):
+        async def ready(*args, **kwargs):
             querying.set()
             await release.wait()
             return []
@@ -417,7 +524,7 @@ def test_monitor_heartbeats_continue_during_quiet_or_slow_work_and_stop_on_shutd
             h.pause()
         if state == "slow_provider":
 
-            async def ready(*args):
+            async def ready(*args, **kwargs):
                 await release.wait()
                 return []
 
