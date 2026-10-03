@@ -20,6 +20,7 @@ The scope is `functional-spec.md`. Historical acceptance records in `archive/pre
 | UC-012: integration | Serialized merge-agent invocations on completion and interval | `test_merge_is_serial_and_completion_trigger_is_retained`; combined-test failure rejects merge; delayed-commit race regression |
 | UC-013: interrupted recovery | Inspect local item, reuse worktree/branch, instruct assessment before continuing | `test_real_process_recovery_and_retry[interrupted]`; stopped-parent/live-child cleanup |
 | UC-014: restart if not resumable | Replacement instructions preserve unrelated work while restarting | `test_real_process_recovery_and_retry[restart]` |
+| UC-015: explicit human decision | Configured provider agent, exact observation binding, stable decision identity, shared access lock, validated result | Synthetic decision CLI tests: allow/cancel/answers, stale refusal, worktree handoff, duplicate clicks, lost acknowledgement, old-runner refusal |
 
 ## Principles and exclusions
 
@@ -29,14 +30,14 @@ The scope is `functional-spec.md`. Historical acceptance records in `archive/pre
 - **P-004:** Item-specific access commands and development commands run in the item's worktree. Separate-project tests verify main remains unchanged for unmerged failure/user-action updates and receives delivered records through Git merge. Merge instructions explicitly require reconciliation of conflicting attempt information.
 - **P-005:** Tests cover transient retries, nontransient holding, timeout exhaustion, and recovery. Two automatic retries are shared by delivery and interruption recovery within the foreground run.
 - **P-006:** Integration fixtures initialize a separate temporary Git project outside this checkout, with status folders, work item creation/update, dependencies, defect recording, independent worktrees, combined tests, and delivery merges. No production backlog is used.
-- Manual item selection, human-answer management, direct provider transactions, dashboards, harness-owned review/proof gates, and retired transports have no implementation or public command. The wheel contains only `__init__`, `__main__`, `adapter`, `cli`, `codex`, `engine`, and `process`.
+- Manual item selection, automatic selection of human answers, direct provider transactions, dashboards, harness-owned review/proof gates, and retired transports have no implementation or public command. The wheel contains only `__init__`, `__main__`, `adapter`, `cli`, `codex`, `decision`, `engine`, `process`, and `provider_lock`.
 
 ## Verification results
 
 Verified on 2026-10-02 with Python 3.12:
 
-- 96 automated tests passed; one opt-in live test skipped in the default suite, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
-- Coverage: 100% of 523 production statements and 148 branches. The existing 100% gate remains enabled.
+- 141 automated tests passed; one opt-in live test skipped in the default suite, including real agent subprocesses, worktree recovery, process-group cleanup, parallel delivery, dependency order, combined-result testing, CLI controls, and structured adapter results.
+- Coverage: 100% of 648 production statements and 190 branches. The existing 100% gate remains enabled.
 - Ruff lint and format checks passed.
 - Source distribution and wheel built successfully. Wheel contents were inspected for retired modules.
 
@@ -73,7 +74,7 @@ The ordinary suite skips that paid model call. Backlog execution remains stopped
 
 `test_provider_reconciles_legacy_candidate_and_excludes_unpublished_work` uses a separate Git project and deterministic provider agents. An explicitly interrupted candidate survives provider-owned reconciliation and the tested delivery merge; its commit remains an ancestor of main. Unrelated local files remain uncommitted. A live assignment is not duplicated and an unreviewed committed candidate is not merged. The fixture's explicit interruption record stands in for provider knowledge; this does not prove a model can diagnose arbitrary historical attempts.
 
-Full regression run: 96 passed, one opt-in live test skipped; 100% statement and branch coverage. The live test passed separately. Ruff, diff checks, and package builds passed.
+Full regression run: 141 passed, one opt-in live test skipped; 100% statement and branch coverage. The live test passed separately. Ruff, diff checks, and package builds passed.
 
 
 ## Monitoring and process events
@@ -83,3 +84,14 @@ Heartbeat tests observe actual emitted events during idle, paused, and slow-prov
 Subprocess tests distinguish spontaneous exit without a result, reported success/failure, invalid results, requested termination, and routine group cleanup. They check invocation, role, item, PID, exit code, registry removal, and exactly one exit event. The separate-project timeout test matches each timeout event to its actual development invocation. Console/JSONL/OTEL equality now includes a heartbeat.
 
 Verification: 96 tests passed, one authenticated SDK test skipped in the default suite; 100% of 523 statements and 148 branches. SDK transport did not change, so the previously passing live instruction-receipt test was not repeated. No production backlog was launched or restarted for this change.
+
+
+## Human decision command
+
+`tests/test_decision.py` invokes the real CLI and process boundary against a separate synthetic provider. That provider, not the harness, owns its records, path/NUL/bytes revisions, history, authoritative workspace and state changes. Tests verify exact approval, explicit cancellation, selected/free-text answers, rejection of stale revisions/questions/candidates/identities, refusal to infer a choice from Allow, and rejection of superseded worktree sources. A current worktree handoff changes only that source, preserving main and candidate files.
+
+Concurrent identical CLI submissions produce one durable decision; the second returns `already_applied`. A provider that persists and loses its acknowledgement produces `unknown`/`persisted:null`; retrying the unchanged submission reads the prior decision without duplicating it. Mismatched provider acknowledgements never become success. Additional tests verify actual cross-process serialization with an ordinary provider status call, cancellation while waiting for a lock, stale/incompatible lease refusal, and second-runner rejection.
+
+The provider-agent instruction requires native conditional-update safeguards and persisted readback. Synthetic evidence verifies the command/contract and the deterministic fixture's behavior; it does not establish that every model/provider implements atomic updates correctly. No real approvals, cancellations, or backlog runs were performed. Dashboard activation requires safe upgrade of the sole runner first.
+
+Current validation: 141 passed, one opt-in live SDK test skipped, 100% of 648 statements and 190 branches; Ruff, formatting and diff checks passed. SDK transport is unchanged.

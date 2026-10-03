@@ -191,7 +191,9 @@ def test_provider_invalid_responses_are_rejected(tmp_path, action, value):
     asyncio.run(scenario())
 
 
-@pytest.mark.parametrize("action", ["ready", "status", "failure", "hold", "epic_complete"])
+@pytest.mark.parametrize(
+    "action", ["ready", "status", "failure", "hold", "epic_complete", "decision"]
+)
 def test_codex_provider_schema_is_strict(action):
     schema = schema_for({"role": "access", "action": action})
     assert schema["additionalProperties"] is False

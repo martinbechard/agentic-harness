@@ -256,8 +256,20 @@ Same as UC-013, but replace step 5 with the following:
 
 5. The replacement agent evaluates the existing work and determines that it cannot be resumed. It discards the interrupted attempt's work, preserves unrelated work, and starts the assigned item over in the same worktree and branch. It updates the work item as delivery proceeds.
 
+### UC-015: Record an explicit human decision on a pending request
+
+Precondition: A live compatible runner provides shared provider coordination. The human user has observed the item revision, exact pending question, and any named candidate.
+
+1. The human user submits Allow, Cancel item, or an exact selected/free-text answer through the decision CLI, using the same project/configuration and observed source as the dashboard.
+2. The harness serializes the request with its other work-item access calls and passes it to the configured provider agent with a stable decision identity.
+3. The provider agent validates the current authoritative main/worktree source, revision, pending question and candidate. It refuses stale/mismatched observations and refuses Allow when an explicit choice or answer is required.
+4. The provider agent records only that decision, preserves history/candidates, performs the provider-defined state transition, and reads back the persisted outcome. Cancel explicitly cancels the item.
+5. The harness returns the structured persisted result. Repeating the same request returns the recorded decision without applying it twice. If persistence cannot be confirmed, the outcome is unknown; submission is not success.
+
+Delivery and integration do not run as part of this command. The provider remains responsible for its conditional-update and transaction semantics.
+
 ## Not supported use cases
 
 - Manually selecting a specific work item for execution.
-- Managing the human user's response to an item in **User Action required**: collecting answers, tracking completion of the requested action, or deciding when to move the item back to ready. These activities occur outside the harness. Once the provider reports the item ready, UC-001 applies.
+- Automatically choosing the human user's answer, approving alternatives implicitly, or executing delivery/merge as part of a decision submission. UC-015 records an explicit decision through the provider; subsequent ready-item dispatch uses UC-001.
 - Refining filesystem-provider work item publication and early cherry-pick workflows. These belong to a separate project.

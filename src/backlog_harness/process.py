@@ -9,6 +9,7 @@ import uuid
 from pathlib import Path
 
 from .engine import Item, Outcome
+from .provider_lock import provider_lock, require_coordinator
 
 
 class Process:
@@ -155,7 +156,9 @@ class Agents:
         return agent
 
     async def ask(self, action, **payload):
-        async with self.access_lock:
+        async with self.access_lock, provider_lock(self.config["state"]):
+            if action == "decision":
+                require_coordinator(self.config)
             self.emit("provider_request", action=action)
             cwd = payload.pop("cwd", None)
             agent = await self.start("access", {"action": action, **payload}, cwd)
@@ -171,6 +174,7 @@ class Agents:
                     "failure": "transient",
                     "epic_complete": "complete",
                     "hold": "updated",
+                    "decision": "status",
                 }[action]
                 if required not in result:
                     raise ValueError(f"Provider response missing {required}")

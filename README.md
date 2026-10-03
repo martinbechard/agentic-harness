@@ -2,7 +2,7 @@
 
 Run ready backlog items through development agents. A work item access agent chooses ready work using the project's provider and dependencies. Development agents update their own items; a separate merge agent checks and integrates finished work.
 
-The scope is [the approved functional specification](docs/functional-spec.md). The runtime supports its fourteen use cases: dispatch, bounded retries, waiting, pause/resume, user-action outcomes, parallel backlog and epic delivery, defect recording, integration, and interrupted-work recovery.
+The scope is [the approved functional specification](docs/functional-spec.md). The runtime supports its fifteen use cases: dispatch, bounded retries, waiting, pause/resume, user-action outcomes, parallel backlog and epic delivery, defect recording, integration, interrupted-work recovery, and explicit human decisions on pending requests.
 
 ## Run
 
@@ -50,6 +50,14 @@ The human user can type `pause` or `resume` followed by Enter. Pausing stops new
 
 All harness activities and agent output appear on the console, in `activities.jsonl`, and as OTLP JSON log entries in `otel.jsonl`. Per-invocation folders retain the request, result, and raw output. No collector or dashboard is required.
 
+## Submit a human decision
+
+```sh
+uv run agentic-harness --config config.yaml --decision decision.json
+```
+
+The request binds the human decision to the exact observed question, candidate and provider revision. The configured provider agent owns validation and persistence. A live upgraded runner using the same configuration/state directory is required for shared provider serialization; older runners are refused. See [decision request and result schemas](docs/operator-guide.md#human-decision-command). Submission alone never means the item was updated.
+
 ## Agent interface and verification
 
 [Operator and agent protocol](docs/operator-guide.md) describes custom commands and role boundaries. `AgentAdapter.run` accepts ordinary Python instructions, request data, output schema, working directory, and an activity callback; it returns a result dictionary. Only `codex.py` imports the Codex SDK. Another backend implements that contract and calls `adapter.execute`; select its entry point in the role command configuration without changing the scheduler. [Verification](docs/verification.md) maps each use case to its tests.
@@ -62,4 +70,4 @@ uv run ruff format --check src tests
 
 Integration tests build a separate disposable Git project and exercise actual subprocesses, filesystem work items, worktrees, and merges. They do not run paid models or modify this repository's backlog.
 
-Manual item selection, human-answer management, dashboards, review gates owned by the harness, and direct provider transactions are absent. Earlier plans and evidence are retained only in [the historical archive](docs/archive/previous-workflow/README.md).
+Manual item selection, automatic choice of human answers, dashboards, review gates owned by the harness, and direct provider transactions are absent. Earlier plans and evidence are retained only in [the historical archive](docs/archive/previous-workflow/README.md).

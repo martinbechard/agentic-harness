@@ -37,6 +37,23 @@ def schema_for(request):
         "status": {"status": {"type": "string"}},
         "failure": {"transient": {"type": "boolean"}},
         "hold": {"updated": {"type": "boolean"}},
+        "decision": {
+            **{
+                key: {"type": "string"}
+                for key in (
+                    "decision_id",
+                    "item_id",
+                    "state",
+                    "revision",
+                    "workspace",
+                    "locator",
+                    "detail",
+                )
+            },
+            "status": {"type": "string", "enum": ["applied", "already_applied", "rejected"]},
+            "persisted": {"type": "boolean"},
+            "resolution": {"type": "string", "enum": ["approved", "cancelled", "answered", "none"]},
+        },
         "epic_complete": {"complete": {"type": "boolean"}},
         None: {
             "status": {"type": "string", "enum": ["success", "failed", "user_action_required"]},

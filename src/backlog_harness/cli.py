@@ -12,8 +12,10 @@ from pathlib import Path
 
 import yaml
 
+from .decision import prepare, submit
 from .engine import Harness
 from .process import Agents
+from .provider_lock import CoordinationUnavailable, coordinator
 
 
 class Events:
@@ -101,10 +103,13 @@ def load_config(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True, type=Path)
-    parser.add_argument("--epic")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--epic")
+    mode.add_argument("--decision", type=Path, metavar="REQUEST.json")
     args = parser.parse_args()
     try:
         config = load_config(args.config)
+        decision = prepare(args.decision, config) if args.decision else None
         events = Events(config["state"])
         agents = Agents(config, events)
         harness = Harness(
@@ -117,6 +122,12 @@ def main():
         )
     except (OSError, ValueError, yaml.YAMLError) as exc:
         parser.error(str(exc))
+    if decision is not None:
+        result = asyncio.run(submit(agents, decision))
+        events("decision_result", project=config["project"], **result)
+        raise SystemExit(
+            {"applied": 0, "already_applied": 0, "rejected": 3, "unknown": 1}[result["status"]]
+        )
     controls = queue.Queue()
 
     def read_controls():
@@ -147,9 +158,12 @@ def main():
             await asyncio.gather(controller, return_exceptions=True)
 
     try:
-        asyncio.run(run())
+        with coordinator(config):
+            asyncio.run(run())
     except KeyboardInterrupt:
         events("exiting")
+    except CoordinationUnavailable as exc:
+        parser.error(str(exc))
 
 
 if __name__ == "__main__":

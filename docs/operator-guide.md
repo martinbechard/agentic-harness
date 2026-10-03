@@ -99,3 +99,60 @@ Example timeout event fields:
 ```json
 {"event":"development_timeout","invocation":"dev-456","role":"development","item":"item-1","timeout_seconds":3600,"outcome":"unknown"}
 ```
+
+
+## Human decision command
+
+Run `agentic-harness --config CONFIG --decision REQUEST.json`. This mode is mutually exclusive with `--epic` and never starts a dispatcher, development agent, or merge agent. The same configuration and state directory as the live upgraded runner are required. The command invokes only its configured access/provider agent.
+
+Request example:
+
+```json
+{
+  "project": "/absolute/project",
+  "item_id": "item-1",
+  "workspace": "/absolute/project/.worktrees/item-1",
+  "observed": {
+    "locator": "backlog/user-action-required/item-1.md",
+    "revision": "opaque-provider-revision",
+    "question": "Do you approve candidate abc123 for integration?",
+    "candidate": "abc123"
+  },
+  "decision": {"kind": "allow", "answer": null}
+}
+```
+
+Required fields are exact; extra fields are rejected. `project` must match the configuration. `workspace` is the existing authoritative source workspace, including a current unpublished worktree handoff where appropriate. `locator` is the provider record reference. For filesystem observations, revision is SHA256 of locator UTF-8 bytes, a NUL byte, and exact file bytes—the dashboard's observation convention, not a Git commit. Other providers use their opaque revision. Question and candidate are exact observed values; candidate is null when the pending request names none.
+
+`decision.kind` is `allow`, `cancel`, or `answer`. Allow/cancel require `answer:null`. Answer requires exact nonempty selected/free-text text. Allow cannot select alternatives or supply a free-text answer; the provider rejects such ambiguity. Cancel means cancel the item, not dismiss the dialog. Approval covers only the named pending request/candidate, never unrelated work or automatic merging.
+
+The harness derives `decision_id` as SHA256 of the canonical complete submission (normalized project/workspace paths, sorted JSON keys, UTF-8, compact separators). Repeating the exact submission retains that identity. The provider must store the identity, complete decision and resolution in durable item history and check it before reapplying. Lost responses are retried with the unchanged observation/decision; a confirmed prior decision returns `already_applied`. An intervening published handoff or changed question requires a fresh observation unless that identical decision was already recorded.
+
+All activity goes to the existing console/JSONL/OTEL writer. The caller consumes the final stdout JSONL event with `event:decision_result`; intermediate output and successful process creation are not persistence acknowledgements. Example (usual run/timestamp metadata omitted):
+
+```json
+{
+  "event": "decision_result",
+  "project": "/absolute/project",
+  "status": "applied",
+  "decision_id": "sha256-of-submission",
+  "item_id": "item-1",
+  "persisted": true,
+  "resolution": "approved",
+  "state": "Ready",
+  "revision": "revision-after-readback",
+  "workspace": "/absolute/project/.worktrees/item-1",
+  "locator": "backlog/ready/item-1.md",
+  "detail": "Decision verified in persisted item history"
+}
+```
+
+Exit 0 means `applied` or `already_applied`, with `persisted:true` and resolution `approved`, `cancelled`, or `answered` matching the submitted decision. State, revision and source reflect the provider's actual readback. Exit 3 means `rejected`, `persisted:false`, `resolution:none`. Exit 1 means `unknown`, `persisted:null`: an exception, timeout, lost result, or inconsistent acknowledgement prevents confirmation, and a write may already have happened. Exit 2 is a malformed request/configuration error before provider launch. Interruption without a final result must also be treated as unknown by the caller.
+
+### Provider serialization and upgrade prerequisite
+
+The runner holds `provider-coordination.lock` for its lifetime. A decision command requires an actively held compatible lease for the same project; a stale file, stopped runner, wrong project, or older runner does not qualify. All access-agent invocations (including ordinary selection/status/failure/hold calls) share `provider.lock` in that state directory. Lock waits yield asynchronously, so monitoring heartbeats continue. Locks release on completion, cancellation, or process exit. A second upgraded runner cannot take the same lease.
+
+This is local cooperative serialization, not a distributed provider lock. The operator must retain sole runner ownership and use the same state directory; an unrelated runner configured elsewhere cannot be detected by this lease. Development/merge agents and external writers may update records directly. The provider therefore must validate the observed revision and use its native conditional-update/transaction safeguards. If it cannot establish safe mutation, it must reject. The harness does not implement filesystem/GitHub transactions or parse work-item Markdown.
+
+Upgrade the sole runner at a safe point before enabling dashboard actions. The older runner cannot acquire this lease and decision submissions remain rejected during that period. The dashboard owns HTTP authentication, binding the observed item from its server-side snapshot, and presenting explicit human actions. No real approvals or cancellations are used in the synthetic verification suite.
