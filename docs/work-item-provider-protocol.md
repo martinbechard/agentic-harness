@@ -100,12 +100,28 @@ booleans. Read or validation failures must exit nonzero; they must not report ze
 or fall back to an agent. Timeout/cancellation stops and reaps the command process
 group, including helper processes. The observer must not mutate provider records.
 
-The dev-methodology observer calls the same `codex_backlog.provider.inventory`
-function used by its dashboard. It counts only eligible records, then applies
-configured queue paths, epic-directory scope, and active-item exclusions. Thus six
-stored Ready children waiting for prerequisites yield **zero**, matching the
-Ready dashboard metric. Resolving prerequisites includes looking outside the
-selection scope; limiting selected paths must not hide predecessor records.
+The dev-methodology observer and dashboard use the same configured provider
+implementation. The provider owns inventory, eligibility, queue and epic scope,
+history, source evidence, artifact inspection, decision locators, and questions
+recorded in assigned worktrees. Its filesystem implementation owns Markdown and
+Git interpretation. The dashboard consumes normalized observations and retains
+presentation, runtime telemetry, scheduling controls, and decision submission.
+It must not reconstruct provider facts by reading backlog files itself.
+
+The count command remains a small adapter to that implementation; its JSON
+contract does not expand to include dashboard details. It counts only eligible
+records within the configured queue paths and epic scope, excluding active item
+IDs. Thus six stored Ready children waiting for prerequisites yield **zero**,
+matching the Ready dashboard metric. Resolving prerequisites includes looking
+outside the selection scope; limiting selected paths must not hide predecessor
+records. Compare counts for the same scope and observation time: the dashboard
+can show a wider inventory than a configured harness selection scope.
+
+Observation capabilities are provider-specific. Supporting this count protocol
+alone does not imply dashboard history, artifacts, or decision support. An
+unsupported configured dashboard provider must fail clearly, rather than read
+filesystem records as a fallback. The GitHub count implementation below does not
+by itself provide GitHub dashboard observation capabilities.
 
 Selection still revalidates changing state after a positive count. Priority,
 compatibility between items, and final worktree preparation remain with the agent.
