@@ -8,7 +8,7 @@ The work item access agent selects ready items with satisfied dependencies, prio
 
 The development agent marks its item running, delivers it, and records its own status and delivery information. A user-action outcome means the question or action is already recorded in the item and its status is **User Action required**. The harness does not collect answers. Once the provider reports the item ready again, ordinary dispatch applies.
 
-The discovering agent records defects through the provider. The development agent fixes blocking defects. Filesystem records are created in the current worktree and published with delivery. Provider-specific early publication belongs to the separate filesystem-provider specification.
+The discovering agent records defects through the provider. The development agent fixes blocking defects. New defect records are created in the current worktree and normally published with delivery. Waiting lifecycle checkpoints use the access-agent reconciliation described above; other provider-specific early publication belongs to the filesystem-provider specification.
 
 The merge agent identifies eligible work according to the project's convention, prepares integration with the latest target branch, runs required tests on the combined result, merges passing work, and updates the item. A successful development outcome triggers a check, not an assumption that a PR exists. Periodic checks also run. The merge agent reconciles competing attempts' work item information even when Git merges cleanly.
 

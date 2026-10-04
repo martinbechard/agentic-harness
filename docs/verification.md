@@ -183,3 +183,12 @@ RUN_CODEX_LIVE=1 uv run pytest -q tests/test_project.py::test_live_access_reconc
 
 The deterministic fixture verifies its provider contract, not arbitrary model
 compliance. Live acceptance and deployed-run receipts are retained separately.
+
+The corrected authenticated live test passed on 2026-10-04 in 263.77 seconds.
+Two fresh access invocations exercised initial publication and unchanged replay.
+Invocation receipts are `14d0e40b68db45c0baa81d8f445d4a2f` and
+`5ca3c59075184c88ba1b27cb145948f2` under
+`.agent-ops/live-lifecycle-test-v2/test_live_access_reconciles_wa0/state/`.
+All four source records, candidate branches, product isolation, staged-file
+preservation and repeat-scan assertions passed. This evidence is bounded to
+these cases; it does not claim arbitrary provider/model correctness.
