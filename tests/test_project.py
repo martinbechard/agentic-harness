@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -136,13 +137,18 @@ def test_real_process_recovery_and_retry(project, mode):
 @pytest.mark.parametrize(
     "mode,folder", [("failure", "holding"), ("user_action", "user-action-required")]
 )
-def test_nondelivery_status_stays_in_worktree_without_main_mutation(project, mode, folder):
+def test_nondelivery_checkpoint_is_published_without_product_delivery(project, mode, folder):
     root, control, config = project
     add(root, "one", mode=mode)
     workspace = root.parent / "worktrees/one"
     target = workspace / "backlog" / folder / "one.json"
-    asyncio.run(execute(config, lambda h: target.exists() and not h.active))
-    assert (root / "backlog/ready/one.json").exists()
+    asyncio.run(
+        execute(
+            config, lambda h: (root / "backlog" / folder / "one.json").exists() and not h.active
+        )
+    )
+    assert not (root / "backlog/ready/one.json").exists()
+    assert not (root / "products/one.txt").exists()
     assert int((control / "one.attempts").read_text()) == 1
     if mode == "user_action":
         assert "Human user:" in json.loads(target.read_text())["question"]
@@ -343,3 +349,168 @@ def test_provider_reconciles_legacy_candidate_and_excludes_unpublished_work(proj
         assert not (control / f"{identity}.attempts").exists()
         assert git(worktrees / identity, "rev-parse", "HEAD") == revision
         assert not (root / f"{identity}-candidate.txt").exists()
+
+
+@pytest.mark.parametrize("main_change", ["unchanged", "completed", "answer", "conflict"])
+def test_waiting_reconciliation_preserves_authority_and_is_idempotent(project, main_change):
+    root, _control, config = project
+    add(root, "one")
+    workspace = root.parent / "worktrees" / "one"
+    workspace.parent.mkdir()
+    git(root, "worktree", "add", "-b", "item/one", str(workspace), "main")
+    waiting = {
+        "id": "one",
+        "status": "user-action-required",
+        "question": "Enable preview?",
+        "candidate": "preserved-candidate",
+        "decision_id": "pending-1",
+    }
+    (workspace / "backlog/ready/one.json").unlink()
+    destination = workspace / "backlog/user-action-required/one.json"
+    destination.parent.mkdir()
+    destination.write_text(json.dumps(waiting))
+    (workspace / "unfinished.txt").write_text("unfinished product change")
+    git(workspace, "add", ".")
+    git(workspace, "commit", "-m", "Record waiting checkpoint with unfinished product")
+    candidate = git(workspace, "rev-parse", "HEAD")
+    if main_change != "unchanged":
+        p = root / "backlog/ready/one.json"
+        data = json.loads(p.read_text())
+        data.update(
+            {
+                "completed": {"status": "completed"},
+                "answer": {"answer": "Approved", "decision_id": "new-answer"},
+                "conflict": {"question": "Different question", "revision": "competing"},
+            }[main_change]
+        )
+        if main_change == "completed":
+            p.unlink()
+            p = root / "backlog/completed/one.json"
+            p.parent.mkdir()
+        p.write_text(json.dumps(data))
+        git(root, "add", "backlog")
+        git(root, "commit", "-m", "Record newer authoritative main change")
+    before = git(root, "rev-parse", "HEAD")
+    unrelated = root / "unrelated.txt"
+    unrelated.write_text("preserve me")
+    git(root, "add", "unrelated.txt")
+    staged_before = git(root, "diff", "--cached", "--", "unrelated.txt")
+
+    async def scan():
+        # Fresh provider instance has no remembered workspace mapping.
+        agents = Agents(config, lambda *_args, **_fields: None)
+        assert await agents.ready(1, None, False, []) == []
+
+    asyncio.run(scan())
+    after = git(root, "rev-parse", "HEAD")
+    if main_change == "unchanged":
+        assert after != before
+        assert json.loads((root / "backlog/user-action-required/one.json").read_text()) == waiting
+        assert not (root / "backlog/ready/one.json").exists()
+    else:
+        assert after == before
+    assert not (root / "unfinished.txt").exists()
+    assert git(workspace, "rev-parse", "HEAD") == candidate
+    assert git(root, "diff", "--cached", "--", "unrelated.txt") == staged_before
+    asyncio.run(scan())
+    assert git(root, "rev-parse", "HEAD") == after
+
+
+@pytest.mark.skipif(os.environ.get("RUN_CODEX_LIVE") != "1", reason="Authenticated live model test")
+def test_live_access_reconciles_waiting_without_product_merge(project):
+    root, _control, config = project
+    (root / "AGENTS.md").write_text("""# Isolated lifecycle publication test project
+The file work-item provider is JSON files under backlog/<status>/<id>.json.
+The configured primary branch is main and this is its primary checkout.
+Use Git history and registered worktrees to reconcile item records. Assigned branch
+item/<id> and sibling worktrees/<id> are the canonical assignments. Do not implement
+product work, run project_agent.py, or mutate other projects. You own main-side
+lifecycle publication for this request. Commit only owned record paths and preserve
+unrelated staged data. Status and folder must agree. There is no claim service.
+Before each write re-read the primary item and confirm it has not changed.
+Questions, decision IDs, candidates and history are opaque evidence to preserve.
+A newer main answer with unresolved competing question evidence must not be
+replaced or dispatched: report the conflict. Completed main items stay completed.
+Verify committed readback. Do not append unchanged scan notes. Product acceptance
+is independent of lifecycle publication; never merge unfinished product files.
+""")
+    git(root, "add", "AGENTS.md")
+    git(root, "commit", "-m", "Define isolated provider conventions")
+    for name in ["waiting", "completed", "conflict", "answered"]:
+        add(root, name)
+        workspace = root.parent / "worktrees" / name
+        workspace.parent.mkdir(exist_ok=True)
+        git(root, "worktree", "add", "-b", "item/" + name, str(workspace), "main")
+        p = workspace / "backlog/ready" / (name + ".json")
+        record = json.loads(p.read_text())
+        record.update(
+            status="user-action-required",
+            question="Enable preview?",
+            candidate="candidate-" + name,
+            decision_id="pending-" + name,
+            owner="Human user",
+            next_action="Answer the preview question",
+            waiting_since="2026-10-04T10:00:00Z",
+        )
+        p.unlink()
+        p = workspace / "backlog/user-action-required" / (name + ".json")
+        p.parent.mkdir(exist_ok=True)
+        p.write_text(json.dumps(record))
+        (workspace / "unfinished.txt").write_text("Never publish this product file")
+        git(workspace, "add", ".")
+        git(workspace, "commit", "-m", "Waiting checkpoint")
+        if name != "waiting":
+            p = root / "backlog/ready" / (name + ".json")
+            current = json.loads(p.read_text())
+            if name == "completed":
+                current["status"] = "completed"
+                p.unlink()
+                p = root / "backlog/completed" / (name + ".json")
+                p.parent.mkdir(exist_ok=True)
+            elif name == "answered":
+                current.update(
+                    answer="Use another endpoint",
+                    decision_id="newer-answer",
+                    question="Which endpoint?",
+                )
+            else:
+                current["question"] = "A different pending question"
+            p.write_text(json.dumps(current))
+            git(root, "add", "backlog")
+            git(root, "commit", "-m", "Newer authoritative main record")
+    before = {p.relative_to(root): p.read_bytes() for p in (root / "backlog").glob("*/*.json")}
+    heads = {p.name: git(p, "rev-parse", "HEAD") for p in (root.parent / "worktrees").iterdir()}
+    (root / "unrelated.txt").write_text("Preserve staged data")
+    git(root, "add", "unrelated.txt")
+    index = git(root, "diff", "--cached")
+    config["access"] = [
+        sys.executable,
+        "-m",
+        "backlog_harness.codex",
+        "--model",
+        "gpt-6-luna",
+        "--effort",
+        "high",
+    ]
+    config["access_timeout"] = 600
+
+    async def scan():
+        agents = Agents(config, lambda *_args, **_fields: None)
+        assert await agents.ready(1, None, False, []) == []
+
+    asyncio.run(scan())
+    waiting = root / "backlog/user-action-required/waiting.json"
+    expected = root.parent / "worktrees/waiting/backlog/user-action-required/waiting.json"
+    assert json.loads(waiting.read_text()) == json.loads(expected.read_text())
+    assert not (root / "backlog/ready/waiting.json").exists()
+    for path, data in before.items():
+        if path.name != "waiting.json":
+            assert (root / path).read_bytes() == data
+    assert not (root / "unfinished.txt").exists()
+    assert git(root, "diff", "--cached") == index
+    for name, head in heads.items():
+        assert git(root.parent / "worktrees" / name, "rev-parse", "HEAD") == head
+    published = git(root, "rev-parse", "HEAD")
+    asyncio.run(scan())
+    assert git(root, "rev-parse", "HEAD") == published
+    assert git(root, "diff", "--cached") == index

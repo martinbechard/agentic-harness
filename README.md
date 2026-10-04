@@ -1,6 +1,6 @@
 # Agentic Harness
 
-Run ready backlog items through development agents. A work item access agent chooses ready work using the project's provider and dependencies. Development agents update their own items; a separate merge agent checks and integrates finished work.
+Run ready backlog items through development agents. A work item access agent chooses ready work using the project's provider and dependencies. Development agents update their own items; a separate merge agent checks and integrates finished work. Before selection, the access agent reconciles committed waiting checkpoints into the published backlog without merging unfinished product changes. Newer human decisions and delivered completion take precedence over stale branch records; conflicts remain undispatched and are reported.
 
 The scope is [the approved functional specification](docs/functional-spec.md). The runtime supports its fifteen use cases: dispatch, bounded retries, waiting, pause/resume, user-action outcomes, parallel backlog and epic delivery, defect recording, integration, interrupted-work recovery, and explicit human decisions on pending requests.
 

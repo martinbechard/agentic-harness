@@ -49,6 +49,19 @@ def test_selected_scheduling_authority_is_supplied_to_every_agent_role(tmp_path)
             [],
             scheduling={"capacity": 2, "mode": "parallel", "revision": 1, "request_id": "r"},
         )
+        selection = captured[0][1]["instruction"]
+        for boundary in (
+            "publish a lifecycle-only update",
+            "independently of product acceptance",
+            "do not merge or cherry-pick unfinished product changes",
+            "must not reopen delivered completion or undo a newer human answer",
+            "not proof that a pending question is resolved",
+            "Never publish dirty worktree evidence",
+            "or competing revisions are ambiguous",
+            "verify the published lifecycle, question and revision",
+            "Unchanged repeat scans must not append duplicate history",
+        ):
+            assert boundary in selection
         agents.start = launch
         await agents.deliver(Item("one", str(tmp_path), "one"), False)
         await agents.integrate()

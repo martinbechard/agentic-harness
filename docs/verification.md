@@ -12,7 +12,7 @@ The scope is `functional-spec.md`. Historical acceptance records in `archive/pre
 | UC-004: no ready item | Polling interval with idle capacity | `test_no_ready_items_wait_and_pause_during_provider_query`; separate-project dependency wait |
 | UC-005: pause | Blocks new/retry dispatch, lets active attempts finish | `test_interrupted_recovery_preserves_workspace_and_waits_for_resume`; foreground CLI test |
 | UC-006: resume | Wakes polling and dispatch | `test_foreground_cli_pause_resume_and_epic_exit` |
-| UC-007: user action | Development agent records question/status; reports outcome; no automatic answer selection | `test_nondelivery_status_stays_in_worktree_without_main_mutation[user_action-user-action-required]` |
+| UC-007: user action | Development agent records question/status; reports outcome; no automatic answer selection | `test_nondelivery_checkpoint_is_published_without_product_delivery[user_action-user-action-required]` |
 | UC-008: concurrent backlog | Capacity-limited assignments with active exclusions and distinct worktrees | Scheduler concurrency and invalid-batch tests; real parallel subprocesses |
 | UC-009: epic dependencies | Epic selection and provider-owned readiness/completion | `test_parallel_delivery_dependencies_defects_and_merge`: B depends on merged A |
 | UC-010: spare capacity | Second access query outside epic after epic items receive priority | `test_concurrency_epic_priority_and_outside_capacity`; real outside-item delivery |
@@ -27,7 +27,7 @@ The scope is `functional-spec.md`. Historical acceptance records in `archive/pre
 - **P-001:** All provider operations go through the access-agent command. Normal status changes occur in the development-agent command. The Codex adapter supports an independently configured model and reasoning effort per role.
 - **P-002:** CLI prompts address the human user explicitly. Pause/resume is exercised through actual stdin; user-action questions are stored by the development test agent.
 - **P-003:** `test_every_activity_has_matching_console_log_and_otel_record` checks identical content and timestamps across console, JSONL activity log, and OTLP JSON log export. Actual process output streaming and incomplete UTF-8 are covered separately.
-- **P-004:** Item-specific access commands and development commands run in the item's worktree. Separate-project tests verify main remains unchanged for unmerged failure/user-action updates and receives delivered records through Git merge. Merge instructions explicitly require reconciliation of conflicting attempt information.
+- **P-004:** Item-specific access commands and development commands run in the item's worktree. Separate-project tests verify committed waiting checkpoints publish lifecycle-only state without merging unfinished product files. Delivered product records still publish through Git merge. Merge instructions explicitly require reconciliation of conflicting attempt information.
 - **P-005:** Tests cover transient retries, nontransient holding, timeout exhaustion, and recovery. Two automatic retries are shared by delivery and interruption recovery within the foreground run.
 - **P-006:** Integration fixtures initialize a separate temporary Git project outside this checkout, with status folders, work item creation/update, dependencies, defect recording, independent worktrees, combined tests, and delivery merges. No production backlog is used.
 - Manual item selection, automatic selection of human answers, direct provider transactions, dashboards, harness-owned review/proof gates, and retired transports have no implementation or public command. The wheel contains only `__init__`, `__main__`, `adapter`, `cli`, `codex`, `decision`, `engine`, `process`, and `provider_lock`.
@@ -153,3 +153,33 @@ The 2026-10-03 suite covers unchanged requests after unrelated history updates, 
 `test_published_answer_reaches_preserved_workspace_before_delivery` uses a disposable Git repository and actual access/development subprocesses. It verifies an exact human answer is committed on the authoritative branch while unrelated staged files remain staged, reconciled into a preserved candidate worktree, and read by the development process before delivery. Candidate ancestry and local delivery evidence survive. A conflicting pending question prevents dispatch. A failing commit hook leaves a partial write unconfirmed and undispatchable; recovery with the original request publishes it once and preserves the request bytes and ID. Selection is tested with a new provider client without an in-memory workspace registry.
 
 These deterministic provider fixtures verify the boundary and intended provider behavior. They do not prove that a live model follows every publication/reconciliation instruction. This release makes that agent contract explicit; it does not add provider-specific Git transactions to the harness. No real decisions were replayed and no production runner was restarted during this work.
+
+## Waiting checkpoint publication (2026-10-04)
+
+Selection now explicitly owns provider-mediated lifecycle-only publication of proven
+committed waiting checkpoints before returning ready items. This does not add a Git
+provider implementation to the harness or authorize unfinished product integration.
+Questions, decisions, assignments, candidate evidence and recorded blocker details
+must survive publication; ambiguous records remain excluded. A Ready label or newer
+partial answer does not establish that a question has been resolved.
+
+The full automated suite passed 254 tests with two authenticated tests skipped;
+statement and branch coverage remained 100% (1022 statements, 318 branches).
+After tightening the partial-answer boundary, 45 focused process/project tests
+passed. Ruff and formatting checks passed. The disposable Git fixture covers
+waiting-state publication, stale branches after completion, newer answers,
+conflicting revisions, repeat-scan idempotence and unrelated staged-file preservation.
+
+The opt-in `test_live_access_reconciles_waiting_without_product_merge` exercises
+the configured Luna/high access agent with real Git worktrees and the same
+selection instructions. It checks complete pending-question metadata, candidate
+preservation, no product merge, newer conflicting decisions, and a fresh unchanged
+second scan. Its first run exposed dispatch of an unresolved partial answer;
+the access instruction was corrected rather than accepting that result. Run with:
+
+```sh
+RUN_CODEX_LIVE=1 uv run pytest -q tests/test_project.py::test_live_access_reconciles_waiting_without_product_merge
+```
+
+The deterministic fixture verifies its provider contract, not arbitrary model
+compliance. Live acceptance and deployed-run receipts are retained separately.

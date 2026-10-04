@@ -47,9 +47,50 @@ def committed_items(root):
     ]
 
 
+def reconcile_waiting(request, main, control):
+    """Fixture provider publishes only proven waiting checkpoints, never product files."""
+    assert "Reconcile lifecycle before selecting" in request["instruction"]
+    for worktree in sorted((main.parent / "worktrees").glob("*")):
+        if not (worktree / ".git").exists():
+            continue
+        for checkpoint in committed_items(worktree):
+            identity = checkpoint["id"]
+            if identity in request["excluded"]:
+                continue
+            if checkpoint["status"] not in {"user-action-required", "holding", "blocked"}:
+                continue
+            current_path, current = load(main, identity)
+            if current == checkpoint or current["status"] == "completed":
+                continue
+            base = git(main, "merge-base", "HEAD", git(worktree, "rev-parse", "HEAD"))
+            base_paths = git(main, "ls-tree", "-r", "--name-only", base, "backlog").splitlines()
+            base_path = next(path for path in base_paths if path.endswith(f"/{identity}.json"))
+            original = json.loads(git(main, "show", f"{base}:{base_path}"))
+            if current != original:
+                (control / f"{identity}.conflict").write_text("Divergent provider revisions")
+                continue
+            if git(worktree, "status", "--porcelain", "--", "backlog"):
+                continue
+            save(main, checkpoint)
+            destination = main / "backlog" / checkpoint["status"] / f"{identity}.json"
+            git(main, "add", "--", str(current_path), str(destination))
+            git(
+                main,
+                "commit",
+                "--only",
+                "-m",
+                f"Publish {identity} waiting checkpoint",
+                "--",
+                str(current_path),
+                str(destination),
+            )
+            assert load(main, identity)[1] == checkpoint
+
+
 def access(request, root, main, control):
     action = request["action"]
     if action == "ready":
+        reconcile_waiting(request, main, control)
         known = {i["id"]: Path(i["worktree"]) for i in request["workspaces"]}
         selected = []
         committed = committed_items(main)

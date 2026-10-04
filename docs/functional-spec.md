@@ -24,6 +24,15 @@ This principle applies to every use case. Routine logging, console progress outp
 
 When using the filesystem work item provider, the provider agent reads and writes work items in the current worktree. Changes to the work item reach the main backlog when the feature branch or worktree is merged.
 
+Before selecting work, the access agent reconciles committed waiting checkpoints with the
+published backlog. It publishes an authorized lifecycle-only update through the provider
+without waiting for unfinished product acceptance or merging product changes. This is a
+main-side provider transaction, not routine cherry-picking. It preserves questions, recorded
+blocker details, identities, candidates, history and newer human decisions. Historical branch
+states must not undo delivered completion. Ambiguous evidence prevents unsafe selection and
+is reported; unchanged scans do not add duplicate history. The published record is read back
+before success is reported. The harness itself does not implement provider transactions.
+
 If the harness has meanwhile retried the item under P-005, the merging agent is responsible for resolving conflicting work item updates appropriately. Git may report a merge conflict; even if Git merges the text cleanly, the merging agent must reconcile incompatible status or delivery information from the separate attempts.
 
 ### P-005: Retry policy
