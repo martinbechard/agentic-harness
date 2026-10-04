@@ -1,13 +1,103 @@
 """Codex Python SDK implementation of the harness agent adapter."""
 
 import argparse
+import asyncio
 import json
+import time
 from pathlib import Path
 
-from openai_codex import ApprovalMode, Codex, CodexConfig
+from openai_codex import ApprovalMode, Codex, CodexConfig, CodexError
+from openai_codex.async_client import AsyncCodexClient
 from openai_codex.types import ReasoningEffort
 
 from .adapter import execute
+
+
+def completed_before(thread, project, cutoff):
+    """Require positive completion evidence, not merely an idle runtime status."""
+    turns = thread["turns"]
+    return (
+        thread["cwd"] == project
+        and thread["status"]["type"] in ("idle", "notLoaded")
+        and thread["updatedAt"] < cutoff
+        and bool(turns)
+        and turns[-1]["status"] == "completed"
+        and turns[-1].get("completedAt") is not None
+        and turns[-1]["completedAt"] < cutoff
+    )
+
+
+async def archive_completed_threads(project, age, emit):
+    """Archive old completed project chats through the SDK without starting a turn."""
+    cutoff = time.time() - age
+    emit("thread_cleanup_started", level="DEBUG", project=project, cutoff=cutoff)
+    archived, failed = 0, 0
+    async with AsyncCodexClient(CodexConfig(cwd=project)) as client:
+        await client.initialize()
+        # Finish pagination before archiving so mutations cannot shift the listing.
+        candidates = []
+        cursor = None
+        while True:
+            page = await client.thread_list(
+                {
+                    "cwd": project,
+                    "archived": False,
+                    "limit": 100,
+                    "cursor": cursor,
+                    "useStateDbOnly": True,
+                }
+            )
+            candidates.extend(t.id for t in page.data if t.updated_at < cutoff)
+            emit("thread_cleanup_page", level="DEBUG", project=project, count=len(page.data))
+            cursor = page.next_cursor
+            if not cursor:
+                break
+        for identity in candidates:
+            try:
+                response = await client.thread_read(identity, include_turns=True)
+                thread = response.thread.model_dump(mode="json", by_alias=True)
+                if not completed_before(thread, project, cutoff):
+                    emit("thread_archive_skipped", level="DEBUG", thread=identity)
+                    continue
+                # Re-read immediately before the mutation to catch resumed chats.
+                response = await client.thread_read(identity, include_turns=True)
+                current = response.thread.model_dump(mode="json", by_alias=True)
+                if not completed_before(current, project, cutoff) or current != thread:
+                    emit("thread_archive_skipped", level="DEBUG", thread=identity)
+                    continue
+                emit("thread_archiving", level="DEBUG", thread=identity, project=project)
+                await client.thread_archive(identity)
+                archived += 1
+                emit(
+                    "thread_archived",
+                    thread=identity,
+                    project=project,
+                    completed_at=current["turns"][-1]["completedAt"],
+                )
+            except (CodexError, OSError, ValueError, RuntimeError) as exc:
+                failed += 1
+                emit("thread_archive_failed", level="ERROR", thread=identity, error=str(exc))
+    emit("thread_cleanup_completed", project=project, archived=archived, failed=failed)
+    return failed == 0
+
+
+async def cleanup_threads(config, emit, *, once=False):
+    """Run immediately, then periodically; cancellation closes the SDK connection."""
+    settings = config.get("thread_cleanup", {})
+    if not settings.get("enabled", True):
+        emit("thread_cleanup_disabled", level="DEBUG")
+        return True
+    while True:
+        try:
+            success = await archive_completed_threads(
+                config["project"], settings.get("completed_age", 3600), emit
+            )
+        except (CodexError, OSError, ValueError, RuntimeError) as exc:
+            success = False
+            emit("thread_cleanup_failed", level="ERROR", error=str(exc))
+        if once:
+            return success
+        await asyncio.sleep(settings.get("interval", 900))
 
 
 def thread_name(request, cwd):

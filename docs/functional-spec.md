@@ -270,6 +270,17 @@ Before subsequent dispatch under UC-001, the provider reconciles the published d
 
 Delivery and integration do not run as part of this command. The provider remains responsible for its conditional-update and transaction semantics.
 
+## Thread housekeeping
+
+The harness mechanically checks Codex chats at startup and every 15 minutes by
+default. It archives chats in the configured project directory only when the latest
+turn completed more than one hour ago and no more recent activity is recorded.
+It rechecks eligibility immediately before archiving. Cleanup can be disabled;
+its interval and completion age are configurable. It uses no agent and does not
+change work-item completion or delivery status. DEBUG events record checks and
+archive attempts; successful archives and failures are logged at INFO and ERROR.
+The configured minimum level applies consistently to console, JSONL, and OTEL output.
+
 ## Not supported use cases
 
 - Manually selecting a specific work item for execution.

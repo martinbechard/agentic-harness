@@ -87,3 +87,58 @@ def test_invalid_config_has_clear_cli_error(tmp_path):
     )
     assert result.returncode == 2
     assert "Configuration must contain" in result.stderr
+
+
+@pytest.mark.parametrize("level,expected", [("INFO", 1), ("DEBUG", 2)])
+def test_debug_level_filters_all_outputs(tmp_path, capsys, level, expected):
+    emit = Events(tmp_path, level)
+    emit("thread_archiving", level="DEBUG", thread="one")
+    emit("thread_archived", thread="one")
+    assert len(capsys.readouterr().out.splitlines()) == expected
+    records = [json.loads(s) for s in (tmp_path / "otel.jsonl").read_text().splitlines()]
+    assert len(records) == expected
+    assert len((tmp_path / "activities.jsonl").read_text().splitlines()) == expected
+    record = records[0]["resourceLogs"][0]["scopeLogs"][0]["logRecords"][0]
+    assert record["severityNumber"] == (5 if level == "DEBUG" else 9)
+    assert record["severityText"] == level
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"log_level": "TRACE"},
+        {"thread_cleanup": False},
+        {"thread_cleanup": {"unknown": 1}},
+        {"thread_cleanup": {"enabled": "false"}},
+        {"thread_cleanup": {"interval": 0}},
+        {"thread_cleanup": {"completed_age": -1}},
+        {"thread_cleanup": {"interval": float("inf")}},
+    ],
+)
+def test_invalid_cleanup_configuration(tmp_path, change):
+    path = tmp_path / "config.yaml"
+    path.write_text(yaml.safe_dump({**config(tmp_path), **change}))
+    with pytest.raises(ValueError):
+        load_config(path)
+
+
+def test_disabled_cleanup_cli_does_not_start_agents(tmp_path):
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                **config(tmp_path),
+                "thread_cleanup": {"enabled": False},
+                "log_level": "DEBUG",
+            }
+        )
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "backlog_harness", "--config", str(path), "--cleanup-once"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "thread_cleanup_disabled" in result.stdout
+    assert "agent_started" not in result.stdout

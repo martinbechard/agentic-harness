@@ -60,6 +60,31 @@ The automated suite verifies agent-owned decisions through deterministic test ag
 
 ## Deployment regressions
 
+### Mechanical thread cleanup (2026-10-04)
+
+`tests/test_cleanup.py` covers strict completion-age eligibility, recent activity,
+active/failed/interrupted/empty/undated turns, pagination before mutation,
+rechecking resumed threads, per-thread failures, disabled cleanup, default timing,
+configured age, cancellation, and one-shot outcomes. `tests/test_cli.py` checks
+configuration validation, disabling cleanup without starting agents, and matching
+DEBUG filtering/severity in console, JSONL, and OTEL output.
+
+The live one-shot pass against `/Users/martinbechard/dev/dev-methodology` archived
+513 chats. An independent indexed listing confirmed all 513 as archived and 24
+chats remaining unarchived. One additional archive was refused by Codex because
+the thread had an active writer; it remained unarchived and produced an ERROR
+event and a nonzero command exit. No agent turns or backlog delivery were started.
+Local logs and readback evidence are in `.agent-ops/thread-cleanup-verification/`.
+The already-running installed harness was not restarted or upgraded by this test.
+
+The final full suite passed: 242 tests passed and one opt-in test skipped.
+Coverage reached 100% of 969 statements and 304 branches. One existing subprocess
+timeout test exceeded its wait budget during the instrumented full run; its
+isolated instrumented rerun passed. Ruff lint, formatting, and diff whitespace
+checks passed.
+
+### Adapter protocol
+
 `test_exact_instructions_are_received_by_sdk_server` compares complete instructions, assignment data, and output schema against JSON-RPC messages received by a local server through the real SDK. `test_codex_sdk_transmits_instructions_schema_and_streams_activity` exercises the subprocess entry point and verifies SDK options and streamed output. Failure tests cover failed/interrupted turns, missing and malformed responses, non-object results, and transport disconnection. The cancellation test confirms the SDK app server is in the invocation process group and is reaped when the invocation stops.
 
 `test_another_adapter_uses_same_request_result_and_event_contract` supplies an unrelated backend through the same interface, with no SDK types in the contract. The temporary context-file option and CLI configuration overrides are removed.
