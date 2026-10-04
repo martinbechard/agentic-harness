@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agentic-harness"
-version = "0.1.0a55"
+version = "0.1.0a56"
 description = "Agent-mediated backlog dispatch and integration harness"
 requires-python = ">=3.12"
 dependencies = [

@@ -164,7 +164,11 @@ class Agents:
 
         agent = await Process.start(
             self.config[role],
-            {"role": role, **payload},
+            {
+                "role": role,
+                "work_item_provider": self.config.get("work_item_provider"),
+                **payload,
+            },
             cwd or self.config["project"],
             self.config["state"],
             emit,

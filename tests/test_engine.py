@@ -654,3 +654,97 @@ def test_event_loop_stall_does_not_emit_misleading_heartbeats():
             await asyncio.gather(run, return_exceptions=True)
 
     asyncio.run(scenario())
+
+
+class CountProvider:
+    def __init__(self, value=0):
+        self.value = value
+        self.queries = []
+
+    async def ready_count(self, **query):
+        self.queries.append(query)
+        return self.value
+
+
+def test_count_gate_skips_empty_then_calls_selection_and_retains_judgment():
+    async def run():
+        provider = CountProvider()
+        h, access, launched, _, events = make(work_item_provider=provider)
+        await h.cycle()
+        assert not access.queries and not launched
+        provider.value = 20
+        access.items = []  # Provider's stored Ready count is not a selection decision.
+        await h.cycle()
+        assert len(access.queries) == 1 and not launched
+        access.items = [Item("one", "/one", "one")]
+        await started(h)
+        assert len(launched) == 1
+        await h.cycle()  # Capacity is full; do not query again.
+        assert len(provider.queries) == 3
+        launched[0][2].finish(Outcome("success"))
+        await settle(h)
+        assert [fields["count"] for event, fields in events if event == "ready_count"] == [
+            0,
+            20,
+            20,
+        ]
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("value", [-1, True, 1.5, None, "1"])
+def test_invalid_count_never_starts_access_agent(value):
+    async def run():
+        h, access, _, _, events = make(work_item_provider=CountProvider(value))
+        await h.cycle()
+        assert not access.queries
+        assert events[-1][0] == "ready_count_failed"
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize(
+    "failure", [OSError("read"), RuntimeError("api"), ValueError("data"), None]
+)
+def test_count_failure_or_timeout_defers_selection(failure):
+    class Provider:
+        async def ready_count(self, **query):
+            if failure:
+                raise failure
+            await asyncio.sleep(60)
+
+    async def run():
+        h, access, _, _, events = make(work_item_provider=Provider(), provider_timeout=0.01)
+        await h.cycle()
+        assert not access.queries
+        assert events[-1][0] == "ready_count_failed"
+
+    asyncio.run(run())
+
+
+def test_count_scope_active_exclusions_and_pause_during_query():
+    async def run():
+        provider = CountProvider(1)
+        h, access, launched, _, _ = make(work_item_provider=provider, epic="release", capacity=2)
+        await started(h)
+        assert provider.queries == [
+            {"epic": "release", "outside": False, "excluded": []},
+            {"epic": "release", "outside": True, "excluded": ["one"]},
+        ]
+        h.pause()
+        await h.cycle()
+        assert len(provider.queries) == 2
+        h.resume()
+
+        async def pause(**query):
+            h.pause()
+            return 1
+
+        provider.ready_count = pause
+        previous = len(access.queries)
+        await h.cycle()
+        assert len(access.queries) == previous
+        launched[0][2].finish(Outcome("success"))
+        await settle(h)
+
+    asyncio.run(run())

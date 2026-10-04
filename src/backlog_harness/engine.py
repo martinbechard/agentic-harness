@@ -49,6 +49,8 @@ class Harness:
         epic=None,
         scheduling_revision=0,
         scheduling_request_id=None,
+        work_item_provider=None,
+        provider_timeout=30,
     ):
         if (
             type(capacity) is not int
@@ -57,7 +59,14 @@ class Harness:
             or scheduling_revision < 0
             or any(
                 type(v) not in (int, float) or not 0 < v < float("inf")
-                for v in (timeout, poll_interval, merge_interval, merge_timeout, heartbeat_interval)
+                for v in (
+                    timeout,
+                    poll_interval,
+                    merge_interval,
+                    merge_timeout,
+                    heartbeat_interval,
+                    provider_timeout,
+                )
             )
         ):
             raise ValueError(
@@ -70,6 +79,8 @@ class Harness:
         self.merge_timeout = merge_timeout
         self.heartbeat_interval = heartbeat_interval
         self.epic = epic
+        self.work_item_provider = work_item_provider
+        self.provider_timeout = provider_timeout
         self.scheduling_revision = scheduling_revision
         self.scheduling_request_id = scheduling_request_id
         self.scheduling_lock = asyncio.Lock()
@@ -233,6 +244,28 @@ class Harness:
             scheduling = self.scheduling()
         if requested_room <= 0:
             return
+        if self.work_item_provider is not None:
+            try:
+                count = await asyncio.wait_for(
+                    self.work_item_provider.ready_count(
+                        epic=self.epic, outside=outside, excluded=list(self.active)
+                    ),
+                    self.provider_timeout,
+                )
+                if type(count) is not int or count < 0:
+                    raise ValueError("Work Item Provider ready count must be a nonnegative integer")
+            except (OSError, RuntimeError, ValueError, TimeoutError) as exc:
+                self.emit(
+                    "ready_count_failed",
+                    level="ERROR",
+                    detail=str(exc) or "Work Item Provider count timed out",
+                    epic=self.epic,
+                    outside=outside,
+                )
+                return
+            self.emit("ready_count", count=count, epic=self.epic, outside=outside)
+            if count == 0 or self.paused:
+                return
         items = await self.access.ready(
             requested_room, self.epic, outside, list(self.active), scheduling=scheduling
         )

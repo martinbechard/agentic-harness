@@ -192,3 +192,35 @@ Invocation receipts are `14d0e40b68db45c0baa81d8f445d4a2f` and
 All four source records, candidate branches, product isolation, staged-file
 preservation and repeat-scan assertions passed. This evidence is bounded to
 these cases; it does not claim arbitrary provider/model correctness.
+
+### Work Item Provider protocol (2026-10-04, 0.1.0a56)
+
+The optional read-only protocol adds a count check before Ready selection. It is
+an exception to P-001's agent-only observation path; selection, reconciliation and
+provider transactions remain agent-owned. Configuration chooses `file`, `github`,
+or the compatible `agent` fallback. See [the contract](work-item-provider-protocol.md).
+
+- Full Python 3.12 suite: **302 passed, 2 opt-in live tests skipped**.
+- Branch coverage: **100%**, all 1,145 statements and 386 branches; no exclusions.
+- Ruff lint, formatting, and Git whitespace checks passed.
+- Source distribution and wheel built for **0.1.0a56**.
+- Installed wheel on Python 3.13: **131 passed, 1 opt-in live test skipped** across
+  provider, engine, CLI, and adapter tests. Imports were verified under the isolated
+  environment's `site-packages`, rather than the editable source checkout.
+
+`tests/test_work_item_provider.py` checks both filesystem layouts, exact header
+state, ignored history/index files, epic scope, active exclusions, missing and
+unreadable queues, GitHub pagination/PR exclusion/milestones/identity forms, malformed
+responses, cancellation, and process reaping. A real configured CLI subprocess
+performs repeated empty polls without starting selection, then observes a new Ready
+file and starts the access agent. The agent may still return no selected items.
+
+`tests/test_engine.py` checks zero/positive/invalid counts, failure and timeout,
+full capacity, active IDs, epic/outside scope, pause during a count, and retained
+agent selection. Existing tests cover agent-only fallback, retries, recovery,
+decisions, merge behavior, and lifecycle reconciliation.
+
+Release evidence is under `.agent-ops/work-item-provider-release/`; the installed
+wheel environment is `.agent-ops/work-item-provider-final/installed`. GitHub API
+behavior is verified with controlled responses and the documented CLI contract;
+no live GitHub account/repository admission test was performed.

@@ -17,6 +17,7 @@ from .decision import prepare, submit
 from .engine import Harness
 from .process import Agents
 from .provider_lock import CoordinationUnavailable, coordinator
+from .work_item_provider import configured_provider
 
 
 class Events:
@@ -79,6 +80,7 @@ def load_config(path):
         "scheduling",
         "thread_cleanup",
         "log_level",
+        "work_item_provider",
     }
     if not isinstance(config, dict) or set(config) - allowed:
         raise ValueError(
@@ -125,6 +127,7 @@ def load_config(path):
         value = cleanup.get(key, default)
         if type(value) not in (int, float) or not 0 < value < float("inf"):
             raise ValueError(f"thread_cleanup.{key} must be positive and finite")
+    configured_provider(config)
     return config
 
 
@@ -156,6 +159,8 @@ def main():
             epic=args.epic,
             scheduling_revision=scheduling_control.revision,
             scheduling_request_id=scheduling_control.request_id,
+            work_item_provider=configured_provider(config),
+            provider_timeout=config.get("work_item_provider", {}).get("timeout", 30),
             **scheduling,
         )
     except (OSError, ValueError, yaml.YAMLError) as exc:

@@ -12,6 +12,14 @@ The discovering agent records defects through the provider. The development agen
 
 The merge agent identifies eligible work according to the project's convention, prepares integration with the latest target branch, runs required tests on the combined result, merges passing work, and updates the item. A successful development outcome triggers a check, not an assumption that a PR exists. Periodic checks also run. The merge agent reconciles competing attempts' work item information even when Git merges cleanly.
 
+## Optional ready-count check
+
+The [Work Item Provider protocol](work-item-provider-protocol.md) can suppress
+empty ready-selection invocations through `work_item_provider` configuration.
+The file and GitHub label implementations return only a count; agents retain
+selection and lifecycle authority. With no implementation configured, the existing
+agent flow remains available. A configured provider failure defers selection.
+
 ## Commands
 
 Configure each role as a nonempty argument array. Commands execute without a shell. Project and state paths may be absolute or relative to the configuration file. Other relative command arguments are interpreted in the agent's working directory; use absolute paths for scripts and executables.
