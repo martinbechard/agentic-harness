@@ -8,13 +8,13 @@ Status: Draft, built item by item with Martin's approval. Only decisions recorde
 
 The harness uses an agent to retrieve work items and update their status. The agent knows which work item provider to use. A capable small model, such as Luna with high reasoning effort, can perform this role.
 
-An optional **Work Item Provider protocol** supplies a read-only count of stored
-Ready candidates before selection, without a model call. If an implementation is
-configured, the harness asks the access agent to select work only when this count
+An optional **Work Item Provider protocol** supplies a read-only count of eligible
+Ready items, including prerequisite and required series-order checks, before
+selection, without a model call. If an implementation is configured, the harness asks the access agent to select work only when this count
 is positive. Zero skips selection until the next poll; failure or timeout defers
 selection and reports the error. Providers without an implementation retain the
 agent-based flow. The agent still selects the appropriate item, reconciles state,
-and checks dependencies and human decisions. The count returns no item details
+and revalidates dependencies and human decisions. The count returns no item details
 and does not replace separate integration, epic-completion, or recovery behavior.
 See [the protocol and configuration](work-item-provider-protocol.md).
 

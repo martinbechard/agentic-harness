@@ -2,62 +2,63 @@
 
 import asyncio
 import json
+import os
 import re
-from pathlib import Path
+import signal
 from typing import Protocol
 from urllib.parse import urlencode
 
 
 class WorkItemProvider(Protocol):
     async def ready_count(self, *, epic: str | None, outside: bool, excluded: list[str]) -> int:
-        """Count stored Ready candidates; selection and reconciliation remain agent-owned."""
+        """Count eligible Ready work; final selection and reconciliation remain agent-owned."""
 
 
 class FileWorkItemProvider:
-    def __init__(self, project, paths, layout):
-        self.project = Path(project)
-        self.paths = [self.project / path for path in paths]
-        self.layout = layout
+    def __init__(self, project, paths, layout, command):
+        self.project, self.paths, self.layout, self.command = project, paths, layout, command
 
     async def ready_count(self, *, epic, outside, excluded):
-        return await asyncio.to_thread(self.count, epic, outside, excluded)
-
-    def count(self, epic, outside, excluded):
-        scope = (self.project / epic).resolve() if epic is not None else None
-        identities = set()
-        for root in self.paths:
-            # A missing configured queue is a configuration/read error, not an empty backlog.
-            if not root.is_dir():
-                raise ValueError(f"Work Item Provider directory does not exist: {root}")
-            for directory, _, files in root.walk(on_error=raise_scan_error):
-                for name in files:
-                    if name.endswith(".md"):
-                        identities.update(
-                            self.ready_identity(directory / name, scope, outside, excluded)
-                        )
-        return len(identities)
-
-    def ready_identity(self, path, scope, outside, excluded):
-        if path.name.lower() in {"index.md", "readme.md"}:
-            return set()
-        if scope is not None and path.resolve().is_relative_to(scope) == outside:
-            return set()
-        # Lifecycle fields belong to the record header, never examples/history below it.
-        header = re.split(r"^##\s", path.read_text(), maxsplit=1, flags=re.MULTILINE)[0]
-        statuses = [
-            value.strip() for value in re.findall(r"^Status:[ \t]*([^\n]*)", header, re.MULTILINE)
-        ]
-        if self.layout == "status-folders":
-            if statuses and statuses != ["Ready"]:
-                raise ValueError(f"Ready folder and Status disagree: {path}")
-        elif statuses != ["Ready"]:
-            return set()
-        return {path.stem} - set(excluded)
-
-
-def raise_scan_error(error):
-    """A failed directory scan must not masquerade as an empty Ready queue."""
-    raise error
+        # The provider owns eligibility. Sharing its observer prevents dashboard/count drift.
+        request = {
+            "epic": epic,
+            "outside": outside,
+            "excluded": excluded,
+            "paths": self.paths,
+            "layout": self.layout,
+        }
+        process = await asyncio.create_subprocess_exec(
+            *self.command,
+            cwd=self.project,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            start_new_session=True,
+        )
+        reader = asyncio.create_task(process.communicate(json.dumps(request).encode()))
+        try:
+            output, error = await asyncio.shield(reader)
+            if process.returncode:
+                raise RuntimeError(f"File Work Item Provider failed: {error.decode().strip()}")
+            result = json.loads(output)
+            if (
+                not isinstance(result, dict)
+                or set(result) != {"ready_count"}
+                or type(result["ready_count"]) is not int
+                or result["ready_count"] < 0
+            ):
+                raise ValueError(
+                    "File Work Item Provider must return only a nonnegative ready_count"
+                )
+            return result["ready_count"]
+        finally:
+            # A provider may run Git readers; stop/reap the entire group even after parent exit.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            await process.wait()
+            await reader
 
 
 class GitHubWorkItemProvider:
@@ -121,7 +122,7 @@ def configured_provider(config) -> WorkItemProvider | None:
     kind = settings.get("type")
     allowed = {
         "agent": {"type"},
-        "file": {"type", "paths", "layout", "timeout"},
+        "file": {"type", "paths", "layout", "timeout", "command"},
         "github": {"type", "repository", "ready_label", "executable", "timeout"},
     }
     if not isinstance(kind, str) or kind not in allowed or set(settings) - allowed[kind]:
@@ -142,7 +143,17 @@ def configured_provider(config) -> WorkItemProvider | None:
             or not all(isinstance(path, str) and path.strip() for path in paths)
         ):
             raise ValueError("work_item_provider.paths must be a nonempty list of directories")
-        return FileWorkItemProvider(config["project"], paths, layout)
+        command = settings.get("command")
+        if (
+            not isinstance(command, list)
+            or not command
+            or not all(isinstance(arg, str) and arg for arg in command)
+        ):
+            raise ValueError(
+                "work_item_provider.command must invoke the file provider's eligibility observer "
+                "as a nonempty argument list; counting stored Status headers is unsupported"
+            )
+        return FileWorkItemProvider(config["project"], paths, layout, command)
     repository = settings.get("repository")
     label = settings.get("ready_label")
     executable = settings.get("executable", "gh")

@@ -93,7 +93,7 @@ require this isolated integration to be updated.
 ## Skip empty selection calls
 
 Configure the optional [Work Item Provider protocol](docs/work-item-provider-protocol.md)
-to count Ready candidates without starting an agent. A zero count skips selection;
+to count eligible Ready work without starting an agent. A zero count skips selection;
 a positive count still asks the access agent to choose and validate work. Read
 errors defer selection. Without an implementation configured, selection remains
 agent-based.
@@ -101,11 +101,14 @@ agent-based.
 ```yaml
 work_item_provider:
   type: file
+  command: [/absolute/path/to/python, /absolute/path/to/provider-ready-count.py]
   layout: status-field
   paths: [backlog/feature-backlog, backlog/defect-backlog]
 ```
 
-Choose only existing active queues. Status-folder layouts use `layout: status-folders`
+The file command must use the provider’s eligibility calculation, including
+prerequisites; it returns only `{"ready_count": N}`. Choose only existing active
+queues. Status-folder layouts use `layout: status-folders`
 and `paths: [backlog/ready]`. GitHub label-based queues use `type: github`, an explicit
 `repository: owner/repository`, and `ready_label: 'Status: Ready'`. See the protocol
 for scope, exclusions, timeout, and format limits. Merge and epic-completion checks

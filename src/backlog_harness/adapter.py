@@ -81,7 +81,7 @@ def instructions_for(request):
         "File paths are relative to the project root (or this item's assigned worktree); "
         "GitHub selection uses the configured repository and Ready label, with epic interpreted "
         "as an exact milestone title. Return file IDs as filename stems and GitHub IDs as issue "
-        "URLs. A mechanical Ready count is only a prefilter: revalidate dependencies, decisions "
+        "URLs. The provider count already checks eligibility; revalidate dependencies, decisions "
         "and current lifecycle before selecting work. The harness does not "
         "implement provider transactions. Perform the requested operation and return the "
         "structured final result. Do not ask the harness to implement project conventions. "

@@ -1,9 +1,9 @@
 # Work Item Provider protocol
 
 The optional Work Item Provider protocol answers one read-only question without
-starting an agent: how many stored Ready candidates exist in this selection scope?
+starting an agent: how many eligible Ready items exist in this selection scope?
 It returns only a count. The access agent still reconciles lifecycle evidence,
-checks dependencies and human decisions, chooses the appropriate items, and
+rechecks current dependencies and human decisions, chooses the appropriate items, and
 prepares their worktrees. A positive count is permission to ask that agent, not
 permission to deliver a particular item. It can legitimately select no items.
 
@@ -53,57 +53,62 @@ service.
 
 ## Filesystem implementation
 
-Status folders:
+The file provider invokes its configured **eligibility observer**, without a shell
+or model. The observer must reuse the provider's readiness calculation, including
+prerequisites and required series order. Counting stored `Status: Ready` headers is
+not an implementation of this contract: such records can be effectively Holding
+or Blocked. The harness no longer contains a second Markdown lifecycle parser.
 
 ```yaml
 work_item_provider:
   type: file
-  layout: status-folders
-  paths: [backlog/ready]
-  timeout: 30
-```
-
-Legacy folders with explicit lifecycle fields:
-
-```yaml
-work_item_provider:
-  type: file
+  command:
+    - /absolute/path/to/python
+    - /absolute/path/to/provider-ready-count.py
   layout: status-field
   paths:
     - backlog/defect-backlog
     - backlog/feature-backlog
     - backlog/analysis-backlog
     - backlog/investigation-backlog
+  timeout: 30
 ```
 
-Paths are directories relative to `project`, or absolute directories. Configure
-only the actual active queues; do not point this at the entire backlog, archives,
-Future Ideas, or a directory of documents. Each configured directory must exist;
-an empty directory returns zero, while a missing directory is an error. Settings
-are loaded on startup, so restart after changing the configuration.
+`command` is required and is a nonempty argument array. Version 0.1.0a56 file
+configurations must add this observer command before upgrading; missing commands
+fail startup rather than reverting to the incorrect stored-state count.
+`layout` and `paths` describe the provider's queues and are passed to the observer.
+They default to `status-folders` and `[backlog/ready]`; an observer must reject
+layouts it does not support. Paths are relative to the configured project or
+absolute. Configure actual active queues, excluding archives and Future Ideas.
 
-The implementation reads Markdown files recursively. Work item IDs are filename
-stems, matching the file provider convention. `index.md` and `README.md` are
-coordination documents and are not counted. Duplicate IDs from overlapping paths
-are counted once. The metadata header ends at the first level-two heading, so
-examples or historical `Status: Ready` text cannot reopen an item.
+The observer runs with the configured project as its current directory and receives
+one JSON object on standard input:
 
-In `status-folders` mode, files are Ready by location. A retained `Status` header
-must agree exactly with `Ready`; disagreement fails the check. In `status-field`
-mode, only an explicit `Status: Ready` header counts. No status, Running, Starting,
-Holding, Blocked, User Action Required, or terminal states do not count. Other
-record formats require another protocol implementation; this is not a generic
-Markdown interpretation engine.
+```json
+{"epic":null,"outside":false,"excluded":[],"paths":["backlog/feature-backlog"],"layout":"status-field"}
+```
 
-An epic is a project-relative or absolute directory, such as
-`backlog/feature-backlog/release`. The count uses directory membership. Projects
-whose epics span status folders through index links should retain agent-only mode
-for epic runs until a matching scope implementation exists.
+It writes exactly this result shape to standard output and exits successfully:
 
-Counts read the configured checkout, without writes or Git operations. Newer
-worktree checkpoints, prerequisite completion, and conflicting human decisions
-are intentionally checked by the access agent after a positive count. A stored
-Ready candidate with an unresolved dependency can therefore still trigger a call.
+```json
+{"ready_count":0}
+```
+
+Diagnostics go to standard error. Counts must be nonnegative integers, never
+booleans. Read or validation failures must exit nonzero; they must not report zero
+or fall back to an agent. Timeout/cancellation stops and reaps the command process
+group, including helper processes. The observer must not mutate provider records.
+
+The dev-methodology observer calls the same `codex_backlog.provider.inventory`
+function used by its dashboard. It counts only eligible records, then applies
+configured queue paths, epic-directory scope, and active-item exclusions. Thus six
+stored Ready children waiting for prerequisites yield **zero**, matching the
+Ready dashboard metric. Resolving prerequisites includes looking outside the
+selection scope; limiting selected paths must not hide predecessor records.
+
+Selection still revalidates changing state after a positive count. Priority,
+compatibility between items, and final worktree preparation remain with the agent.
 
 ## GitHub implementation
 

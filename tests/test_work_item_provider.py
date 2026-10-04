@@ -3,7 +3,6 @@
 import asyncio
 import json
 import sys
-from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
@@ -15,70 +14,80 @@ from backlog_harness.work_item_provider import (
 )
 
 
-def record(root, name, status=None, body=""):
-    path = root / name
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"# Work\n\n{('Status: ' + status) if status else ''}\n\n## Summary\n{body}")
-    return path
-
-
 def count(provider, epic=None, outside=False, excluded=None):
     return asyncio.run(provider.ready_count(epic=epic, outside=outside, excluded=excluded or []))
 
 
-def test_file_status_folders_scope_exclusions_and_read_only(tmp_path):
-    root = tmp_path / "backlog/ready"
-    record(root, "one.md")
-    record(root, "epic/two.md", "Ready")
-    record(root, "epic/index.md")
-    record(root, "README.md")
-    before = {p: p.read_bytes() for p in root.rglob("*.md")}
-    provider = FileWorkItemProvider(tmp_path, ["backlog/ready"], "status-folders")
-    assert count(provider) == 2
-    assert count(provider, "backlog/ready/epic") == 1
-    assert count(provider, "backlog/ready/epic", outside=True) == 1
-    assert count(provider, excluded=["one", "two"]) == 0
-    assert before == {p: p.read_bytes() for p in root.rglob("*.md")}
-    record(root, "contradiction.md", "Running")
-    with pytest.raises(ValueError, match="disagree"):
-        count(provider)
-
-
-def test_file_legacy_status_and_overlapping_paths(tmp_path):
-    root = tmp_path / "backlog/features"
-    record(root, "one.md", "Ready")
-    record(root, "epic/two.md", "Ready")
-    for status in (
-        "Running",
-        "Starting",
-        "Holding",
-        "Blocked",
-        "User Action Required",
-        "Completed",
-    ):
-        record(root, f"{status}.md", status, "Status: Ready\n")
-    record(root, "unmarked.md", body="Status: Ready\n")
-    record(tmp_path / "backlog/future-ideas", "future.md", "Ready")
-    provider = FileWorkItemProvider(
-        tmp_path, ["backlog/features", "backlog/features/epic"], "status-field"
+def file_provider(tmp_path, source):
+    script = tmp_path / "provider.py"
+    script.write_text(source)
+    return FileWorkItemProvider(
+        str(tmp_path), ["backlog/features"], "status-field", [sys.executable, str(script)]
     )
-    assert count(provider) == 2
-    assert count(provider, excluded=["one"]) == 1
 
 
-def test_missing_directory_is_not_empty(tmp_path):
-    provider = FileWorkItemProvider(tmp_path, ["missing"], "status-folders")
-    with pytest.raises(ValueError, match="does not exist"):
+def test_file_provider_calls_shared_eligibility_observer_with_exact_scope(tmp_path):
+    provider = file_provider(
+        tmp_path,
+        "import json,sys\n"
+        "from pathlib import Path\n"
+        "request=json.load(sys.stdin)\n"
+        "assert request == {'epic':'release','outside':True,'excluded':['one'],"
+        "'paths':['backlog/features'],'layout':'status-field'}\n"
+        "assert Path.cwd().name == " + repr(tmp_path.name) + "\n"
+        "print(json.dumps({'ready_count':2}))\n",
+    )
+    assert count(provider, "release", True, ["one"]) == 2
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        "invalid JSON",
+        "[]",
+        "{}",
+        '{"ready_count":true}',
+        '{"ready_count":-1}',
+        '{"ready_count":1.5}',
+        '{"ready_count":"1"}',
+        '{"ready_count":1,"items":[]}',
+    ],
+)
+def test_invalid_file_provider_response_is_not_a_count(tmp_path, output):
+    provider = file_provider(tmp_path, "print(" + repr(output) + ")\n")
+    with pytest.raises(ValueError):
         count(provider)
 
 
-def test_empty_directory_and_unreadable_record(tmp_path, monkeypatch):
-    provider = FileWorkItemProvider(tmp_path, ["."], "status-folders")
-    assert count(provider) == 0
-    record(tmp_path, "one.md")
-    monkeypatch.setattr(Path, "read_text", lambda *a, **kw: (_ for _ in ()).throw(OSError("read")))
-    with pytest.raises(OSError, match="read"):
+def test_file_provider_failure_is_not_empty_or_agent_fallback(tmp_path):
+    provider = file_provider(
+        tmp_path, "import sys\nprint('queue unavailable',file=sys.stderr)\nsys.exit(2)\n"
+    )
+    with pytest.raises(RuntimeError, match="queue unavailable"):
         count(provider)
+
+
+def test_file_provider_timeout_reaps_process(tmp_path, monkeypatch):
+    import os
+    import signal
+
+    provider = file_provider(tmp_path, "import time; time.sleep(60)\n")
+    original = os.killpg
+    stopped = []
+
+    def stop(pid, sig):
+        stopped.append((pid, sig))
+        original(pid, sig)
+
+    async def run():
+        with pytest.raises(TimeoutError):
+            await asyncio.wait_for(provider.ready_count(epic=None, outside=False, excluded=[]), 0.1)
+        assert stopped and stopped[0][1] == signal.SIGKILL
+        with pytest.raises(ProcessLookupError):
+            os.kill(stopped[0][0], 0)
+
+    monkeypatch.setattr(os, "killpg", stop)
+    asyncio.run(run())
 
 
 @pytest.mark.parametrize(
@@ -89,6 +98,10 @@ def test_empty_directory_and_unreadable_record(tmp_path, monkeypatch):
         {"type": []},
         {"type": "unknown"},
         {"type": "agent", "paths": []},
+        {"type": "file"},
+        {"type": "file", "command": []},
+        {"type": "file", "command": "shell command"},
+        {"type": "file", "command": [None]},
         {"type": "file", "timeout": 0},
         {"type": "file", "timeout": True},
         {"type": "file", "layout": "unknown"},
@@ -111,8 +124,11 @@ def test_explicit_optional_provider_configuration(tmp_path):
     config = {"project": str(tmp_path)}
     assert configured_provider(config) is None
     assert configured_provider({**config, "work_item_provider": {"type": "agent"}}) is None
-    file = configured_provider({**config, "work_item_provider": {"type": "file"}})
-    assert file.paths == [tmp_path / "backlog/ready"]
+    file = configured_provider(
+        {**config, "work_item_provider": {"type": "file", "command": ["provider"]}}
+    )
+    assert file.paths == ["backlog/ready"]
+    assert file.command == ["provider"]
     github = configured_provider(
         {
             **config,
@@ -222,21 +238,31 @@ def test_github_timeout_reaps_real_process(tmp_path, monkeypatch):
     asyncio.run(run())
 
 
-def test_configured_cli_skips_empty_polls_and_observes_new_ready_file(tmp_path):
+def test_configured_cli_skips_six_ineligible_records_then_observes_eligible_work(tmp_path):
     import signal
 
     import yaml
 
     from backlog_harness.cli import load_config
 
-    ready = tmp_path / "backlog/ready"
-    ready.mkdir(parents=True)
+    # The real provider's eligibility resolver has its own tests. This fixture exposes
+    # its observation, including the regression: six stored Ready records, none eligible.
+    inventory = tmp_path / "inventory.json"
+    records = [{"stored_state": "Ready", "eligible": False} for _ in range(6)]
+    inventory.write_text(json.dumps(records))
+    provider_script = tmp_path / "count.py"
+    provider_script.write_text(
+        "import json,sys\nfrom pathlib import Path\n"
+        "request=json.load(sys.stdin)\n"
+        "records=json.loads(Path('inventory.json').read_text())\n"
+        "print(json.dumps({'ready_count':sum(r['eligible'] for r in records)}))\n"
+    )
     script = tmp_path / "agent.py"
     script.write_text(
         "import json, os\n"
         "from pathlib import Path\n"
         "r=json.loads(Path(os.environ['HARNESS_REQUEST']).read_text())\n"
-        "assert r['work_item_provider'] == {'type': 'file'}\n"
+        "assert r['work_item_provider']['type'] == 'file'\n"
         "out={'items': []} if r['role']=='access' else {'status': 'success'}\n"
         "Path(os.environ['HARNESS_RESULT']).write_text(json.dumps(out))\n"
     )
@@ -252,7 +278,10 @@ def test_configured_cli_skips_empty_polls_and_observes_new_ready_file(tmp_path):
                 },
                 "thread_cleanup": {"enabled": False},
                 "scheduling": {"poll_interval": 0.03, "merge_interval": 60},
-                "work_item_provider": {"type": "file"},
+                "work_item_provider": {
+                    "type": "file",
+                    "command": [sys.executable, str(provider_script)],
+                },
             }
         )
     )
@@ -284,7 +313,8 @@ def test_configured_cli_skips_empty_polls_and_observes_new_ready_file(tmp_path):
         try:
             await until(lambda: sum(e["event"] == "ready_count" for e in events) >= 2)
             assert not any(e.get("action") == "ready" for e in events)
-            record(ready, "new.md", "Ready")
+            records[0]["eligible"] = True
+            inventory.write_text(json.dumps(records))
             await until(lambda: any(e["event"] == "provider_response" for e in events))
             assert any(e["event"] == "ready_count" and e["count"] == 1 for e in events)
             assert any(e["event"] == "agent_started" and e["role"] == "access" for e in events)
@@ -301,18 +331,25 @@ def test_configured_cli_skips_empty_polls_and_observes_new_ready_file(tmp_path):
     asyncio.run(scenario())
 
 
-def test_file_directory_scan_error_is_not_zero(tmp_path, monkeypatch):
-    import os
+def test_file_provider_reaps_group_when_parent_exits_with_child_holding_output(tmp_path):
+    import subprocess
 
-    def denied(*args):
-        raise PermissionError("cannot scan queue")
+    provider = file_provider(
+        tmp_path,
+        "import subprocess,sys\nfrom pathlib import Path\n"
+        "child=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)'])\n"
+        "Path('child.pid').write_text(str(child.pid))\n"
+        "print('{\"ready_count\":0}')\n",
+    )
 
-    monkeypatch.setattr(os, "scandir", denied)
-    with pytest.raises(PermissionError, match="cannot scan queue"):
-        count(FileWorkItemProvider(tmp_path, ["."], "status-folders"))
+    async def run():
+        with pytest.raises(TimeoutError):
+            await asyncio.wait_for(provider.ready_count(epic=None, outside=False, excluded=[]), 0.5)
 
-
-def test_file_ignores_non_markdown_and_trims_status_whitespace(tmp_path):
-    (tmp_path / "note.txt").write_text("Status: Ready")
-    record(tmp_path, "ready.md", "Ready  ")
-    assert count(FileWorkItemProvider(tmp_path, ["."], "status-field")) == 1
+    asyncio.run(run())
+    child = (tmp_path / "child.pid").read_text()
+    # A dead orphan can briefly remain as a zombie until the OS reaps it.
+    status = subprocess.run(
+        ["ps", "-p", child, "-o", "stat="], capture_output=True, text=True, check=False
+    ).stdout.strip()
+    assert not status or status.startswith("Z")

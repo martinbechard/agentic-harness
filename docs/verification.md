@@ -224,3 +224,34 @@ Release evidence is under `.agent-ops/work-item-provider-release/`; the installe
 wheel environment is `.agent-ops/work-item-provider-final/installed`. GitHub API
 behavior is verified with controlled responses and the documented CLI contract;
 no live GitHub account/repository admission test was performed.
+
+### Eligible Ready count correction (2026-10-04, 0.1.0a57)
+
+The a56 filesystem count above was incorrect for prerequisite-blocked Ready
+records. It counted stored status and disagreed with the dashboard. The harness
+now invokes the file provider's configured count command and contains no duplicate
+Markdown status parser. Dev-methodology's command reuses the dashboard's
+`codex_backlog.provider.inventory` eligibility calculation, then applies scope and
+active-item exclusions. The command returns only `ready_count`.
+
+- Full Python 3.12 regression suite: **311 passed, 2 opt-in live tests skipped**.
+- Coverage: **100%**, all 1,137 statements and 372 branches, no exclusions.
+- One additional real-process regression verifies timeout kills a helper process
+  after its parent exits while leaving its output pipe open.
+- Installed a57 wheel, Python 3.13: **141 passed, 1 opt-in live test skipped** across
+  provider, scheduler, CLI and adapter tests, including that additional regression.
+- Lint, formatting, whitespace checks, source distribution and wheel build passed.
+- Installed harness provider calling the actual dev-methodology observer returned
+  **0, 0, 0** on three consecutive reads. All **340** backlog Markdown files kept
+  their hashes. This is read-only observation, not a synthetic production backlog.
+
+The CLI regression starts with six stored Ready records whose provider eligibility
+is false: repeated polls make no selection call. When the observer reports an
+eligible item, selection runs. Provider tests cover exact input scope, malformed
+counts, command errors and process cleanup. The provider repository separately tests
+real prerequisite and series-order resolution through its shared inventory.
+
+Evidence: `.agent-ops/provider-eligibility-fix/coverage.json`,
+`combined-provider-check.json`, and the a57 wheel under `dist/` in that directory.
+A file provider command is now required; missing commands fail configuration
+validation instead of falling back to the faulty stored-status count.
