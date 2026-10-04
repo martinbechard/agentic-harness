@@ -83,7 +83,31 @@ timeout test exceeded its wait budget during the instrumented full run; its
 isolated instrumented rerun passed. Ruff lint, formatting, and diff whitespace
 checks passed.
 
-### Adapter protocol
+### Desktop archive notifications (2026-10-04)
+
+The earlier archive readback proved persistence, not removal from the visible
+sidebar. `desktop.py` now sends the same version-2 `thread-archived` IPC broadcast
+used by the installed desktop, following an initialization handshake. Each cleanup
+pass enumerates existing project archives and replays notifications, including
+previous runs. The local socket must belong to the current user in a private
+directory; notification work is bounded to five seconds. This is an isolated
+internal desktop interface and can require changes after desktop upgrades.
+
+The full suite passed with 250 tests and one opt-in skip. Focused tests after adding
+archived-list pagination coverage passed; combined coverage is 100% of 1022
+statements and 318 branches. Tests exercise a real temporary Unix socket,
+initialization, unrelated frames, versioned broadcasts, rejected initialization,
+invalid framing, disconnects, missing app, invalid socket, replay, and retry logging.
+
+The live repair enumerated archived dev-methodology root and worktree chats and
+sent 975 cache-invalidation notifications. Evidence is
+`.agent-ops/thread-cleanup-verification/ui-notifications.json`. Notifications have
+no UI-render acknowledgment. Computer Use refused inspection of Codex itself;
+visual disappearance was requested from the user and is not yet independently
+verified. The supported desktop archive tool also successfully reapplied archive
+to one already-archived chat before the bulk notification test.
+
+### Adapter protocol tests
 
 `test_exact_instructions_are_received_by_sdk_server` compares complete instructions, assignment data, and output schema against JSON-RPC messages received by a local server through the real SDK. `test_codex_sdk_transmits_instructions_schema_and_streams_activity` exercises the subprocess entry point and verifies SDK options and streamed output. Failure tests cover failed/interrupted turns, missing and malformed responses, non-object results, and transport disconnection. The cancellation test confirms the SDK app server is in the invocation process group and is reaped when the invocation stops.
 

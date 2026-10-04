@@ -78,6 +78,18 @@ uv run agentic-harness --config config.yaml --cleanup-once
 
 The command respects the off switch and exits nonzero if a cleanup operation fails.
 
+After each pass, cleanup sends the desktop's `thread-archived` notification for
+the project's persisted archives, including archives from earlier runs. This
+invalidates stale sidebar entries without resuming chats or starting agents.
+The desktop integration uses its internal, versioned local IPC interface
+(`$CODEX_HOME/ipc/ipc.sock`, default `~/.codex/ipc/ipc.sock`), not a public SDK API.
+It checks same-user ownership and bounds notification work to five seconds.
+An unavailable or incompatible app produces `thread_archive_ui_sync_failed`;
+persisted archives remain valid, and the next cleanup pass retries notifications.
+`thread_archive_ui_notifications_sent` records dispatched notifications at DEBUG;
+it is not an acknowledgment that the sidebar finished rendering. App updates can
+require this isolated integration to be updated.
+
 ## Submit a human decision
 
 ```sh

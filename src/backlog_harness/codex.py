@@ -11,6 +11,7 @@ from openai_codex.async_client import AsyncCodexClient
 from openai_codex.types import ReasoningEffort
 
 from .adapter import execute
+from .desktop import notify_archived
 
 
 def completed_before(thread, project, cutoff):
@@ -77,6 +78,40 @@ async def archive_completed_threads(project, age, emit):
             except (CodexError, OSError, ValueError, RuntimeError) as exc:
                 failed += 1
                 emit("thread_archive_failed", level="ERROR", thread=identity, error=str(exc))
+        # Replay persisted archives, including earlier runs, so a closed app or
+        # interrupted notification does not leave permanently stale sidebar rows.
+        try:
+            cursor, archived_threads = None, []
+            while True:
+                page = await client.thread_list(
+                    {
+                        "cwd": project,
+                        "archived": True,
+                        "limit": 100,
+                        "cursor": cursor,
+                        "useStateDbOnly": True,
+                    }
+                )
+                archived_threads.extend({"id": t.id, "cwd": project} for t in page.data)
+                cursor = page.next_cursor
+                if not cursor:
+                    break
+            await notify_archived(archived_threads)
+            emit(
+                "thread_archive_ui_notifications_sent",
+                level="DEBUG",
+                project=project,
+                count=len(archived_threads),
+            )
+        except (CodexError, OSError, ValueError, RuntimeError, EOFError) as exc:
+            failed += 1
+            emit(
+                "thread_archive_ui_sync_failed",
+                level="ERROR",
+                project=project,
+                error=str(exc),
+                retry="next cleanup pass",
+            )
     emit("thread_cleanup_completed", project=project, archived=archived, failed=failed)
     return failed == 0
 

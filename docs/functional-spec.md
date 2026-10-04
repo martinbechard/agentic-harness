@@ -281,6 +281,12 @@ change work-item completion or delivery status. DEBUG events record checks and
 archive attempts; successful archives and failures are logged at INFO and ERROR.
 The configured minimum level applies consistently to console, JSONL, and OTEL output.
 
+Cleanup also notifies the local desktop of persisted archives so its sidebar can
+drop stale entries. Each pass replays the project's existing archives, allowing
+notification recovery after the app was closed. Archive persistence and desktop
+notification failures are reported separately; a notification is not proof of a
+rendered UI result. No model or agent performs this notification step.
+
 ## Not supported use cases
 
 - Manually selecting a specific work item for execution.

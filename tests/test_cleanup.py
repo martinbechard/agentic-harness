@@ -43,7 +43,8 @@ def test_completed_thread_is_eligible():
     assert codex.completed_before(thread(), "/project", 100)
 
 
-def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch):
+@pytest.mark.parametrize("ui_failure", [False, True])
+def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch, ui_failure):
     calls, events = [], []
     reads = {}
 
@@ -62,7 +63,12 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch):
 
         async def thread_list(self, params):
             calls.append("list")
-            assert params["cwd"] == "/project" and params["archived"] is False
+            assert params["cwd"] == "/project"
+            if params["archived"]:
+                return SimpleNamespace(
+                    data=[SimpleNamespace(id="previous" if params["cursor"] is None else "old")],
+                    next_cursor="archive-next" if params["cursor"] is None else None,
+                )
             ids = ["old", "resumed", "failed"] if params["cursor"] is None else ["empty", "recent"]
             return SimpleNamespace(
                 data=[SimpleNamespace(id=i, updated_at=100 if i == "recent" else 10) for i in ids],
@@ -84,6 +90,13 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch):
             if identity == "failed":
                 raise RuntimeError("archive unavailable")
 
+    async def notify(threads):
+        assert threads == [{"id": "previous", "cwd": "/project"}, {"id": "old", "cwd": "/project"}]
+        calls.append("notify")
+        if ui_failure:
+            raise OSError("app closed")
+
+    monkeypatch.setattr(codex, "notify_archived", notify)
     monkeypatch.setattr(codex, "AsyncCodexClient", Client)
     monkeypatch.setattr(codex.time, "time", lambda: 200)
     result = asyncio.run(
@@ -92,9 +105,9 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch):
         )
     )
     assert not result
-    assert calls == ["list", "list", "old", "failed", "closed"]
+    assert calls == ["list", "list", "old", "failed", "list", "list", "notify", "closed"]
     assert "recent" not in reads
-    assert events[-1][1] == {"project": "/project", "archived": 1, "failed": 1}
+    assert events[-1][1] == {"project": "/project", "archived": 1, "failed": 1 + int(ui_failure)}
     assert any(e == "thread_archive_failed" for e, _ in events)
 
 
