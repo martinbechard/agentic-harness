@@ -301,7 +301,11 @@ class Agents:
             "workspace's item and verify the original decision ID, exact answer/approval and "
             "resolved question before returning it. If publication or reconciliation is incomplete "
             "or conflicting, omit that item and report the concrete blocker; never dispatch the "
-            "stale question. Do not mark items running "
+            "stale question. A published retry_blocked decision explicitly authorizes a fresh "
+            "blocker check, not a claim that the blocker is resolved: reconcile its exact comment "
+            "and decision ID into the preserved assignment and admit that retry without requiring "
+            "proof of blocker resolution first. Preserve dependency and approval gates. "
+            "Do not mark items running "
             "during selection; the development agent does that when starting.",
         )
         try:

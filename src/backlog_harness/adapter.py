@@ -55,7 +55,10 @@ def schema_for(request):
                 "enum": ["applied", "already_applied", "already_resolved", "rejected", "unknown"],
             },
             "persisted": {"type": ["boolean", "null"]},
-            "resolution": {"type": "string", "enum": ["approved", "cancelled", "answered", "none"]},
+            "resolution": {
+                "type": "string",
+                "enum": ["approved", "cancelled", "answered", "retry_requested", "none"],
+            },
         },
         "epic_complete": {"complete": {"type": "boolean"}},
         None: {

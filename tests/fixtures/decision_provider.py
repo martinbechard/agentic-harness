@@ -28,6 +28,17 @@ if request["role"] == "development":
     record = json.loads(Path("backlog/item.json").read_text())
     assert record["status"] == "Ready" and record["decisions"]
     Path("received-answer.json").write_text(json.dumps(record["decisions"][-1]))
+    record["status"] = "Running"
+    record["history"].append("Running: retry received comment")
+    Path("backlog/item.json").write_text(json.dumps(record))
+    if Path("still-blocked").exists():
+        record["status"] = "Blocked"
+        record["history"].append("Blocked: blocker rechecked and remains")
+        Path("backlog/item.json").write_text(json.dumps(record))
+        Path(os.environ["HARNESS_RESULT"]).write_text(
+            json.dumps({"status": "user_action_required"})
+        )
+        raise SystemExit(0)
     Path(os.environ["HARNESS_RESULT"]).write_text(json.dumps({"status": "success"}))
     raise SystemExit(0)
 
@@ -120,10 +131,11 @@ if authority["workspace"] == str(workspace) and path.exists():
         and (expected_revision == observed["revision"] or unchanged)
         and record["question"] == observed["question"]
         and record["candidate"] == observed["candidate"]
-        and record["status"] == "User Action Required"
+        and record["status"]
+        == ("Blocked" if decision["kind"] == "retry_blocked" else "User Action Required")
     )
     acceptable = (
-        decision["kind"] == "cancel"
+        decision["kind"] in ("cancel", "retry_blocked")
         or (decision["kind"] == "allow" and record["kind"] == "approval")
         or (
             decision["kind"] == "answer"
@@ -136,6 +148,7 @@ if authority["workspace"] == str(workspace) and path.exists():
         result.update(status="already_applied", persisted=True, resolution=prior["resolution"])
     elif (
         historical
+        and decision["kind"] != "retry_blocked"
         and (decision["kind"] != "cancel" or historical["resolution"] == "cancelled")
         and record["id"] == submission["item_id"]
         and historical["question"] == observed["question"]
@@ -152,9 +165,12 @@ if authority["workspace"] == str(workspace) and path.exists():
             result["detail"] = "Native conditional update refused a concurrent change"
             Path(os.environ["HARNESS_RESULT"]).write_text(json.dumps(result))
             raise SystemExit(0)
-        resolution = {"allow": "approved", "cancel": "cancelled", "answer": "answered"}[
-            decision["kind"]
-        ]
+        resolution = {
+            "allow": "approved",
+            "cancel": "cancelled",
+            "answer": "answered",
+            "retry_blocked": "retry_requested",
+        }[decision["kind"]]
         record["status"] = "Cancelled" if decision["kind"] == "cancel" else "Ready"
         record["decisions"].append({"submission": submission, "resolution": resolution})
         temporary = path.with_suffix(".tmp")

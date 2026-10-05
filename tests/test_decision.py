@@ -583,10 +583,13 @@ def test_prior_approval_cannot_be_acknowledged_as_item_cancellation(project):
         validate_result(result, request)
 
 
+@pytest.mark.parametrize(
+    "kind,still_blocked", [("answer", False), ("retry_blocked", False), ("retry_blocked", True)]
+)
 @pytest.mark.parametrize("conflict", [False, True])
 @pytest.mark.parametrize("commit_failure", [False, True])
 def test_published_answer_reaches_preserved_workspace_before_delivery(
-    project, conflict, commit_failure
+    project, conflict, commit_failure, kind, still_blocked
 ):
     import asyncio
 
@@ -601,9 +604,11 @@ def test_published_answer_reaches_preserved_workspace_before_delivery(
 
     record = json.loads(path.read_text())
     record.update(kind="choice", free_text=True, candidate=None)
+    if kind == "retry_blocked":
+        record["status"] = "Blocked"
     path.write_text(json.dumps(record))
     request["observed"].update(candidate=None, revision=revision(path))
-    request["decision"] = {"kind": "answer", "answer": "Adopt the harness as is"}
+    request["decision"] = {"kind": kind, "answer": "Adopt the harness as is"}
     git(root, "init", "-b", "main")
     git(root, "config", "user.email", "fixture@example.invalid")
     git(root, "config", "user.name", "Decision fixture")
@@ -657,13 +662,21 @@ def test_published_answer_reaches_preserved_workspace_before_delivery(
             assert not (workspace / "received-answer.json").exists()
             return
         assert items[0].worktree == str(workspace) and items[0].branch == "item/one"
+        if still_blocked:
+            (workspace / "still-blocked").touch()
         agent = await agents.deliver(items[0], False)
-        assert (await agent.wait()).status == "success"
+        assert (await agent.wait()).status == (
+            "user_action_required" if still_blocked else "success"
+        )
         received = json.loads((workspace / "received-answer.json").read_text())
         assert received["submission"]["decision_id"] == prepared["decision_id"]
         assert received["submission"]["decision"] == request["decision"]
         final = json.loads((workspace / "backlog/item.json").read_text())
         assert "local delivery evidence" in final["history"]
+        assert "Running: retry received comment" in final["history"]
+        if still_blocked:
+            assert final["status"] == "Blocked"
+            assert final["history"][-1] == "Blocked: blocker rechecked and remains"
         git(workspace, "merge-base", "--is-ancestor", candidate, "HEAD")
         assert (workspace / "unrelated.txt").read_text() == "local unrelated edit"
 
@@ -702,3 +715,29 @@ def test_provider_can_report_partial_publication(project, persisted, resolution,
     else:
         with pytest.raises(ValueError, match="Unconfirmed publication"):
             validate_result(result, request)
+
+
+def test_blocked_comment_retry_persists_once_and_rejects_changed_blocker(project):
+    config, config_path, request, path = project
+    record = json.loads(path.read_text())
+    record.update(status="Blocked", question="Service unavailable")
+    path.write_text(json.dumps(record))
+    request["observed"].update(revision=revision(path), question=record["question"])
+    request["decision"] = {"kind": "retry_blocked", "answer": "Service restarted; please recheck"}
+    with coordinator(config):
+        code, result = finish(invoke(config_path, request))
+        assert code == 0 and result["resolution"] == "retry_requested"
+        assert result["state"] == "Ready" and result["persisted"] is True
+        saved = path.read_bytes()
+        code, repeated = finish(invoke(config_path, request))
+        assert code == 0 and repeated["status"] == "already_applied"
+        assert path.read_bytes() == saved
+        record = json.loads(saved)
+        assert record["decisions"][0]["submission"]["decision"] == request["decision"]
+        record.update(status="Blocked", question="Different blocker")
+        path.write_text(json.dumps(record))
+        before = path.read_bytes()
+        request["decision"]["answer"] = "Another comment"
+        code, rejected = finish(invoke(config_path, request))
+        assert code == 3 and rejected["persisted"] is False
+        assert path.read_bytes() == before

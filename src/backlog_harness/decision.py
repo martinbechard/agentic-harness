@@ -66,6 +66,34 @@ Do not claim persistence merely because a request was accepted or a write was at
 """
 
 
+RETRY_INSTRUCTION = """Apply only this explicit human comment-and-retry request for a Blocked item.
+The observed question is the recorded blocker, not a pending approval question.
+Verify the exact project, item, locator and authoritative revision. Reject without mutation
+if the item is no longer Blocked, an execution already owns active work on it, or its
+blocker has changed since observation. Preserve
+candidate commits, assignment, earlier blocker history and unrelated edits. Do not infer
+that the comment proves the blocker resolved or grants delivery or access approval.
+Record the exact comment and complete submission with decision_id durably on the item.
+For Markdown records append a Human Blocker Retry section with occurrence time, Comment,
+Decision ID and Next Action fields as well as the complete submission. Set the next action
+to read this comment and recheck the blocker on the preserved work.
+Transition Blocked to Ready for a fresh attempt through the ordinary harness dispatcher.
+Do not mark it Running before a development execution starts. The resumed execution must
+read the comment, recheck the blocker, and record Blocked again with current evidence if it
+still cannot proceed. This explicit retry does not require proof of resolution beforehand.
+An identical decision_id already published returns already_applied without another update;
+an older comment or approval is not a resolution of this new request. Use resolution
+retry_requested for applied/already_applied. Never return already_resolved for this action.
+Use provider-native conditional revision safeguards under the shared provider lock. Honor
+configured claim-free SOLO mode. Commit only the owned item update on its authoritative
+branch and verify publication and readback before returning applied. Preserve unrelated
+staged and unstaged files. Do not deliver, merge candidates, inventory the backlog or start
+a duplicate worker. If publication cannot be confirmed return unknown, persisted=null,
+resolution=none with concrete partial-persistence evidence. For validation failures return
+rejected, persisted=false, resolution=none. Return actual record state, revision and locator.
+"""
+
+
 def prepare(path, config):
     value = json.loads(path.read_text())
     if not isinstance(value, dict) or set(value) != {
@@ -105,9 +133,9 @@ def prepare(path, config):
     decision = value["decision"]
     if not isinstance(decision, dict) or set(decision) != {"kind", "answer"}:
         raise ValueError("Decision requires kind and answer")
-    if decision["kind"] not in ("allow", "cancel", "answer"):
+    if decision["kind"] not in ("allow", "cancel", "answer", "retry_blocked"):
         raise ValueError("Decision kind must be allow, cancel, or answer")
-    if decision["kind"] == "answer":
+    if decision["kind"] in ("answer", "retry_blocked"):
         if not isinstance(decision["answer"], str) or not decision["answer"].strip():
             raise ValueError("Answer requires exact nonempty text")
     elif decision["answer"] is not None:
@@ -146,11 +174,16 @@ def validate_result(result, request):
     if result["status"] not in ("applied", "already_applied", "already_resolved", "rejected"):
         raise ValueError("Invalid provider decision status")
     applied = result["status"] != "rejected"
-    resolution = {"allow": "approved", "cancel": "cancelled", "answer": "answered"}[
-        request["decision"]["kind"]
-    ]
+    resolution = {
+        "allow": "approved",
+        "cancel": "cancelled",
+        "answer": "answered",
+        "retry_blocked": "retry_requested",
+    }[request["decision"]["kind"]]
     historical = result["status"] == "already_resolved"
     if historical:
+        if request["decision"]["kind"] == "retry_blocked":
+            raise ValueError("A prior resolution cannot satisfy a new retry")
         if (
             result["resolution"] not in ("approved", "cancelled", "answered")
             or not result["detail"].strip()
@@ -173,7 +206,12 @@ def validate_result(result, request):
 async def submit(agents, request):
     try:
         result = await agents.ask(
-            "decision", submission=request, instruction=INSTRUCTION, cwd=request["workspace"]
+            "decision",
+            submission=request,
+            instruction=RETRY_INSTRUCTION
+            if request["decision"]["kind"] == "retry_blocked"
+            else INSTRUCTION,
+            cwd=request["workspace"],
         )
         return validate_result(result, request)
     except (OSError, RuntimeError, ValueError) as exc:
