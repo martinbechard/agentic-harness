@@ -221,11 +221,15 @@ class Agents:
         try:
             result = await asyncio.wait_for(
                 agent.response(),
-                None if action == "decision" else self.config.get("access_timeout", 120),
+                None
+                if action in {"decision", "unblock"}
+                else self.config.get("access_timeout", 120),
             )
             if agent.process.returncode != 0 or not isinstance(result, dict):
                 raise RuntimeError("Work item access agent failed")
             required = {
+                "blocked_count": "blocked_count",
+                "unblock": "status",
                 "ready": "items",
                 "status": "status",
                 "failure": "transient",
@@ -244,6 +248,16 @@ class Agents:
                 raise RuntimeError("Provider did not put item on hold")
             if action == "status" and not isinstance(result["status"], str):
                 raise ValueError("Provider status must be text")
+            if action == "blocked_count" and (
+                type(result[required]) is not int or result[required] < 0
+            ):
+                raise ValueError("Provider blocked_count must be a nonnegative integer")
+            if action == "unblock" and (
+                result["status"] not in ("success", "failed", "user_action_required")
+                or not isinstance(result.get("detail"), str)
+                or set(result) != {"status", "detail"}
+            ):
+                raise ValueError("Invalid unblock result")
             self.emit("provider_response", action=action)
             return result
         except TimeoutError:
@@ -316,6 +330,43 @@ class Agents:
             ) from exc
         self.workspaces.update({item.id: item.__dict__ for item in items})
         return items
+
+    async def blocked_count(self, *, epic, excluded):
+        return (
+            await self.ask(
+                "blocked_count",
+                epic=epic,
+                excluded=excluded,
+                instruction="Read the configured work item provider and count only Blocked items "
+                "in the requested epic (all active queues if epic is null), excluding assigned IDs. "
+                "This is read-only. Do not include Holding, User Action Required, or terminal items.",
+            )
+        )["blocked_count"]
+
+    async def unblock(self, *, epic, excluded):
+        return await self.ask(
+            "unblock",
+            epic=epic,
+            excluded=excluded,
+            workspaces=list(self.workspaces.values()),
+            instruction=self.scheduling_instruction()
+            + " Re-read Blocked items through the configured work item provider within the "
+            "requested epic (all configured active queues if epic is null). For filesystem "
+            "providers use blocked_paths when configured, otherwise paths for status-field "
+            "or backlog/blocked for status-folders. For GitHub use blocked_label. "
+            "Diagnose and resolve blockers using project instructions and installed skills. "
+            "Exclude the supplied IDs and any currently Starting or Running assignments. "
+            "Preserve candidates, commits, worktrees, unrelated edits and newer human decisions. "
+            "Do not invent approvals or answers, reset retry limits, or resume Holding or "
+            "User Action Required items. Revalidate current state and dependencies before any "
+            "provider-defined transition; moving an item to Ready is not proof of resolution. "
+            "If correction requires delivery, leave it for normal work-item dispatch. "
+            "For unresolved blockers retain Blocked with the cause, owner, next action and "
+            "observable unblock condition. Publish only authorized lifecycle changes through "
+            "provider transactions and read them back before claiming success. Do not merge "
+            "product changes. Avoid duplicate history for unchanged blockers. Report the "
+            "actual result, including unresolved blockers and required human action.",
+        )
 
     async def status(self, item):
         return (await self.ask("status", item=item.__dict__, cwd=item.worktree))["status"]

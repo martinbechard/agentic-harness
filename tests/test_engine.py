@@ -748,3 +748,160 @@ def test_count_scope_active_exclusions_and_pause_during_query():
         await settle(h)
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("count", [0, 2, -1, True, "2", RuntimeError("offline")])
+def test_blocked_check_counts_and_only_unblocks_positive_valid_results(count):
+    from unittest.mock import AsyncMock
+
+    async def scenario():
+        h, access, _, _, events = make(epic="release")
+        access.blocked_count = AsyncMock(return_value=count)
+        if isinstance(count, Exception):
+            access.blocked_count.side_effect = count
+        access.unblock = AsyncMock(return_value={"status": "success", "detail": "checked"})
+        h.pending = [(Item("retry", "/retry", "retry"), False)]
+        await h.check_blocked()
+        access.blocked_count.assert_awaited_once_with(epic="release", excluded=["retry"])
+        assert access.unblock.await_count == (type(count) is int and count > 0)
+        if access.unblock.await_count:
+            access.unblock.assert_awaited_once_with(epic="release", excluded=["retry"])
+            assert h.wake.is_set()
+        assert any(
+            name
+            == ("blocked_count" if type(count) is int and count >= 0 else "blocked_count_failed")
+            for name, _ in events
+        )
+
+    asyncio.run(scenario())
+
+
+def test_blocked_check_pause_completion_and_pause_during_count():
+    from unittest.mock import AsyncMock
+
+    async def scenario():
+        h, access, _, _, _ = make()
+        access.blocked_count = AsyncMock(return_value=1)
+        access.unblock = AsyncMock()
+        h.pause()
+        await h.check_blocked()
+        h.resume()
+        h.complete = True
+        await h.check_blocked()
+        access.blocked_count.assert_not_awaited()
+        h.complete = False
+
+        async def count(**kw):
+            h.pause()
+            return 1
+
+        access.blocked_count.side_effect = count
+        await h.check_blocked()
+        access.unblock.assert_not_awaited()
+
+    asyncio.run(scenario())
+
+
+def test_blocked_provider_timeout_and_recovery_timeout_are_reported():
+    from unittest.mock import AsyncMock
+
+    async def scenario():
+        h, access, _, _, events = make(provider_timeout=0.01, unblock_timeout=0.01)
+        cancelled = []
+
+        async def hang(**kw):
+            try:
+                await asyncio.Event().wait()
+            finally:
+                cancelled.append(True)
+
+        provider = type("Provider", (), {})()
+        provider.blocked_count = AsyncMock(side_effect=hang)
+        h.work_item_provider = provider
+        access.unblock = AsyncMock(side_effect=hang)
+        await h.check_blocked()
+        assert events[-1][0] == "blocked_count_failed"
+        access.unblock.assert_not_awaited()
+        provider.blocked_count.side_effect = None
+        provider.blocked_count.return_value = 1
+        await h.check_blocked()
+        assert events[-1][0] == "unblock_error"
+        assert len(cancelled) == 2
+        assert not h.scheduling_lock.locked()
+
+    asyncio.run(scenario())
+
+
+def test_periodic_blocked_checks_do_not_overlap_and_shutdown_cancels_recovery():
+    from unittest.mock import AsyncMock
+
+    async def scenario():
+        h, access, _, _, _ = make(blocked_interval=0.01, heartbeat_interval=0.01)
+        access.items = []
+        entered, stopped = asyncio.Event(), asyncio.Event()
+        access.blocked_count = AsyncMock(return_value=1)
+
+        async def unblock(**kw):
+            entered.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                stopped.set()
+
+        access.unblock = AsyncMock(side_effect=unblock)
+        task = asyncio.create_task(h.run())
+        await asyncio.wait_for(entered.wait(), 1)
+        await asyncio.sleep(0.04)
+        assert access.unblock.await_count == 1
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert stopped.is_set()
+
+    asyncio.run(scenario())
+
+
+def test_pause_while_blocked_recovery_waits_for_admission_lock():
+    from unittest.mock import AsyncMock
+
+    async def scenario():
+        h, access, _, _, _ = make()
+        counted = asyncio.Event()
+
+        async def count(**kw):
+            counted.set()
+            return 1
+
+        access.blocked_count = count
+        access.unblock = AsyncMock()
+        async with h.scheduling_lock:
+            task = asyncio.create_task(h.check_blocked())
+            await counted.wait()
+            await asyncio.sleep(0)
+            h.pause()
+        await task
+        access.unblock.assert_not_awaited()
+
+    asyncio.run(scenario())
+
+
+def test_blocked_monitor_failure_is_supervised():
+    async def scenario():
+        h, _, _, _, events = make(heartbeat_interval=0.005)
+
+        async def broken():
+            raise RuntimeError("blocked monitor failed")
+
+        h.blocked_checks = broken
+        with pytest.raises(RuntimeError, match="blocked monitor failed"):
+            await h.run()
+        assert events[-1] == ("shutdown_completed", {"reason": "error"})
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("setting", ["blocked_interval", "unblock_timeout"])
+@pytest.mark.parametrize("value", [0, -1, True, float("nan"), float("inf")])
+def test_invalid_blocked_timing(setting, value):
+    with pytest.raises(ValueError):
+        make(**{setting: value})

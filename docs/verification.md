@@ -255,3 +255,30 @@ Evidence: `.agent-ops/provider-eligibility-fix/coverage.json`,
 `combined-provider-check.json`, and the a57 wheel under `dist/` in that directory.
 A file provider command is now required; missing commands fail configuration
 validation instead of falling back to the faulty stored-status count.
+
+### Periodic Blocked recovery (2026-10-05, source checkout)
+
+UC-016 adds a provider count every 900 seconds by default, followed by one
+serialized access-agent recovery invocation only for a positive count. Tests cover
+count validation, file command scope and backwards compatibility, GitHub labels,
+pause/completion, timeout, pending exclusions, no overlapping recovery, supervisor
+failure, and shutdown. A real subprocess test verifies the count-to-recovery flow
+and process-group cleanup on timeout. Human-decision validation also rejects an
+old resolution as satisfaction of a new blocked retry.
+
+- Full regression run: **360 passed, 2 opt-in live tests skipped**.
+- Additional historical-resolution safeguard test: **1 passed**.
+- Combined coverage: **100%**, all 1,202 statements and 394 branches.
+- Ruff lint, formatting and whitespace checks passed.
+
+Coverage evidence: `.agent-ops/blocked-recovery-coverage.json`. Tests use isolated
+fixtures and subprocesses, not paid agents or a live production backlog. No installed
+release or external file observer was upgraded by this change; file observers must
+implement the new Blocked request contract before recovery can operate.
+
+The coordinated upgrade packages this change as **0.1.0a58**. The wheel and source
+distribution built successfully; `uv lock --locked` passed. An isolated Python
+3.12 installation imported the wheel from `site-packages` and passed **210 tests
+with 1 opt-in live test skipped** across engine, provider, process, CLI and adapter
+tests. Distribution files are in `.agent-ops/blocked-recovery-release/`.
+Dev-methodology owns observer deployment and safe runtime activation.

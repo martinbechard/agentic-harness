@@ -289,6 +289,24 @@ Before subsequent dispatch under UC-001, the provider reconciles the published d
 
 Delivery and integration do not run as part of this command. The provider remains responsible for its conditional-update and transaction semantics.
 
+### UC-016: Periodically attempt to unblock work items
+
+1. Every 15 minutes by default, while delivery is not paused or complete, ask the
+   work item provider for the number of Blocked items in scope, excluding active
+   assignments and pending retries.
+2. If the count is positive, start one separate agent invocation to recheck and
+   resolve blockers using the configured provider and project conventions.
+3. Preserve candidates, worktrees, newer decisions and approval gates. Keep
+   unresolved blockers with concrete causes and next actions. Route corrections
+   requiring product delivery through normal dispatch.
+4. Report count, recovery outcome, or failure. Repeat after the configurable
+   interval; never overlap recovery passes. Count errors do not launch recovery.
+
+Recovery shares provider serialization, has a configurable timeout, and is reaped
+on shutdown. A pause suppresses new recovery but lets existing recovery finish.
+With an epic selected, only its Blocked items are examined. Provider-only counts
+use no model; providers without a count implementation use an access-agent count.
+
 ## Thread housekeeping
 
 The harness mechanically checks Codex chats at startup and every 15 minutes by

@@ -152,3 +152,32 @@ Authentication, rate-limit, command, and response errors defer selection. The CL
 process is killed and reaped when the count is cancelled or times out. No live
 GitHub project is required for the automated tests, and those tests do not establish
 live account access.
+
+## Blocked count and recovery
+
+Implement `blocked_count(*, epic, excluded) -> int` alongside `ready_count`.
+This counts the provider's **Blocked** lifecycle state, not prerequisite-ineligible
+Ready items, Holding, User Action Required, or terminal states. Counts are read-only;
+recovery uses a separate access-agent invocation only after a positive count.
+An epic restricts the count to that epic; null covers all configured queues.
+There is no outside-epic recovery pass. Active and pending retry IDs are excluded.
+
+File observers receive the following request on the same command's standard input:
+
+```json
+{"action":"blocked_count","epic":null,"outside":false,"excluded":[],"paths":["backlog/blocked"],"layout":"status-folders"}
+```
+
+Return only `{"blocked_count": N}` with a nonnegative integer. Requests without
+`action` retain the existing Ready contract. The `paths` in a Blocked request come
+from optional `blocked_paths`, defaulting to `paths` for status-field layouts and
+`["backlog/blocked"]` for status-folders. Use existing active queues. The harness
+never parses work item files or substitutes an access agent after observer errors.
+Upgrade existing Ready-only commands before relying on blocked recovery.
+
+GitHub uses the same pagination, issue exclusions, identity aliases and milestone
+scope as Ready counting, but requires an explicit `blocked_label` configuration.
+The harness does not infer that label from `ready_label`. Missing configuration is
+a count error, not an empty queue. Both paths share `work_item_provider.timeout`.
+Agent-only configuration uses the access `blocked_count` action with the same count
+schema, under the provider lock and the count timeout.

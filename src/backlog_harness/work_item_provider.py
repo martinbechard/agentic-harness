@@ -1,4 +1,4 @@
-"""Optional, read-only Work Item Provider protocol for inexpensive Ready counts."""
+"""Optional, read-only Work Item Provider protocol for inexpensive Ready and Blocked counts."""
 
 import asyncio
 import json
@@ -13,10 +13,16 @@ class WorkItemProvider(Protocol):
     async def ready_count(self, *, epic: str | None, outside: bool, excluded: list[str]) -> int:
         """Count eligible Ready work; final selection and reconciliation remain agent-owned."""
 
+    async def blocked_count(self, *, epic: str | None, excluded: list[str]) -> int:
+        """Count Blocked items in scope without changing their lifecycle."""
+
 
 class FileWorkItemProvider:
-    def __init__(self, project, paths, layout, command):
+    def __init__(self, project, paths, layout, command, blocked_paths=None):
         self.project, self.paths, self.layout, self.command = project, paths, layout, command
+        self.blocked_paths = blocked_paths or (
+            paths if layout == "status-field" else ["backlog/blocked"]
+        )
 
     async def ready_count(self, *, epic, outside, excluded):
         # The provider owns eligibility. Sharing its observer prevents dashboard/count drift.
@@ -27,6 +33,22 @@ class FileWorkItemProvider:
             "paths": self.paths,
             "layout": self.layout,
         }
+        return await self.count(request, "ready_count")
+
+    async def blocked_count(self, *, epic, excluded):
+        return await self.count(
+            {
+                "action": "blocked_count",
+                "epic": epic,
+                "outside": False,
+                "excluded": excluded,
+                "paths": self.blocked_paths,
+                "layout": self.layout,
+            },
+            "blocked_count",
+        )
+
+    async def count(self, request, field):
         process = await asyncio.create_subprocess_exec(
             *self.command,
             cwd=self.project,
@@ -43,14 +65,12 @@ class FileWorkItemProvider:
             result = json.loads(output)
             if (
                 not isinstance(result, dict)
-                or set(result) != {"ready_count"}
-                or type(result["ready_count"]) is not int
-                or result["ready_count"] < 0
+                or set(result) != {field}
+                or type(result[field]) is not int
+                or result[field] < 0
             ):
-                raise ValueError(
-                    "File Work Item Provider must return only a nonnegative ready_count"
-                )
-            return result["ready_count"]
+                raise ValueError(f"File Work Item Provider must return only a nonnegative {field}")
+            return result[field]
         finally:
             # A provider may run Git readers; stop/reap the entire group even after parent exit.
             try:
@@ -62,12 +82,21 @@ class FileWorkItemProvider:
 
 
 class GitHubWorkItemProvider:
-    def __init__(self, project, repository, ready_label, executable):
+    def __init__(self, project, repository, ready_label, executable, blocked_label=None):
         self.project, self.repository = project, repository
         self.ready_label, self.executable = ready_label, executable
+        self.blocked_label = blocked_label
 
     async def ready_count(self, *, epic, outside, excluded):
-        query = urlencode({"state": "open", "labels": self.ready_label, "per_page": 100})
+        return await self.count(self.ready_label, epic, outside, excluded)
+
+    async def blocked_count(self, *, epic, excluded):
+        if self.blocked_label is None:
+            raise ValueError("work_item_provider.blocked_label is required for Blocked counts")
+        return await self.count(self.blocked_label, epic, False, excluded)
+
+    async def count(self, label, epic, outside, excluded):
+        query = urlencode({"state": "open", "labels": label, "per_page": 100})
         process = await asyncio.create_subprocess_exec(
             self.executable,
             "api",
@@ -122,8 +151,8 @@ def configured_provider(config) -> WorkItemProvider | None:
     kind = settings.get("type")
     allowed = {
         "agent": {"type"},
-        "file": {"type", "paths", "layout", "timeout", "command"},
-        "github": {"type", "repository", "ready_label", "executable", "timeout"},
+        "file": {"type", "paths", "layout", "timeout", "command", "blocked_paths"},
+        "github": {"type", "repository", "ready_label", "executable", "timeout", "blocked_label"},
     }
     if not isinstance(kind, str) or kind not in allowed or set(settings) - allowed[kind]:
         raise ValueError("Unknown work_item_provider type or setting")
@@ -153,7 +182,16 @@ def configured_provider(config) -> WorkItemProvider | None:
                 "work_item_provider.command must invoke the file provider's eligibility observer "
                 "as a nonempty argument list; counting stored Status headers is unsupported"
             )
-        return FileWorkItemProvider(config["project"], paths, layout, command)
+        blocked_paths = settings.get("blocked_paths")
+        if blocked_paths is not None and (
+            not isinstance(blocked_paths, list)
+            or not blocked_paths
+            or not all(isinstance(path, str) and path.strip() for path in blocked_paths)
+        ):
+            raise ValueError(
+                "work_item_provider.blocked_paths must be a nonempty list of directories"
+            )
+        return FileWorkItemProvider(config["project"], paths, layout, command, blocked_paths)
     repository = settings.get("repository")
     label = settings.get("ready_label")
     executable = settings.get("executable", "gh")
@@ -163,4 +201,9 @@ def configured_provider(config) -> WorkItemProvider | None:
         raise ValueError("work_item_provider.ready_label must be one nonempty label")
     if not isinstance(executable, str) or not executable.strip():
         raise ValueError("work_item_provider.executable must be an executable path or name")
-    return GitHubWorkItemProvider(config["project"], repository, label, executable)
+    blocked_label = settings.get("blocked_label")
+    if blocked_label is not None and (
+        not isinstance(blocked_label, str) or not blocked_label.strip() or "," in blocked_label
+    ):
+        raise ValueError("work_item_provider.blocked_label must be one nonempty label")
+    return GitHubWorkItemProvider(config["project"], repository, label, executable, blocked_label)

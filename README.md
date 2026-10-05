@@ -2,7 +2,7 @@
 
 Run ready backlog items through development agents. A work item access agent chooses ready work using the project's provider and dependencies. Development agents update their own items; a separate merge agent checks and integrates finished work. Before selection, the access agent reconciles committed waiting checkpoints into the published backlog without merging unfinished product changes. Newer human decisions and delivered completion take precedence over stale branch records; conflicts remain undispatched and are reported.
 
-The scope is [the approved functional specification](docs/functional-spec.md). The runtime supports its fifteen use cases: dispatch, bounded retries, waiting, pause/resume, user-action outcomes, parallel backlog and epic delivery, defect recording, integration, interrupted-work recovery, and explicit human decisions on pending requests.
+The scope is [the approved functional specification](docs/functional-spec.md). The runtime supports its sixteen use cases: dispatch, bounded retries, waiting, pause/resume, user-action outcomes, parallel backlog and epic delivery, defect recording, integration, interrupted-work recovery, and explicit human decisions on pending requests.
 
 ## Run
 
@@ -36,6 +36,8 @@ scheduling:
   merge_interval: 60
   merge_timeout: 3600
   heartbeat_interval: 10
+  blocked_interval: 900
+  unblock_timeout: 3600
 access_timeout: 120
 decision_timeout: 120
 log_level: INFO
@@ -113,6 +115,35 @@ and `paths: [backlog/ready]`. GitHub label-based queues use `type: github`, an e
 `repository: owner/repository`, and `ready_label: 'Status: Ready'`. See the protocol
 for scope, exclusions, timeout, and format limits. Merge and epic-completion checks
 retain their separate behavior.
+
+## Check blocked items
+
+Every 15 minutes, the harness asks the work item provider for a Blocked count.
+A positive count starts one separate unblock invocation using the configured
+`access` command. Agent-only providers use an access-agent count; configured file
+and GitHub providers count without a model call. Errors are logged and retried on
+the next interval; they never become zero counts or trigger recovery.
+
+`scheduling.blocked_interval` (default 900 seconds) is the delay before the first
+check and between completed passes. `scheduling.unblock_timeout` (default 3600
+seconds) bounds recovery, including waiting for provider access. Checks do not
+overlap. Pause suppresses new checks and recovery; an already started pass may
+finish. Shutdown cancels and reaps recovery. The selected epic limits recovery;
+without an epic it covers the configured active queues. Active and pending retry
+assignments are excluded. New delivery admission waits during recovery.
+
+The agent rechecks blockers, resolves what it can through provider conventions,
+and records remaining causes and next actions. It preserves human approval gates,
+candidates, worktrees and newer decisions. Corrections requiring delivery return
+through normal dispatch. A successful scan does not mean every item was unblocked.
+
+File observer commands must accept `action: blocked_count` and return only
+`{"blocked_count": N}`. Existing Ready requests stay unchanged. For status-field
+layouts, Blocked counts use `paths`; status-folders default to `backlog/blocked`.
+Set `work_item_provider.blocked_paths` to override the Blocked scope. GitHub
+configuration must add an explicit `blocked_label`, such as `'Status: Blocked'`.
+An older Ready-only command or missing label produces `blocked_count_failed` and
+leaves normal delivery running. See the [provider protocol](docs/work-item-provider-protocol.md).
 
 ## Submit a human decision
 

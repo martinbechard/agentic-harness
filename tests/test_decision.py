@@ -741,3 +741,25 @@ def test_blocked_comment_retry_persists_once_and_rejects_changed_blocker(project
         code, rejected = finish(invoke(config_path, request))
         assert code == 3 and rejected["persisted"] is False
         assert path.read_bytes() == before
+
+
+def test_historical_resolution_cannot_satisfy_new_blocked_retry(project):
+    from backlog_harness.decision import validate_result
+
+    _, _, request, _ = project
+    request["decision_id"] = "new-retry"
+    request["decision"] = {"kind": "retry_blocked", "answer": "Recheck the blocker"}
+    result = {
+        "status": "already_resolved",
+        "decision_id": "new-retry",
+        "item_id": "one",
+        "persisted": True,
+        "resolution": "approved",
+        "state": "Ready",
+        "revision": "old",
+        "workspace": request["workspace"],
+        "locator": request["observed"]["locator"],
+        "detail": "An earlier approval exists",
+    }
+    with pytest.raises(ValueError, match="prior resolution cannot satisfy a new retry"):
+        validate_result(result, request)

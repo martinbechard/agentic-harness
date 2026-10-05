@@ -49,6 +49,8 @@ All requests contain `role`: `access`, `development`, or `merge`. Item identitie
 | Access action | Request fields | Required result |
 | --- | --- | --- |
 | `ready` | `limit`, `epic` (string or null), `outside`, `excluded`, `workspaces`, `instruction` | `{"items":[...]}` |
+| `blocked_count` | `epic`, `excluded`, `instruction` | `{"blocked_count":0}` (nonnegative integer) |
+| `unblock` | `epic`, `excluded`, `workspaces`, `instruction` | `{"status":"success","detail":"Actual recovery outcome"}` |
 | `status` | `item` | `{"status":"running"}` or another provider-normalized status |
 | `failure` | `item`, `reason` | `{"transient":true}` after recording the failure |
 | `hold` | `item` | `{"updated":true}` after moving it to holding |
@@ -188,3 +190,30 @@ Provider instructions limit this to one item and focused history. They prohibit 
 For a Git-backed filesystem provider, a changed working file is insufficient. The decision agent must commit only the owned work-item changes, including any state-folder move, and verify the committed original decision ID and exact answer/approval before returning `applied` or `already_applied`. Unrelated staged and unstaged changes must remain untouched. A partial write followed by publication failure is unconfirmed (`unknown`); retrying the identical saved submission completes publication without adding another decision.
 
 Ready selection must reconcile that published decision into the exact assigned worktree and branch before returning the item. It preserves candidate commits, local delivery history and unrelated edits, then reads back the decision ID, answer/approval and resolved question. Incomplete publication or conflicting item state prevents selection. Development reads the reconciled record before starting and honors the existing answer. These are provider-agent responsibilities; the harness does not implement Git transactions or select a provider's reconciliation strategy.
+
+## Periodic blocked recovery
+
+UC-016 checks every `scheduling.blocked_interval` seconds (900 by default), starting
+after the first interval. A positive provider count starts an `access` invocation
+with action `unblock`. Its required status is `success`, `failed`, or
+`user_action_required`, and required `detail` describes the actual result.
+It shares provider serialization with selection and human decisions. Recovery
+waits and execution together are bounded by `scheduling.unblock_timeout` (3600 by
+default), rather than the short `access_timeout`. Timeouts cancel and reap the
+process group and report an unknown recovery outcome; persisted partial work is
+rechecked on the next interval. No delivery retry budget is reset or consumed.
+
+The next interval starts after the previous pass finishes. Paused or completed
+runs skip checks; a pause arriving during a count suppresses recovery. Existing
+recovery may finish after pause. Active and pending retry assignments are excluded,
+and new delivery admission waits for recovery. Existing delivery and merge agents
+continue; the recovery agent must revalidate ownership and use provider transactions.
+It does not perform product delivery or merge, invent human answers, or resume
+Holding/User Action Required records. Unresolved blockers retain their evidence.
+
+`blocked_count` reports count and epic. `blocked_count_failed` reports read,
+validation or timeout errors at ERROR. `unblock_started` reports a positive trigger;
+`provider_started` identifies the actual invocation after lock acquisition.
+`unblock_finished` carries the validated status and detail; it does not imply an
+empty Blocked queue. `unblock_error` reports invocation failures/timeouts at ERROR.
+All use the normal console, JSONL and OTEL writer.

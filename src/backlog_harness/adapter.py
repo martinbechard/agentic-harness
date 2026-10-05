@@ -33,6 +33,11 @@ def schema_for(request):
         "additionalProperties": False,
     }
     properties = {
+        "blocked_count": {"blocked_count": {"type": "integer", "minimum": 0}},
+        "unblock": {
+            "status": {"type": "string", "enum": ["success", "failed", "user_action_required"]},
+            "detail": {"type": "string"},
+        },
         "ready": {"items": {"type": "array", "items": item}},
         "status": {"status": {"type": "string"}},
         "failure": {"transient": {"type": "boolean"}},

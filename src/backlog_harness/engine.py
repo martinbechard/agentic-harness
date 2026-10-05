@@ -51,6 +51,8 @@ class Harness:
         scheduling_request_id=None,
         work_item_provider=None,
         provider_timeout=30,
+        blocked_interval=900,
+        unblock_timeout=3600,
     ):
         if (
             type(capacity) is not int
@@ -66,6 +68,8 @@ class Harness:
                     merge_timeout,
                     heartbeat_interval,
                     provider_timeout,
+                    blocked_interval,
+                    unblock_timeout,
                 )
             )
         ):
@@ -81,6 +85,7 @@ class Harness:
         self.epic = epic
         self.work_item_provider = work_item_provider
         self.provider_timeout = provider_timeout
+        self.blocked_interval, self.unblock_timeout = blocked_interval, unblock_timeout
         self.scheduling_revision = scheduling_revision
         self.scheduling_request_id = scheduling_request_id
         self.scheduling_lock = asyncio.Lock()
@@ -315,6 +320,44 @@ class Harness:
         if self.epic and not self.paused:
             await self.fill(outside=True)
 
+    async def check_blocked(self):
+        if self.paused or self.complete:
+            return
+        excluded = list(self.active) + [item.id for item, _ in self.pending]
+        provider = self.work_item_provider or self.access
+        try:
+            count = await asyncio.wait_for(
+                provider.blocked_count(epic=self.epic, excluded=excluded), self.provider_timeout
+            )
+            if type(count) is not int or count < 0:
+                raise ValueError("Work Item Provider blocked count must be a nonnegative integer")
+        except (OSError, RuntimeError, ValueError, TimeoutError) as exc:
+            self.emit("blocked_count_failed", level="ERROR", detail=str(exc) or "Count timed out")
+            return
+        self.emit("blocked_count", count=count, epic=self.epic)
+        if count == 0 or self.paused or self.complete:
+            return
+        try:
+            # Serialize admission with recovery, and refresh exclusions after the count.
+            async with self.scheduling_lock:
+                if self.paused or self.complete:
+                    return
+                excluded = list(self.active) + [item.id for item, _ in self.pending]
+                self.emit("unblock_started", count=count, epic=self.epic)
+                result = await asyncio.wait_for(
+                    self.access.unblock(epic=self.epic, excluded=excluded), self.unblock_timeout
+                )
+                self.emit("unblock_finished", **result)
+                self.wake.set()
+        except (OSError, RuntimeError, ValueError, TimeoutError) as exc:
+            self.emit("unblock_error", level="ERROR", detail=str(exc) or "Unblock timed out")
+
+    async def blocked_checks(self):
+        # Wait between completed passes so long recovery calls never overlap or catch up.
+        while True:
+            await asyncio.sleep(self.blocked_interval)
+            await self.check_blocked()
+
     async def merges(self):
         """One invocation at a time, with a pending completion trigger retained."""
         while True:
@@ -377,11 +420,14 @@ class Harness:
     async def run(self):
         merger = asyncio.create_task(self.merges())
         scheduler = asyncio.create_task(self.schedule(merger))
+        unblocker = asyncio.create_task(self.blocked_checks())
         reason = "cancelled"
         try:
             # This is the supervising task, not a detached heartbeat timer. Slow
             # agent I/O yields here; a stalled event loop cannot emit a heartbeat.
             while not scheduler.done():
+                if unblocker.done():
+                    unblocker.result()
                 if merger.done():
                     merger.result()
                 self.heartbeat()
@@ -395,8 +441,9 @@ class Harness:
             self.emit("shutdown_started", reason=reason)
             scheduler.cancel()
             merger.cancel()
+            unblocker.cancel()
             tasks = [a.task for a in self.active.values()]
             for task in tasks:
                 task.cancel()
-            await asyncio.gather(scheduler, merger, *tasks, return_exceptions=True)
+            await asyncio.gather(scheduler, merger, unblocker, *tasks, return_exceptions=True)
             self.emit("shutdown_completed", reason=reason)

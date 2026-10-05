@@ -142,3 +142,13 @@ def test_disabled_cleanup_cli_does_not_start_agents(tmp_path):
     assert result.returncode == 0, result.stderr
     assert "thread_cleanup_disabled" in result.stdout
     assert "agent_started" not in result.stdout
+
+
+def test_blocked_timing_configuration(tmp_path):
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {**config(tmp_path), "scheduling": {"blocked_interval": 900, "unblock_timeout": 3600}}
+        )
+    )
+    assert load_config(path)["scheduling"] == {"blocked_interval": 900, "unblock_timeout": 3600}

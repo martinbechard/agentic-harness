@@ -114,6 +114,8 @@ def load_config(path):
         "merge_interval",
         "merge_timeout",
         "heartbeat_interval",
+        "blocked_interval",
+        "unblock_timeout",
     }:
         raise ValueError("Unknown scheduling setting")
     if config.get("log_level", "INFO") not in ("DEBUG", "INFO", "ERROR"):

@@ -248,7 +248,8 @@ def test_provider_invalid_responses_are_rejected(tmp_path, action, value):
 
 
 @pytest.mark.parametrize(
-    "action", ["ready", "status", "failure", "hold", "epic_complete", "decision"]
+    "action",
+    ["ready", "status", "failure", "hold", "epic_complete", "decision", "blocked_count", "unblock"],
 )
 def test_codex_provider_schema_is_strict(action):
     schema = schema_for({"role": "access", "action": action})
@@ -315,5 +316,81 @@ def test_agent_registry_and_requested_stop_events(tmp_path):
         assert event["stop_requested"] is True
         assert event["exit_code"] != 0
         assert event["item"] == "one"
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize(
+    "action,value",
+    [
+        ("blocked_count", {"blocked_count": True}),
+        ("blocked_count", {"blocked_count": -1}),
+        ("unblock", {"status": "invalid", "detail": ""}),
+        ("unblock", {"status": "success"}),
+        ("unblock", {"status": "success", "detail": "", "extra": 1}),
+    ],
+)
+def test_invalid_blocked_responses_are_rejected(tmp_path, action, value):
+    async def scenario():
+        code = (
+            "import os; from pathlib import Path; "
+            f"Path(os.environ['HARNESS_RESULT']).write_text({json.dumps(value)!r})"
+        )
+        agents = Agents(
+            {
+                "project": str(tmp_path),
+                "state": str(tmp_path / "state"),
+                "access": [sys.executable, "-c", code],
+            },
+            lambda *a, **kw: None,
+        )
+        with pytest.raises(ValueError):
+            await agents.ask(action)
+
+    asyncio.run(scenario())
+
+
+def test_blocked_agent_flow_and_timeout_reap_real_process(tmp_path):
+    from backlog_harness.engine import Harness
+
+    async def scenario():
+        code = """import json,os,time
+from pathlib import Path
+request = json.loads(Path(os.environ['HARNESS_REQUEST']).read_text())
+assert request['epic'] == 'release' and request['excluded'] == []
+if request['action'] == 'blocked_count':
+    result = {'blocked_count': 1}
+else:
+    assert request['action'] == 'unblock'
+    assert 'Do not invent approvals or answers' in request['instruction']
+    if Path('hang').exists():
+        time.sleep(60)
+    result = {'status': 'success', 'detail': 'blocker resolved'}
+Path(os.environ['HARNESS_RESULT']).write_text(json.dumps(result))
+"""
+        events = []
+        emit = lambda event, **kw: events.append((event, kw))
+        agents = Agents(
+            {
+                "project": str(tmp_path),
+                "state": str(tmp_path / "state"),
+                "access": [sys.executable, "-c", code],
+            },
+            emit,
+        )
+        h = Harness(
+            agents, agents.deliver, agents.integrate, emit, epic="release", unblock_timeout=5
+        )
+        await h.check_blocked()
+        assert ("unblock_finished", {"status": "success", "detail": "blocker resolved"}) in events
+        assert not agents.running_invocations()
+        (tmp_path / "hang").touch()
+        h.unblock_timeout = 0.2
+        await h.check_blocked()
+        assert events[-1][0] == "unblock_error"
+        assert not agents.running_invocations()
+        assert any(
+            e == "agent_group_stopped" and f["reason"] == "stop_requested" for e, f in events
+        )
 
     asyncio.run(scenario())

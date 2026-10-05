@@ -353,3 +353,64 @@ def test_file_provider_reaps_group_when_parent_exits_with_child_holding_output(t
         ["ps", "-p", child, "-o", "stat="], capture_output=True, text=True, check=False
     ).stdout.strip()
     assert not status or status.startswith("Z")
+
+
+def test_file_blocked_count_uses_explicit_operation_and_blocked_scope(tmp_path):
+    provider = file_provider(
+        tmp_path,
+        "import json,sys\n"
+        "r=json.load(sys.stdin)\n"
+        "assert r == {'action':'blocked_count','epic':'release','outside':False,"
+        "'excluded':['one'],'paths':['backlog/features'],'layout':'status-field'}\n"
+        "print(json.dumps({'blocked_count':3}))\n",
+    )
+    assert asyncio.run(provider.blocked_count(epic="release", excluded=["one"])) == 3
+    folders = FileWorkItemProvider(str(tmp_path), ["backlog/ready"], "status-folders", ["x"])
+    assert folders.blocked_paths == ["backlog/blocked"]
+
+
+def test_old_ready_only_observer_cannot_masquerade_as_blocked_count(tmp_path):
+    provider = file_provider(tmp_path, "print('{\"ready_count\":2}')")
+    with pytest.raises(ValueError, match="blocked_count"):
+        asyncio.run(provider.blocked_count(epic=None, excluded=[]))
+
+
+def test_github_blocked_count_uses_explicit_label_and_existing_filters(tmp_path, monkeypatch):
+    process = GitHubProcess(
+        [
+            [
+                {"number": 1, "milestone": {"title": "release"}},
+                {"number": 2, "pull_request": {}},
+                {"number": 3, "milestone": {"title": "other"}},
+            ]
+        ]
+    )
+    launch = AsyncMock(return_value=process)
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", launch)
+    provider = GitHubWorkItemProvider(str(tmp_path), "owner/repo", "Ready", "gh", "Blocked")
+    assert asyncio.run(provider.blocked_count(epic="release", excluded=[])) == 1
+    assert "labels=Blocked" in launch.call_args.args[2]
+    provider.blocked_label = None
+    with pytest.raises(ValueError, match="blocked_label"):
+        asyncio.run(provider.blocked_count(epic=None, excluded=[]))
+
+
+@pytest.mark.parametrize(
+    "kind,key,value",
+    [
+        ("file", "blocked_paths", []),
+        ("file", "blocked_paths", ""),
+        ("file", "blocked_paths", [1]),
+        ("github", "blocked_label", ""),
+        ("github", "blocked_label", "a,b"),
+        ("github", "blocked_label", False),
+    ],
+)
+def test_invalid_blocked_provider_settings(kind, key, value, tmp_path):
+    settings = {"type": kind, key: value}
+    if kind == "file":
+        settings["command"] = ["provider"]
+    else:
+        settings.update(repository="owner/repo", ready_label="Ready")
+    with pytest.raises(ValueError, match=key):
+        configured_provider({"project": str(tmp_path), "work_item_provider": settings})
