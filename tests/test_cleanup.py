@@ -30,7 +30,6 @@ def thread(**changes):
         {"status": {"type": "active"}},
         {"status": {"type": "systemError"}},
         {"turns": [{"status": "inProgress", "completedAt": None}]},
-        {"turns": [{"status": "interrupted", "completedAt": 10}]},
         {"turns": [{"status": "completed", "completedAt": None}]},
         {"turns": [{"status": "completed", "completedAt": 100}]},
     ],
@@ -39,7 +38,7 @@ def test_ineligible_threads_are_preserved(changes):
     assert not codex.completed_before(thread(**changes), "/project", 100)
 
 
-@pytest.mark.parametrize("status", ["completed", "failed"])
+@pytest.mark.parametrize("status", ["completed", "failed", "interrupted"])
 def test_finished_thread_is_eligible(status):
     assert codex.completed_before(
         thread(turns=[{"status": status, "completedAt": 10}]), "/project", 100
@@ -228,7 +227,7 @@ def test_cleanup_project_and_managed_worktree_scope(cwd, expected):
     assert codex.completed_before(thread(cwd=cwd), "/project", 100) == expected
 
 
-@pytest.mark.parametrize("status", ["completed", "failed"])
+@pytest.mark.parametrize("status", ["completed", "failed", "interrupted"])
 @pytest.mark.parametrize(
     "updated, ended, expected",
     [

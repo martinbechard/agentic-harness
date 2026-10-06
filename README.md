@@ -61,9 +61,9 @@ All harness activities and agent output appear on the console, in `activities.js
 Mechanical Codex thread cleanup runs at startup and every 15 minutes while the
 harness runs, including while delivery is paused. It archives unarchived chats
 whose working directory matches `project` or a worktree under `project/.worktrees`,
-whose latest turn completed
-or failed more than 20 minutes ago, and which have no newer activity. It re-reads each chat
-before archiving. Interrupted, active, empty, and undated turns are kept.
+whose latest turn completed,
+failed, or was interrupted more than 20 minutes ago, and which have no newer activity. It re-reads each chat
+before archiving. Active, empty, and undated turns are kept.
 Chats in other directories are outside this scope.
 Archiving does not delete chats or change work-item status. Failed runs retain their
 error evidence in archived chats and harness logs. No agent or model is used.

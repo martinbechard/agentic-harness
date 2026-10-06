@@ -106,7 +106,8 @@ def instructions_for(request):
             "archive tool if available. Archive only your own chat, never a work-item "
             "chat or another agent's chat. Preserve the required structured final result. "
             "If the tool is unavailable or archiving fails, return the result normally; "
-            "the harness also archives completed and failed runs after 20 minutes of inactivity."
+            "the harness also archives completed, failed, and interrupted runs after 20 minutes "
+            "of inactivity."
         )
     return instructions
 

@@ -27,7 +27,7 @@ def completed_before(thread, project, cutoff):
         and thread["status"]["type"] in ("idle", "notLoaded")
         and thread["updatedAt"] < cutoff
         and bool(turns)
-        and turns[-1]["status"] in ("completed", "failed")
+        and turns[-1]["status"] in ("completed", "failed", "interrupted")
         and turns[-1].get("completedAt") is not None
         and turns[-1]["completedAt"] < cutoff
     )
