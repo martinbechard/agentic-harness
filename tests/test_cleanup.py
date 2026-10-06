@@ -5,6 +5,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from openai_codex.generated.v2_all import AbsolutePathBuf
 
 from backlog_harness import codex
 
@@ -70,9 +71,10 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch, ui_
                 return SimpleNamespace(
                     data=[
                         SimpleNamespace(
-                            id="previous" if params["cursor"] is None else "old", cwd="/project"
+                            id="previous" if params["cursor"] is None else "old",
+                            cwd=AbsolutePathBuf(root="/project"),
                         ),
-                        SimpleNamespace(id="foreign-archive", cwd="/other"),
+                        SimpleNamespace(id="foreign-archive", cwd=AbsolutePathBuf(root="/other")),
                     ],
                     next_cursor="archive-next" if params["cursor"] is None else None,
                 )
@@ -85,11 +87,15 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch, ui_
                 data=[
                     SimpleNamespace(
                         id=i,
-                        cwd="/other"
-                        if i == "foreign"
-                        else "/project/.worktrees/fix"
-                        if i == "worktree"
-                        else "/project",
+                        cwd=AbsolutePathBuf(
+                            root=(
+                                "/other"
+                                if i == "foreign"
+                                else "/project/.worktrees/fix"
+                                if i == "worktree"
+                                else "/project"
+                            )
+                        ),
                         updated_at=100 if i == "recent" else 10,
                     )
                     for i in ids

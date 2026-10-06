@@ -34,7 +34,7 @@ def completed_before(thread, project, cutoff):
 
 
 async def archive_completed_threads(project, age, emit):
-    """Archive old completed project chats through the SDK without starting a turn."""
+    """Archive old finished project chats through the SDK without starting a turn."""
     cutoff = time.time() - age
     emit("thread_cleanup_started", level="DEBUG", project=project, cutoff=cutoff)
     archived, failed = 0, 0
@@ -53,7 +53,9 @@ async def archive_completed_threads(project, age, emit):
                 }
             )
             candidates.extend(
-                t.id for t in page.data if project_thread(t.cwd, project) and t.updated_at < cutoff
+                t.id
+                for t in page.data
+                if project_thread(t.cwd.root, project) and t.updated_at < cutoff
             )
             emit("thread_cleanup_page", level="DEBUG", project=project, count=len(page.data))
             cursor = page.next_cursor
@@ -98,7 +100,9 @@ async def archive_completed_threads(project, age, emit):
                     }
                 )
                 archived_threads.extend(
-                    {"id": t.id, "cwd": t.cwd} for t in page.data if project_thread(t.cwd, project)
+                    {"id": t.id, "cwd": t.cwd.root}
+                    for t in page.data
+                    if project_thread(t.cwd.root, project)
                 )
                 cursor = page.next_cursor
                 if not cursor:
