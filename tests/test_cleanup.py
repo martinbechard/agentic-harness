@@ -29,7 +29,6 @@ def thread(**changes):
         {"status": {"type": "active"}},
         {"status": {"type": "systemError"}},
         {"turns": [{"status": "inProgress", "completedAt": None}]},
-        {"turns": [{"status": "failed", "completedAt": 10}]},
         {"turns": [{"status": "interrupted", "completedAt": 10}]},
         {"turns": [{"status": "completed", "completedAt": None}]},
         {"turns": [{"status": "completed", "completedAt": 100}]},
@@ -39,8 +38,11 @@ def test_ineligible_threads_are_preserved(changes):
     assert not codex.completed_before(thread(**changes), "/project", 100)
 
 
-def test_completed_thread_is_eligible():
-    assert codex.completed_before(thread(), "/project", 100)
+@pytest.mark.parametrize("status", ["completed", "failed"])
+def test_finished_thread_is_eligible(status):
+    assert codex.completed_before(
+        thread(turns=[{"status": status, "completedAt": 10}]), "/project", 100
+    )
 
 
 @pytest.mark.parametrize("ui_failure", [False, True])
@@ -63,15 +65,35 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch, ui_
 
         async def thread_list(self, params):
             calls.append("list")
-            assert params["cwd"] == "/project"
+            assert "cwd" not in params
             if params["archived"]:
                 return SimpleNamespace(
-                    data=[SimpleNamespace(id="previous" if params["cursor"] is None else "old")],
+                    data=[
+                        SimpleNamespace(
+                            id="previous" if params["cursor"] is None else "old", cwd="/project"
+                        ),
+                        SimpleNamespace(id="foreign-archive", cwd="/other"),
+                    ],
                     next_cursor="archive-next" if params["cursor"] is None else None,
                 )
-            ids = ["old", "resumed", "failed"] if params["cursor"] is None else ["empty", "recent"]
+            ids = (
+                ["old", "resumed", "failed"]
+                if params["cursor"] is None
+                else ["empty", "recent", "failed-run", "worktree", "foreign"]
+            )
             return SimpleNamespace(
-                data=[SimpleNamespace(id=i, updated_at=100 if i == "recent" else 10) for i in ids],
+                data=[
+                    SimpleNamespace(
+                        id=i,
+                        cwd="/other"
+                        if i == "foreign"
+                        else "/project/.worktrees/fix"
+                        if i == "worktree"
+                        else "/project",
+                        updated_at=100 if i == "recent" else 10,
+                    )
+                    for i in ids
+                ],
                 next_cursor="next" if params["cursor"] is None else None,
             )
 
@@ -79,6 +101,10 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch, ui_
             assert include_turns
             reads[identity] = reads.get(identity, 0) + 1
             data = thread(id=identity)
+            if identity == "failed-run":
+                data["turns"][-1]["status"] = "failed"
+            if identity == "worktree":
+                data["cwd"] = "/project/.worktrees/fix"
             if identity == "empty":
                 data["turns"] = []
             if identity == "resumed" and reads[identity] == 2:
@@ -105,9 +131,21 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch, ui_
         )
     )
     assert not result
-    assert calls == ["list", "list", "old", "failed", "list", "list", "notify", "closed"]
+    assert calls == [
+        "list",
+        "list",
+        "old",
+        "failed",
+        "failed-run",
+        "worktree",
+        "list",
+        "list",
+        "notify",
+        "closed",
+    ]
     assert "recent" not in reads
-    assert events[-1][1] == {"project": "/project", "archived": 1, "failed": 1 + int(ui_failure)}
+    assert "foreign" not in reads
+    assert events[-1][1] == {"project": "/project", "archived": 3, "failed": 1 + int(ui_failure)}
     assert any(e == "thread_archive_failed" for e, _ in events)
 
 
@@ -141,7 +179,7 @@ def test_periodic_defaults_retry_and_cancel(monkeypatch):
         asyncio.run(
             codex.cleanup_threads({"project": "/project"}, lambda e, **kw: events.append(e))
         )
-    assert calls == [("/project", 3600)] * 2
+    assert calls == [("/project", 1200)] * 2
     assert events == ["thread_cleanup_failed"] * 2
 
 
@@ -168,3 +206,33 @@ def test_successful_one_shot_uses_configured_age(monkeypatch):
             once=True,
         )
     )
+
+
+@pytest.mark.parametrize(
+    "cwd, expected",
+    [
+        ("/project", True),
+        ("/project/.worktrees/fix", True),
+        ("/project-other/.worktrees/fix", False),
+        ("/project/docs", False),
+        ("/other", False),
+    ],
+)
+def test_cleanup_project_and_managed_worktree_scope(cwd, expected):
+    assert codex.completed_before(thread(cwd=cwd), "/project", 100) == expected
+
+
+@pytest.mark.parametrize("status", ["completed", "failed"])
+@pytest.mark.parametrize(
+    "updated, ended, expected",
+    [
+        (799, 799, True),
+        (800, 799, False),
+        (799, 800, False),
+        (801, 700, False),
+        (700, None, False),
+    ],
+)
+def test_twenty_minutes_requires_both_end_and_last_activity(status, updated, ended, expected):
+    data = thread(updatedAt=updated, turns=[{"status": status, "completedAt": ended}])
+    assert codex.completed_before(data, "/project", 2000 - 1200) == expected

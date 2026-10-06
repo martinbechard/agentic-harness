@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from backlog_harness.adapter import execute
+from backlog_harness.adapter import execute, instructions_for
 from backlog_harness.process import Process
 
 SERVER = Path(__file__).parent / "fixtures/codex_server.py"
@@ -74,6 +74,7 @@ def test_codex_sdk_transmits_instructions_schema_and_streams_activity(tmp_path):
         assert start["model"] == "chosen-model"
         assert start["cwd"] == str(tmp_path)
         assert "access agent" in start["developerInstructions"]
+        assert "self-archive this chat" in start["developerInstructions"]
         assert "sandbox" not in start
         assert start["approvalPolicy"] == "never"
         assert turn["effort"] == "high"
@@ -263,3 +264,13 @@ def test_live_codex_receives_instructions(tmp_path):
     (tmp_path / "sdk-events.json").write_text(json.dumps(events, indent=2))
     assert result == {"receipt": nonce}
     assert any(e.get("method") == "turn/completed" for e in events)
+
+
+@pytest.mark.parametrize("role", ["access", "merge", "development", "unblock"])
+def test_self_archive_prompt_targets_disposable_roles(role):
+    instructions = instructions_for({"role": role})
+    assert ("self-archive this chat" in instructions) == (role in ("access", "merge"))
+    if role in ("access", "merge"):
+        assert "20 minutes of inactivity" in instructions
+        assert "Preserve the required structured final result" in instructions
+        assert "If the tool is unavailable or archiving fails" in instructions

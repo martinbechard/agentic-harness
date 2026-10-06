@@ -14,15 +14,20 @@ from .adapter import execute
 from .desktop import notify_archived
 
 
+def project_thread(cwd, project):
+    """Include the project and its managed worktrees, but no sibling projects."""
+    return Path(cwd) == Path(project) or Path(project) / ".worktrees" in Path(cwd).parents
+
+
 def completed_before(thread, project, cutoff):
-    """Require positive completion evidence, not merely an idle runtime status."""
+    """Require a finished run and inactivity, not merely an idle runtime status."""
     turns = thread["turns"]
     return (
-        thread["cwd"] == project
+        project_thread(thread["cwd"], project)
         and thread["status"]["type"] in ("idle", "notLoaded")
         and thread["updatedAt"] < cutoff
         and bool(turns)
-        and turns[-1]["status"] == "completed"
+        and turns[-1]["status"] in ("completed", "failed")
         and turns[-1].get("completedAt") is not None
         and turns[-1]["completedAt"] < cutoff
     )
@@ -41,14 +46,15 @@ async def archive_completed_threads(project, age, emit):
         while True:
             page = await client.thread_list(
                 {
-                    "cwd": project,
                     "archived": False,
                     "limit": 100,
                     "cursor": cursor,
                     "useStateDbOnly": True,
                 }
             )
-            candidates.extend(t.id for t in page.data if t.updated_at < cutoff)
+            candidates.extend(
+                t.id for t in page.data if project_thread(t.cwd, project) and t.updated_at < cutoff
+            )
             emit("thread_cleanup_page", level="DEBUG", project=project, count=len(page.data))
             cursor = page.next_cursor
             if not cursor:
@@ -85,14 +91,15 @@ async def archive_completed_threads(project, age, emit):
             while True:
                 page = await client.thread_list(
                     {
-                        "cwd": project,
                         "archived": True,
                         "limit": 100,
                         "cursor": cursor,
                         "useStateDbOnly": True,
                     }
                 )
-                archived_threads.extend({"id": t.id, "cwd": project} for t in page.data)
+                archived_threads.extend(
+                    {"id": t.id, "cwd": t.cwd} for t in page.data if project_thread(t.cwd, project)
+                )
                 cursor = page.next_cursor
                 if not cursor:
                     break
@@ -125,7 +132,7 @@ async def cleanup_threads(config, emit, *, once=False):
     while True:
         try:
             success = await archive_completed_threads(
-                config["project"], settings.get("completed_age", 3600), emit
+                config["project"], settings.get("completed_age", 1200), emit
             )
         except (CodexError, OSError, ValueError, RuntimeError) as exc:
             success = False

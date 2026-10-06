@@ -44,7 +44,7 @@ log_level: INFO
 thread_cleanup:
   enabled: true
   interval: 900
-  completed_age: 3600
+  completed_age: 1200
 ```
 
 Use a model available to your Codex account. The bundled adapter uses the official `openai-codex` Python SDK and its matching local app-server runtime. It reuses Codex authentication and the configured sandbox; permission escalation is denied for these unattended invocations. Optional arguments are `--model` and `--effort`. Role instructions are supplied through the SDK's `developer_instructions` parameter and assignments through its turn input. Agents use project instructions and provider/delivery skills for backlog and integration conventions. There is no context-file or shell-wrapper requirement.
@@ -60,11 +60,17 @@ All harness activities and agent output appear on the console, in `activities.js
 
 Mechanical Codex thread cleanup runs at startup and every 15 minutes while the
 harness runs, including while delivery is paused. It archives unarchived chats
-whose working directory exactly matches `project`, whose latest turn completed
-more than one hour ago, and which have no newer activity. It re-reads each chat
-before archiving. Failed, interrupted, active, empty, and undated turns are kept.
-Chats in other directories, including separate worktrees, are outside this scope.
-Archiving does not delete chats or change work-item status. No agent or model is used.
+whose working directory matches `project` or a worktree under `project/.worktrees`,
+whose latest turn completed
+or failed more than 20 minutes ago, and which have no newer activity. It re-reads each chat
+before archiving. Interrupted, active, empty, and undated turns are kept.
+Chats in other directories are outside this scope.
+Archiving does not delete chats or change work-item status. Failed runs retain their
+error evidence in archived chats and harness logs. No agent or model is used.
+
+Backlog and Merge prompts also ask agents to self-archive their own chat when done,
+using the runtime archive tool when available. The structured result is still required;
+an unavailable or failed archive tool leaves cleanup to the periodic pass.
 
 Set `thread_cleanup.enabled: false` to disable cleanup. `interval` and
 `completed_age` are seconds. Set `log_level: DEBUG` for check, skip, and archive-attempt

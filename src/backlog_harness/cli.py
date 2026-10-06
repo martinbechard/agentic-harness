@@ -125,7 +125,7 @@ def load_config(path):
         raise ValueError("Unknown thread_cleanup setting")
     if type(cleanup.get("enabled", True)) is not bool:
         raise ValueError("thread_cleanup.enabled must be boolean")
-    for key, default in (("interval", 900), ("completed_age", 3600)):
+    for key, default in (("interval", 900), ("completed_age", 1200)):
         value = cleanup.get(key, default)
         if type(value) not in (int, float) or not 0 < value < float("inf"):
             raise ValueError(f"thread_cleanup.{key} must be positive and finite")

@@ -81,7 +81,7 @@ def schema_for(request):
 
 
 def instructions_for(request):
-    return (
+    instructions = (
         "You are the " + request["role"] + " agent for a backlog delivery harness. "
         "Use the current project's instructions and installed provider/delivery skills to "
         "choose the work item provider and follow its conventions. When work_item_provider "
@@ -100,6 +100,15 @@ def instructions_for(request):
         "Operate on filesystem work items in the current worktree. Report your activities "
         "in the agent output."
     )
+    if request["role"] in ("access", "merge"):
+        instructions += (
+            " When this assignment is done, self-archive this chat using the runtime's "
+            "archive tool if available. Archive only your own chat, never a work-item "
+            "chat or another agent's chat. Preserve the required structured final result. "
+            "If the tool is unavailable or archiving fails, return the result normally; "
+            "the harness also archives completed and failed runs after 20 minutes of inactivity."
+        )
+    return instructions
 
 
 def execute(adapter: AgentAdapter):
