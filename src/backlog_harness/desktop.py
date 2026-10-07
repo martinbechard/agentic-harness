@@ -12,6 +12,9 @@ import struct
 import uuid
 from pathlib import Path
 
+# Stable built-in section ID used by Codex desktop for pinned chats.
+PINNED_SECTION_ID = "01984de2-8f74-7c91-a3b2-5c5e937cf318"
+
 
 async def notify_archived(threads):
     """Send archive cache invalidations; this is not a UI-render acknowledgment."""

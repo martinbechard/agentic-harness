@@ -11,7 +11,7 @@ from openai_codex.async_client import AsyncCodexClient
 from openai_codex.types import ReasoningEffort
 
 from .adapter import execute
-from .desktop import notify_archived
+from .desktop import PINNED_SECTION_ID, notify_archived
 
 
 def project_thread(cwd, project):
@@ -24,6 +24,7 @@ def completed_before(thread, project, cutoff):
     turns = thread["turns"]
     return (
         project_thread(thread["cwd"], project)
+        and (thread.get("section") or {}).get("id") != PINNED_SECTION_ID
         and thread["status"]["type"] in ("idle", "notLoaded")
         and thread["updatedAt"] < cutoff
         and bool(turns)
@@ -136,14 +137,14 @@ async def cleanup_threads(config, emit, *, once=False):
     while True:
         try:
             success = await archive_completed_threads(
-                config["project"], settings.get("completed_age", 1200), emit
+                config["project"], settings.get("completed_age", 300), emit
             )
         except (CodexError, OSError, ValueError, RuntimeError) as exc:
             success = False
             emit("thread_cleanup_failed", level="ERROR", error=str(exc))
         if once:
             return success
-        await asyncio.sleep(settings.get("interval", 900))
+        await asyncio.sleep(settings.get("interval", 60))
 
 
 def thread_name(request, cwd):

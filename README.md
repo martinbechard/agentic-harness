@@ -43,8 +43,8 @@ decision_timeout: 120
 log_level: INFO
 thread_cleanup:
   enabled: true
-  interval: 900
-  completed_age: 1200
+  interval: 60
+  completed_age: 300
 ```
 
 Use a model available to your Codex account. The bundled adapter uses the official `openai-codex` Python SDK and its matching local app-server runtime. It reuses Codex authentication and the configured sandbox; permission escalation is denied for these unattended invocations. Optional arguments are `--model` and `--effort`. Role instructions are supplied through the SDK's `developer_instructions` parameter and assignments through its turn input. Agents use project instructions and provider/delivery skills for backlog and integration conventions. There is no context-file or shell-wrapper requirement.
@@ -58,12 +58,17 @@ The human user can type `pause` or `resume` followed by Enter. Pausing stops new
 
 All harness activities and agent output appear on the console, in `activities.jsonl`, and as OTLP JSON log entries in `otel.jsonl`. Per-invocation folders retain the request, result, and raw output. No collector or dashboard is required.
 
-Mechanical Codex thread cleanup runs at startup and every 15 minutes while the
+Mechanical Codex thread cleanup runs at startup and every minute while the
 harness runs, including while delivery is paused. It archives unarchived chats
 whose working directory matches `project` or a worktree under `project/.worktrees`,
 whose latest turn completed,
-failed, or was interrupted more than 20 minutes ago, and which have no newer activity. It re-reads each chat
-before archiving. Active, empty, and undated turns are kept.
+failed, or was interrupted more than 5 minutes ago, and which have no newer activity.
+It re-reads each chat before archiving. Active, empty, and undated turns are kept.
+Chats in Codex's built-in Pinned section are kept, including when pinned between
+the two reads. The section ID comes from the desktop integration and is checked
+in SDK thread metadata; when that metadata is unavailable, cleanup uses the
+activity checks alone. With the default polling interval, eligible chats are
+normally archived between five and six minutes after their last activity.
 Chats in other directories are outside this scope.
 Archiving does not delete chats or change work-item status. Failed runs retain their
 error evidence in archived chats and harness logs. No agent or model is used.

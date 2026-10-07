@@ -104,10 +104,11 @@ def instructions_for(request):
         instructions += (
             " When this assignment is done, self-archive this chat using the runtime's "
             "archive tool if available. Archive only your own chat, never a work-item "
-            "chat or another agent's chat. Preserve the required structured final result. "
+            "chat or another agent's chat. If pin status is available, do not archive a pinned "
+            "chat. Preserve the required structured final result. "
             "If the tool is unavailable or archiving fails, return the result normally; "
-            "the harness also archives completed, failed, and interrupted runs after 20 minutes "
-            "of inactivity."
+            "the harness also archives completed, failed, and interrupted runs after 5 minutes "
+            "of inactivity by default, preserving pinned chats when pin status is available."
         )
     return instructions
 

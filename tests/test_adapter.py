@@ -271,6 +271,7 @@ def test_self_archive_prompt_targets_disposable_roles(role):
     instructions = instructions_for({"role": role})
     assert ("self-archive this chat" in instructions) == (role in ("access", "merge"))
     if role in ("access", "merge"):
-        assert "20 minutes of inactivity" in instructions
+        assert "5 minutes of inactivity by default" in instructions
+        assert "do not archive a pinned chat" in instructions
         assert "Preserve the required structured final result" in instructions
         assert "If the tool is unavailable or archiving fails" in instructions

@@ -25,6 +25,7 @@ def thread(**changes):
     "changes",
     [
         {"cwd": "/other"},
+        {"section": {"id": codex.PINNED_SECTION_ID, "name": "Pinned"}},
         {"updatedAt": 100},
         {"turns": []},
         {"status": {"type": "active"}},
@@ -80,7 +81,7 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch, ui_
             ids = (
                 ["old", "resumed", "failed"]
                 if params["cursor"] is None
-                else ["empty", "recent", "failed-run", "worktree", "foreign"]
+                else ["empty", "recent", "failed-run", "worktree", "foreign", "pinned", "pin-race"]
             )
             return SimpleNamespace(
                 data=[
@@ -106,6 +107,8 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch, ui_
             assert include_turns
             reads[identity] = reads.get(identity, 0) + 1
             data = thread(id=identity)
+            if identity == "pinned" or (identity == "pin-race" and reads[identity] == 2):
+                data["section"] = {"id": codex.PINNED_SECTION_ID, "name": "Pinned"}
             if identity == "failed-run":
                 data["turns"][-1]["status"] = "failed"
             if identity == "worktree":
@@ -150,6 +153,8 @@ def test_paginated_cleanup_rechecks_and_continues_after_failure(monkeypatch, ui_
     ]
     assert "recent" not in reads
     assert "foreign" not in reads
+    assert reads["pinned"] == 1
+    assert reads["pin-race"] == 2
     assert events[-1][1] == {"project": "/project", "archived": 3, "failed": 1 + int(ui_failure)}
     assert any(e == "thread_archive_failed" for e, _ in events)
 
@@ -174,7 +179,7 @@ def test_periodic_defaults_retry_and_cancel(monkeypatch):
         raise RuntimeError("offline")
 
     async def sleep(seconds):
-        assert seconds == 900
+        assert seconds == 60
         if len(calls) == 2:
             raise asyncio.CancelledError
 
@@ -184,7 +189,7 @@ def test_periodic_defaults_retry_and_cancel(monkeypatch):
         asyncio.run(
             codex.cleanup_threads({"project": "/project"}, lambda e, **kw: events.append(e))
         )
-    assert calls == [("/project", 1200)] * 2
+    assert calls == [("/project", 300)] * 2
     assert events == ["thread_cleanup_failed"] * 2
 
 
@@ -238,6 +243,11 @@ def test_cleanup_project_and_managed_worktree_scope(cwd, expected):
         (700, None, False),
     ],
 )
-def test_twenty_minutes_requires_both_end_and_last_activity(status, updated, ended, expected):
+def test_five_minutes_requires_both_end_and_last_activity(status, updated, ended, expected):
     data = thread(updatedAt=updated, turns=[{"status": status, "completedAt": ended}])
-    assert codex.completed_before(data, "/project", 2000 - 1200) == expected
+    assert codex.completed_before(data, "/project", 1100 - 300) == expected
+
+
+@pytest.mark.parametrize("section", [None, {"id": "custom", "name": "Pinned"}])
+def test_unpinned_sections_remain_eligible(section):
+    assert codex.completed_before(thread(section=section), "/project", 100)
