@@ -64,7 +64,7 @@ Development requests contain `item` and `instruction`. Merge requests contain `i
 {"status":"success","transient":false,"detail":"Work delivered or integration checked"}
 ```
 
-Allowed statuses are `success`, `failed`, and `user_action_required`. `transient` and `detail` are optional for custom commands; defaults are false and empty text. The Codex structured schema requires all three. A nonzero exit cannot claim success. Missing results leave the delivery outcome unknown; malformed results are failures.
+Allowed statuses are `success`, `failed`, `user_action_required`, `waiting`, and `blocked`. Development agents report `waiting` or `blocked` only after publishing and reading back the corresponding lifecycle checkpoint without unfinished product changes. These outcomes release the worker without retries or Holding; the merge/recovery passes reconsider the item. `transient` and `detail` are optional for custom commands; defaults are false and empty text. The Codex structured schema requires all three. A nonzero exit cannot claim success. Missing results leave the delivery outcome unknown; malformed results are failures.
 
 ## Failure and process handling
 
@@ -217,3 +217,15 @@ validation or timeout errors at ERROR. `unblock_started` reports a positive trig
 `unblock_finished` carries the validated status and detail; it does not imply an
 empty Blocked queue. `unblock_error` reports invocation failures/timeouts at ERROR.
 All use the normal console, JSONL and OTEL writer.
+
+## Dependency waiting
+
+Provider agents use Waiting for valid unfinished prerequisites and Blocked for
+problems needing help. Waiting is excluded from Ready selection and Blocked counts.
+The merge assignment includes dependency-state reconciliation on every pass,
+including empty passes, and immediately after each published Completed item.
+Only completion of all prerequisites permits promotion to Ready. Worker success,
+pending merge, cancellation, or missing evidence does not satisfy a dependency.
+The scheduler wakes after merge-agent termination to observe published promotions.
+See [the provider protocol](work-item-provider-protocol.md#waiting-lifecycle) for
+provider conventions and external-provider compatibility limits.

@@ -514,3 +514,88 @@ is independent of lifecycle publication; never merge unfinished product files.
     asyncio.run(scan())
     assert git(root, "rev-parse", "HEAD") == published
     assert git(root, "diff", "--cached") == index
+
+
+def test_waiting_reconciliation_requires_every_completed_dependency(project):
+    root, _control, config = project
+    add(root, "first", status="awaiting-merge")
+    add(root, "second", status="running")
+    add(root, "dependent", dependencies=["first", "second"])
+    add(root, "legacy", status="blocked", blocker="dependencies", dependencies=["first"])
+    add(root, "real-blocker", status="blocked", blocker="broken tool", dependencies=["first"])
+    add(root, "missing", dependencies=["absent"])
+    add(root, "cycle-a", dependencies=["cycle-b"])
+    add(root, "cycle-b", dependencies=["cycle-a"])
+    add(root, "approval", status="user-action-required", dependencies=["first"])
+
+    def state(identity):
+        paths = list((root / "backlog").glob(f"*/{identity}.json"))
+        assert len(paths) == 1
+        return json.loads(paths[0].read_text())["status"]
+
+    def complete(identity):
+        path = next((root / "backlog").glob(f"*/{identity}.json"))
+        record = json.loads(path.read_text())
+        record["status"] = "completed"
+        destination = root / "backlog" / "completed" / path.name
+        destination.parent.mkdir(exist_ok=True)
+        path.unlink()
+        destination.write_text(json.dumps(record))
+        git(root, "add", "backlog")
+        git(root, "commit", "-m", f"External completion {identity}")
+
+    async def check():
+        # Fresh Agents instance on every pass exercises restart catch-up, without Ready selection.
+        agents = Agents(config, lambda *_args, **_fields: None)
+        agent = await agents.integrate()
+        try:
+            assert (await agent.wait()).status == "success"
+        finally:
+            await agent.kill()
+
+    asyncio.run(check())
+    assert state("dependent") == state("legacy") == "waiting"
+    assert all(state(i) == "blocked" for i in ("missing", "cycle-a", "cycle-b", "real-blocker"))
+    assert state("approval") == "user-action-required"
+    before = git(root, "rev-parse", "HEAD")
+    asyncio.run(check())
+    assert git(root, "rev-parse", "HEAD") == before
+    complete("first")
+    asyncio.run(check())
+    assert state("legacy") == "ready"
+    assert state("dependent") == "waiting"
+    complete("second")
+    asyncio.run(check())
+    assert state("dependent") == "ready"
+    assert state("real-blocker") == "blocked"
+    assert state("approval") == "user-action-required"
+
+
+def test_zero_ready_count_does_not_starve_waiting_reconciliation(project):
+    root, _control, config = project
+    add(root, "prerequisite", status="completed")
+    add(root, "dependent", status="waiting", dependencies=["prerequisite"])
+    counts = []
+
+    class Provider:
+        async def ready_count(self, *, epic, outside, excluded):
+            records = [
+                json.loads(git(root, "show", f"HEAD:{path}"))
+                for path in git(
+                    root, "ls-tree", "-r", "--name-only", "HEAD", "backlog"
+                ).splitlines()
+            ]
+            count = sum(r["status"] == "ready" and r["id"] not in excluded for r in records)
+            counts.append(count)
+            return count
+
+    async def scenario():
+        await execute(
+            config,
+            lambda _h: (root / "backlog" / "completed" / "dependent.json").exists(),
+            work_item_provider=Provider(),
+        )
+
+    asyncio.run(scenario())
+    assert counts[0] == 0
+    assert 1 in counts

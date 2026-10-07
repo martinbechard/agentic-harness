@@ -33,7 +33,7 @@ The filesystem provider creates, reads, edits, moves, and publishes work items. 
 ### UC-001: Create a work item
 
 1. The human user asks the provider agent to create a work item, supplying its description.
-2. The provider agent creates the item with a unique identifier in the backlog's `ready` subfolder on main.
+2. The provider agent creates the item with a unique identifier on main: `ready` when eligible, `waiting` when its only impediment is valid unfinished prerequisites, or `blocked` when a concrete problem requires intervention.
 3. The provider agent commits the new item on main, preserving unrelated changes.
 
 ### UC-002: Record a defect needed to complete the assigned work
@@ -64,6 +64,20 @@ Replace all steps starting with step 3 with:
 1. While working on an assigned item, the agent reads the work item in its current worktree.
 2. The agent records progress and findings in the item and moves it between status folders as the work progresses.
 3. When the work is complete, the work item updates are committed and merged with the rest of the work.
+
+### UC-005: Wait for prerequisites
+
+1. Record stable dependency identifiers. Use `waiting` when the only impediment is
+   unfinished valid prerequisites; use `blocked` for missing references, cycles or
+   other problems requiring help. Reconcile legacy dependency-only Blocked items.
+2. After an item is published Completed, recheck its Waiting dependents. Promote
+   them to `ready` only when all prerequisites are Completed and other readiness
+   conditions hold. Resolve dependencies across queues and completed archives.
+3. Repeat reconciliation during regular integration checks, including checks with
+   no merges, to recover missed or externally published completions.
+4. Revalidate current revisions and ownership, preserve human decisions and
+   unrelated edits, publish only owned lifecycle changes, and verify readback.
+   Repeated unchanged checks do not add history or commits.
 
 ## Not supported use cases
 

@@ -163,7 +163,7 @@ Step 4 of UC-001 then applies: the development agent reports the **User Action r
 5. As agents become idle, the harness repeats steps 2–4 to retrieve and dispatch further ready items across the backlog.
 6. When no items are ready, idle agents wait and the harness checks again after the configured polling interval.
 
-Dependency-blocked items wait until their prerequisites are satisfied. The timeout, exception, and user-action variations in UC-002, UC-003, and UC-007 apply to each dispatched item.
+Items waiting only for valid unfinished prerequisites use **Waiting**, distinct from **Blocked** items needing intervention. Missing dependencies, cycles and prerequisites requiring intervention are Blocked. Waiting items become Ready only after all prerequisites are authoritatively Completed and other readiness conditions hold. The timeout, exception, and user-action variations in UC-002, UC-003, and UC-007 apply to each dispatched item.
 
 ```mermaid
 flowchart TD
@@ -224,7 +224,8 @@ flowchart TD
 2. The merge agent identifies eligible work using the project's convention: approved PRs, a work item status with an associated branch, or another configured convention.
 3. For each eligible item, the merge agent prepares integration with the latest target branch and runs the project's required tests on the combined result.
 4. If tests pass, the merge agent merges the work and updates its work item.
-5. The merge agent reports the outcome to the harness.
+5. After publishing each Completed item, the merge agent reconciles Waiting dependents and promotes eligible items to Ready. Every pass also reconciles dependency states across active queues, even with no merges or zero Ready items, to catch external completion and recover missed updates after restart. Dependency lookup includes other epics and completed archives. Preserve active assignments, human decisions and terminal states; publish and read back conditional lifecycle transactions.
+6. The merge agent reports the outcome to the harness, which wakes dispatch to observe newly Ready items.
 
 The harness runs one merge-agent invocation at a time. The merge agent owns readiness checks, testing, and merge details; development agents can continue working concurrently. Successful development-agent completion triggers a check; it does not guarantee that eligible work is waiting.
 
@@ -292,7 +293,7 @@ Delivery and integration do not run as part of this command. The provider remain
 ### UC-016: Periodically attempt to unblock work items
 
 1. Every 15 minutes by default, while delivery is not paused or complete, ask the
-   work item provider for the number of Blocked items in scope, excluding active
+   work item provider for the number of Blocked items in scope, excluding Waiting, active
    assignments and pending retries.
 2. If the count is positive, start one separate agent invocation to recheck and
    resolve blockers using the configured provider and project conventions.
@@ -306,6 +307,11 @@ Recovery shares provider serialization, has a configurable timeout, and is reape
 on shutdown. A pause suppresses new recovery but lets existing recovery finish.
 With an epic selected, only its Blocked items are examined. Provider-only counts
 use no model; providers without a count implementation use an access-agent count.
+
+Development agents may also report `waiting` or `blocked` after publishing and
+reading back the corresponding lifecycle checkpoint without unfinished product
+changes. These outcomes free capacity without consuming retries or moving the item
+to Holding. Dependency reconciliation and periodic recovery handle subsequent work.
 
 ## Thread housekeeping
 

@@ -282,3 +282,29 @@ distribution built successfully; `uv lock --locked` passed. An isolated Python
 with 1 opt-in live test skipped** across engine, provider, process, CLI and adapter
 tests. Distribution files are in `.agent-ops/blocked-recovery-release/`.
 Dev-methodology owns observer deployment and safe runtime activation.
+
+### Dependency Waiting and Blocked outcomes (2026-10-07)
+
+Provider-agent instructions distinguish Waiting for valid unfinished prerequisites
+from Blocked problems needing help. Integration rechecks dependents after each
+published completion and on empty periodic passes; the scheduler wakes after each
+merge pass. Development `waiting` and `blocked` outcomes release capacity without
+failure classification, retries, or Holding. Existing 15-minute blocked recovery
+is retained and excludes Waiting.
+
+The disposable Git provider tests cover multiple prerequisites, pending-merge
+nondelivery, missing references, cycles, legacy dependency-only Blocked records,
+real blockers, approval preservation, unchanged-pass idempotence, external
+completion/restart catch-up, and zero-Ready observer gating. Process and scheduler
+tests cover the new outcomes; adapter tests verify the expanded result schema.
+
+Final verification: **392 passed, 2 opt-in skips**; Ruff lint/format and diff
+whitespace checks passed. Instrumented coverage plus the corrected adapter test
+rerun covers **100% of 1,210 statements and 396 branches**. The instrumented suite
+initially failed one assertion expecting the old three-status schema; the assertion
+was corrected and the final full uninstrumented suite passed.
+
+These tests use deterministic provider agents and temporary Git repositories.
+No live model, installed external provider migration, deployment, or running
+harness restart was performed. External providers must implement the Waiting
+convention and count exclusions described in the provider protocol.

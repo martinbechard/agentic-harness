@@ -48,8 +48,9 @@ exception updates, explicit human decisions, and already assigned retries/recove
 retain their existing calls. Zero Ready items does not establish epic completion
 or absence of work to integrate. A zero count also means the access agent's
 selection-time lifecycle reconciliation does not run during that poll; it resumes
-when Ready candidates are published. This is not a background lifecycle repair
-service.
+when Ready candidates are published. Dependency-state reconciliation still runs through the merge agent at startup,
+on its regular interval, and after each published completion, independently of
+this Ready count gate. Counts themselves never change lifecycle state.
 
 ## Filesystem implementation
 
@@ -157,7 +158,7 @@ live account access.
 
 Implement `blocked_count(*, epic, excluded) -> int` alongside `ready_count`.
 This counts the provider's **Blocked** lifecycle state, not prerequisite-ineligible
-Ready items, Holding, User Action Required, or terminal states. Counts are read-only;
+Ready items, Waiting, Holding, User Action Required, or terminal states. Counts are read-only;
 recovery uses a separate access-agent invocation only after a positive count.
 An epic restricts the count to that epic; null covers all configured queues.
 There is no outside-epic recovery pass. Active and pending retry IDs are excluded.
@@ -181,3 +182,17 @@ The harness does not infer that label from `ready_label`. Missing configuration 
 a count error, not an empty queue. Both paths share `work_item_provider.timeout`.
 Agent-only configuration uses the access `blocked_count` action with the same count
 schema, under the provider lock and the count timeout.
+
+## Waiting lifecycle
+
+Waiting is a provider state for valid unfinished prerequisites, excluded from both
+Ready and Blocked counts. No `waiting_count` operation or additional observer
+command is needed. The merge agent reconciles Waiting items even if Ready counts
+stay zero, and promotes only those with all dependencies authoritatively Completed.
+Use the provider's Waiting folder, status field, or label convention. Dependencies
+outside the selected queue/epic and in completed archives still require lookup.
+Agents migrate dependency-only Ready or legacy Blocked items; read-only observers
+must never perform that migration. Invalid dependencies and genuine blockers stay
+Blocked for periodic recovery. Existing observers/providers must support this
+state distinction; harness tests do not establish compatibility with a separately
+installed provider implementation.

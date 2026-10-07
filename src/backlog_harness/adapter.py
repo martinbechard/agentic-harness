@@ -67,7 +67,10 @@ def schema_for(request):
         },
         "epic_complete": {"complete": {"type": "boolean"}},
         None: {
-            "status": {"type": "string", "enum": ["success", "failed", "user_action_required"]},
+            "status": {
+                "type": "string",
+                "enum": ["success", "failed", "user_action_required", "waiting", "blocked"],
+            },
             "transient": {"type": "boolean"},
             "detail": {"type": "string"},
         },

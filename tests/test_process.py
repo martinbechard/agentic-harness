@@ -74,6 +74,8 @@ def test_selected_scheduling_authority_is_supplied_to_every_agent_role(tmp_path)
                 "supersedes project guidance that fixes Work item scheduling to SOLO" in instruction
             )
             assert "does not change claim-free restrictions" in instruction
+            assert "ALL prerequisites" in instruction
+            assert "Waiting is distinct from Blocked" in instruction
             assert "serial merge checks" in instruction
 
     asyncio.run(scenario())
@@ -392,5 +394,19 @@ Path(os.environ['HARNESS_RESULT']).write_text(json.dumps(result))
         assert any(
             e == "agent_group_stopped" and f["reason"] == "stop_requested" for e, f in events
         )
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("status", ["waiting", "blocked"])
+def test_dependency_and_blocker_outcomes_survive_process_boundary(tmp_path, status):
+    async def scenario():
+        result = json.dumps({"status": status, "detail": "Published provider checkpoint"})
+        agent, _ = await start(
+            tmp_path,
+            "import os; from pathlib import Path; "
+            f"Path(os.environ['HARNESS_RESULT']).write_text({result!r})",
+        )
+        assert await agent.wait() == Outcome(status, detail="Published provider checkpoint")
 
     asyncio.run(scenario())

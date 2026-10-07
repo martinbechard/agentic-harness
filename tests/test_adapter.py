@@ -31,6 +31,8 @@ def test_another_adapter_uses_same_request_result_and_event_contract(tmp_path, m
                 "success",
                 "failed",
                 "user_action_required",
+                "waiting",
+                "blocked",
             ]
             emit({"activity": "delivered"})
             return {"status": "success", "transient": False, "detail": "done"}

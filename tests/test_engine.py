@@ -89,12 +89,12 @@ async def started(h):
 
 def test_success_and_user_action_are_updated_by_development_agent():
     async def scenario():
-        for status in ("success", "user_action_required"):
+        for status in ("success", "user_action_required", "waiting", "blocked"):
             h, access, launched, _, _ = make()
             await started(h)
             launched[0][2].finish(Outcome(status))
             await settle(h)
-            assert not h.active and not h.pending and not access.failures
+            assert not h.active and not h.pending and not access.failures and not access.held
             assert h.merge_requested.is_set() == (status == "success")
 
     asyncio.run(scenario())
@@ -362,6 +362,7 @@ def test_merge_is_serial_and_completion_trigger_is_retained():
         for _ in range(10):
             await asyncio.sleep(0)
         assert len(merged) == 2
+        assert h.wake.is_set()  # Newly Ready dependents need no polling delay.
         h.complete = True
         merged[1].finish(Outcome("success"))
         await task

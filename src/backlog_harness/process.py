@@ -11,6 +11,24 @@ from pathlib import Path
 from .engine import Item, Outcome
 from .provider_lock import CoordinationUnavailable, provider_lock, require_coordinator
 
+DEPENDENCY_STATES = (
+    " Use Waiting for items whose only impediment is an unfinished, valid prerequisite. "
+    "Record the exact dependency IDs; Waiting is distinct from Blocked and is not Ready. "
+    "Use Blocked for a concrete problem requiring help, including missing dependencies, "
+    "dependency cycles or a prerequisite that cannot complete without intervention. "
+    "When reconciling lifecycle, move dependency-only Ready or legacy Blocked items to Waiting. "
+    "Promote Waiting to Ready only after ALL prerequisites have authoritative Completed "
+    "evidence and other readiness conditions hold; a worker success or pending merge is "
+    "not completion. Resolve dependency identities across queues, epics and completed archives. "
+    "Do not reopen terminal items, clear real blockers, bypass human decisions, or change "
+    "Starting, Running, Holding or User Action Required items during this reconciliation. "
+    "Use the provider's Waiting status/folder/label convention (backlog/waiting for the "
+    "default filesystem status-folders layout; the configured queues for status-field). "
+    "Revalidate revisions through provider-native conditional transactions, publish only "
+    "owned lifecycle changes and verify readback. Preserve candidates, assignments, history "
+    "and unrelated edits; unchanged scans must not append duplicate history."
+)
+
 
 class Process:
     @classmethod
@@ -114,7 +132,7 @@ class Process:
         if value is None:
             return None
         status = value.get("status")
-        if status not in {"success", "failed", "user_action_required"}:
+        if status not in {"success", "failed", "user_action_required", "waiting", "blocked"}:
             return Outcome("failed", detail="Invalid agent outcome")
         if self.process.returncode != 0:
             return Outcome("failed", detail="Agent exited unsuccessfully")
@@ -276,11 +294,12 @@ class Agents:
             excluded=excluded,
             workspaces=list(self.workspaces.values()),
             instruction=self.scheduling_instruction()
+            + DEPENDENCY_STATES
             + " Reconcile lifecycle before selecting ready items. For filesystem providers, "
             "inspect the configured primary backlog and committed checkpoints in assigned "
             "worktrees, including assignments discoverable through provider records after a "
             "harness restart. When a checkpoint establishes a newer waiting state (User Action "
-            "Required, Blocked, or Holding), publish a lifecycle-only update on the configured "
+            "Required, Waiting, Blocked, or Holding), publish a lifecycle-only update on the configured "
             "primary branch through the provider's conditional transaction procedure. This "
             "caller authorizes that main-side lifecycle reconciliation independently of product "
             "acceptance or integration; do not merge or cherry-pick unfinished product changes. "
@@ -339,7 +358,8 @@ class Agents:
                 excluded=excluded,
                 instruction="Read the configured work item provider and count only Blocked items "
                 "in the requested epic (all active queues if epic is null), excluding assigned IDs. "
-                "This is read-only. Do not include Holding, User Action Required, or terminal items.",
+                "This is read-only. Do not include Waiting, Holding, User Action Required, "
+                "or terminal items.",
             )
         )["blocked_count"]
 
@@ -350,6 +370,7 @@ class Agents:
             excluded=excluded,
             workspaces=list(self.workspaces.values()),
             instruction=self.scheduling_instruction()
+            + DEPENDENCY_STATES
             + " Re-read Blocked items through the configured work item provider within the "
             "requested epic (all configured active queues if epic is null). For filesystem "
             "providers use blocked_paths when configured, otherwise paths for status-field "
@@ -385,6 +406,7 @@ class Agents:
     async def deliver(self, item, interrupted):
         instruction = (
             self.scheduling_instruction()
+            + DEPENDENCY_STATES
             + " Read this workspace's current work item and recorded human decisions before starting; "
             "honor the exact recorded answer/approval and do not re-raise a resolved question. "
             "Mark this work item running when starting, deliver it, and update its status and "
@@ -393,7 +415,11 @@ class Agents:
             "Record discovered defects through the provider in the current worktree; "
             "the development agent fixes blocking defects before continuing. "
             "Publish filesystem work item changes with the delivery merge. "
-            "Report success, failed (with transient boolean), or user_action_required."
+            "Report success, failed (with transient boolean), user_action_required, waiting, or blocked. "
+            "For waiting or blocked, publish a lifecycle-only checkpoint through the provider "
+            "on the authoritative branch without merging unfinished product changes; verify "
+            "readback before reporting that outcome. Those outcomes release the worker without "
+            "automatic retries or Holding. The dependency/recovery passes handle them later."
         )
         if interrupted:
             instruction += (
@@ -411,6 +437,7 @@ class Agents:
             "merge",
             {
                 "instruction": self.scheduling_instruction()
+                + DEPENDENCY_STATES
                 + " Check for work ready to integrate using the project's convention (approved PR, "
                 "work item status and branch, or configured equivalent). For each eligible item, "
                 "prepare integration against the latest target, run required tests on the combined "
@@ -418,6 +445,13 @@ class Agents:
                 "treat an uncommitted running-worktree status as ready. Pin the candidate before "
                 "testing. Update the work item and report the outcome. "
                 "Reconcile conflicting status/delivery information from separate attempts even "
-                "when Git merges cleanly."
+                "when Git merges cleanly. After publishing each Completed item, recheck its "
+                "Waiting dependents and promote those now eligible to Ready. Also reconcile "
+                "dependency states across the configured active queues on every pass, even "
+                "when nothing can be merged or the Ready count is zero, to recover missed "
+                "completion updates after restart. Do not stop this reconciliation because "
+                "an unrelated merge failed. Re-read current assignments before lifecycle "
+                "writes and skip actively owned items. Report incomplete publication or "
+                "unresolved dependency problems explicitly."
             },
         )

@@ -57,7 +57,12 @@ def reconcile_waiting(request, main, control):
             identity = checkpoint["id"]
             if identity in request["excluded"]:
                 continue
-            if checkpoint["status"] not in {"user-action-required", "holding", "blocked"}:
+            if checkpoint["status"] not in {
+                "user-action-required",
+                "waiting",
+                "holding",
+                "blocked",
+            }:
                 continue
             current_path, current = load(main, identity)
             if current == checkpoint or current["status"] == "completed":
@@ -204,6 +209,42 @@ def development(request, root, main, control):
     return {"status": "success"}
 
 
+def reconcile_dependencies(request, main):
+    """Test provider implements the requested lifecycle; production agents own this policy."""
+    assert "ALL prerequisites" in request["instruction"]
+    assert "even when nothing can be merged" in request["instruction"]
+    items = {item["id"]: item for item in committed_items(main)}
+
+    def invalid(identity, ancestors):
+        if identity in ancestors or identity not in items:
+            return True
+        item = items[identity]
+        if item["status"] == "completed":
+            return False
+        if item["status"] in {"holding", "user-action-required", "cancelled"}:
+            return True
+        if item["status"] == "blocked" and item.get("blocker") != "dependencies":
+            return True
+        return any(invalid(dep, ancestors | {identity}) for dep in item.get("dependencies", []))
+
+    for identity, item in items.items():
+        if item["status"] not in {"ready", "waiting", "blocked"}:
+            continue
+        if item["status"] == "blocked" and item.get("blocker") != "dependencies":
+            continue
+        dependencies = item.get("dependencies", [])
+        if invalid(identity, set()):
+            target = "blocked"
+        elif any(items[dep]["status"] != "completed" for dep in dependencies):
+            target = "waiting"
+        else:
+            target = "ready"
+        if target != item["status"]:
+            save(main, item, target)
+            git(main, "add", "--", "backlog")
+            git(main, "commit", "-m", f"Dependency state {identity}: {target}")
+
+
 def merge(request, root, main, control):
     lock = control / "merge.lock"
     try:
@@ -211,6 +252,7 @@ def merge(request, root, main, control):
     except FileExistsError:
         raise AssertionError("Overlapping merge agents") from None
     try:
+        reconcile_dependencies(request, main)
         for line in git(main, "worktree", "list", "--porcelain").splitlines():
             if not line.startswith("worktree "):
                 continue
@@ -241,6 +283,7 @@ def merge(request, root, main, control):
                     return {"status": "failed", "detail": "Combined tests failed"}
                 save(main, item, "completed")
                 commit(main, f"Integrate {item['id']} after combined tests")
+                reconcile_dependencies(request, main)
         return {"status": "success"}
     finally:
         lock.rmdir()

@@ -127,9 +127,32 @@ and `paths: [backlog/ready]`. GitHub label-based queues use `type: github`, an e
 for scope, exclusions, timeout, and format limits. Merge and epic-completion checks
 retain their separate behavior.
 
+## Wait for dependencies
+
+`Waiting` means an item can proceed once its valid prerequisites finish. `Blocked`
+means a concrete problem needs help. Provider agents record exact dependency IDs
+and move dependency-only Ready or legacy Blocked records to Waiting. Missing
+references, cycles, and prerequisites needing intervention remain Blocked.
+
+After publishing each Completed item, the merge agent rechecks Waiting dependents.
+It promotes an item to Ready only when **all** prerequisites are authoritatively
+Completed and other readiness conditions hold. A successful worker or pending
+merge does not qualify. Dependency lookup includes other queues, epics and
+completed archives. Human decisions and active assignments remain protected.
+
+The existing merge pass also reconciles dependency states at startup and on its
+regular interval, even with zero Ready items or no merges. This catches completions
+published elsewhere and missed updates after restart. The scheduler wakes after a
+merge pass to pick up newly Ready work. Lifecycle transactions and readback remain
+agent/provider responsibilities; the harness does not parse dependency graphs.
+Workers can report `waiting` or `blocked` after publishing the lifecycle checkpoint;
+these outcomes release capacity without retries or a transition to Holding.
+Status-folder providers use their Waiting folder (`backlog/waiting` by default);
+status-field and hosted providers use their configured lifecycle convention.
+
 ## Check blocked items
 
-Every 15 minutes, the harness asks the work item provider for a Blocked count.
+Every 15 minutes, the harness asks the work item provider for a Blocked count, excluding Waiting items.
 A positive count starts one separate unblock invocation using the configured
 `access` command. Agent-only providers use an access-agent count; configured file
 and GitHub providers count without a model call. Errors are logged and retried on

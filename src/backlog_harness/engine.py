@@ -223,7 +223,7 @@ class Harness:
                 self.merge_requested.set()
             elif outcome.status == "failed":
                 return await self.failed(item, outcome.detail, outcome.transient)
-            elif outcome.status != "user_action_required":
+            elif outcome.status not in {"user_action_required", "waiting", "blocked"}:
                 return await self.failed(item, "invalid outcome", transient=False)
             return None
         finally:
@@ -373,6 +373,8 @@ class Harness:
             finally:
                 if agent is not None:
                     await agent.kill()
+                # A merge pass can publish Ready dependents, even after a partial failure.
+                self.wake.set()
             if self.complete and not self.active and not self.merge_requested.is_set():
                 return
             try:
